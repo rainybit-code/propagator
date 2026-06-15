@@ -103,6 +103,16 @@ body::before {
 .bpm-mini-led.kick { background: var(--grow); box-shadow: 0 0 8px rgba(147,240,107,.85); }
 .bpm-mini-led.kick.down { background: var(--heat); box-shadow: 0 0 8px rgba(255,124,61,.85); }
 
+/* SYNTH voice editor */
+.pod-synth { grid-area: synthpod; justify-self: end; }
+.pod-synth[hidden] { display: none; }
+.pod-synth .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
+.synth-knobs { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem .35rem; margin-top: .65rem; }
+.synth-knobs .knob { width: auto; }
+.synth-knobs .knob-dial { width: 36px; height: 36px; }
+.synth-knobs .knob-dial .knob-pointer { height: 14px; }
+.synth-knobs .knob-label { font-size: .56rem; min-height: 2.1em; }
+
 /* MIDI thru breakout box */
 .pod-midi { grid-area: midipod; justify-self: start; }
 .pod-midi[hidden] { display: none; }
@@ -146,7 +156,10 @@ body::before {
 .stage {
   position: relative; z-index: 5; display: grid;
   grid-template-columns: minmax(150px, 1fr) minmax(340px, 470px) minmax(150px, 1fr);
-  grid-template-areas: "modepod pedal fxpod" "bpmpod pedal midipod";
+  grid-template-areas:
+    "modepod  pedal fxpod"
+    "synthpod pedal midipod"
+    "bpmpod   pedal .";
   gap: 1.1rem 1.7rem; align-items: start; justify-items: center;
   max-width: 1300px; margin: 0 auto; padding: 2.2rem 1.4rem 1rem;
 }

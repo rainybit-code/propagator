@@ -11,6 +11,8 @@ const CONFIG = {
   ccFx:   [26, 27, 28, 29, 30, 31], // FX-layer knobs 1..6
   ccModeSelect: 16,                 // mode select (0/64/127 -> synth/granular/generative)
   ccFxSelect:   17,                 // FX select   (0/64/127 -> off/delay/reverb)
+  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47],  // extended synth params
+  synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
   modeOrder: ['synth', 'granular', 'generative'], // toggle 1: up / middle / down
   modeLabels: {
     synth:      ['Cutoff', 'Resonance', 'Attack', 'Decay', 'Mod Depth', 'Gen-mod Mix'],
@@ -53,7 +55,11 @@ let clockCount = 0, lastClockMs = 0, clockBpm = 0;  // MIDI clock tracking (24 P
 let activeMode = 0;   // 0 synth / 1 granular / 2 generative
 let activeFx = 0;     // 0 off / 1 delay / 2 reverb
 
-const knobValue = { mode: [0.5,0.5,0.5,0.5,0.5,0.5], fx: [0.3,0.4,0.35,0.7,0.6,0.7] };
+const knobValue = {
+  mode:  [0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+  fx:    [0.3, 0.4, 0.35, 0.7, 0.6, 0.7],
+  synth: [0.25, 0.40, 0.70, 0.30, 0.50, 0.30, 0.00, 0.60],  // matches firmware defaults
+};
 
 /* ===========================================================================
    KNOBS
@@ -82,7 +88,7 @@ function makeKnob(bank, idx, label) {
 
 function attachKnobDrag(k, dial, bank, idx, apply, lab) {
   let startY = 0, startV = 0, dragging = false;
-  const cc = (bank === 'mode' ? CONFIG.ccMode : CONFIG.ccFx)[idx];
+  const cc = (bank === 'mode' ? CONFIG.ccMode : bank === 'fx' ? CONFIG.ccFx : CONFIG.ccSynth)[idx];
 
   const showAnnot = (e) => {
     annot.hidden = false;
@@ -121,6 +127,9 @@ const modeKnobs = CONFIG.modeLabels[CONFIG.modeOrder[0]].map((lab, i) => makeKno
 modeKnobs.forEach(k => knobsRow.appendChild(k));
 /* build fx knobs */
 CONFIG.fxLabels.forEach((lab, i) => fxKnobsEl.appendChild(makeKnob('fx', i, lab)));
+/* build synth-panel knobs */
+const synthKnobsEl = $('#synthKnobs');
+CONFIG.synthLabels.forEach((lab, i) => synthKnobsEl.appendChild(makeKnob('synth', i, lab)));
 
 /* ===========================================================================
    TOGGLES (3-position)
@@ -184,6 +193,7 @@ function setMode(m) {
   $('#modeNote').textContent = CONFIG.modeNotes[name];
   if (stompNames[1]) stompNames[1].textContent = CONFIG.fsActions[name] || 'ACTION';  // FS2 = mode action
   const mp = $('#modePod'); if (mp) mp.classList.remove('closed');   // switch change re-opens its box
+  const sp = $('#synthPod'); if (sp) sp.hidden = (m !== 0);          // synth panel only in Synth mode
   sendCC(CONFIG.ccModeSelect, m / 2);   // tell the pedal to switch mode
 }
 function setFx(f) {
@@ -239,9 +249,10 @@ function updateConn() {
 function selectOut(id) {
   midiOut = id ? midi.outputs.get(id) : null;
   updateConn();
-  if (midiOut) {  // sync the pedal to the UI's current mode/FX on connect
+  if (midiOut) {  // sync the pedal to the UI's current state on connect
     sendCC(CONFIG.ccModeSelect, activeMode / 2);
     sendCC(CONFIG.ccFxSelect, activeFx / 2);
+    CONFIG.ccSynth.forEach((cc, i) => sendCC(cc, knobValue.synth[i]));
   }
 }
 function selectIn(id) {
@@ -523,7 +534,7 @@ function makeDraggable(pod) {
   pod.addEventListener('pointerup', end);
   pod.addEventListener('pointercancel', end);
 }
-['#modePod', '#fxPod', '#bpmPod', '#midiPod'].forEach(id => makeDraggable($(id)));
+['#modePod', '#fxPod', '#bpmPod', '#midiPod', '#synthPod'].forEach(id => makeDraggable($(id)));
 
 /* close (×) / reset breakout boxes. A closed mode/fx box re-opens when its
    corresponding toggle switch is changed (see setMode / setFx). */
