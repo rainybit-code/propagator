@@ -725,7 +725,7 @@ function makeDraggable(pod) {
   if (!pod) return;
   let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
   pod.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.knob, button, input, .bpm-dial, select, .seg, .beat-seed')) return;
+    if (e.target.closest('.knob, button, input, label, .pill, .switch-field, .bpm-dial, select, .seg, .beat-seed')) return;
     dragging = true; pod.classList.add('dragging');
     sx = e.clientX; sy = e.clientY;
     ox = parseFloat(pod.dataset.dx || '0'); oy = parseFloat(pod.dataset.dy || '0');
