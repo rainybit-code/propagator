@@ -177,6 +177,25 @@
     <p class="pod-note">detuned oscillators · sub · ADSR · filter envelope · glide</p>
   </aside>
 
+  <!-- ---- MOD / LFO (shown in Synth mode) ---- -->
+  <aside class="pod pod-mod sketch" id="modPod">
+    <div class="pod-tab">MOD&nbsp;▸&nbsp;LFO</div>
+    <div class="synth-wave" id="lfoShapeSeg">
+      <button data-w="0" class="on" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
+      <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
+      <button data-w="2" title="Saw"><svg viewBox="0 0 26 16"><path d="M3 13 L12 3 L12 13 L21 3 L21 13"/></svg></button>
+      <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
+    </div>
+    <div class="mod-knobs" id="modKnobs"><!-- LFO rate + depth injected by app.js --></div>
+    <div class="lfo-dest" id="lfoDestSeg">
+      <button data-d="0">Off</button>
+      <button data-d="1" class="on">Vib</button>
+      <button data-d="2">Filt</button>
+      <button data-d="3">Trem</button>
+    </div>
+    <p class="pod-note">LFO → vibrato / filter / tremolo · knob 5 adds depth</p>
+  </aside>
+
   <!-- ---- MIDI thru breakout (shown when thru is on AND both devices connected) ---- -->
   <aside class="pod pod-midi sketch" id="midiPod" hidden>
     <div class="pod-tab">MIDI&nbsp;▸&nbsp;THRU</div>

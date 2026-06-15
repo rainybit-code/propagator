@@ -120,6 +120,20 @@ body::before {
 .synth-knobs .knob-dial .knob-pointer { height: 14px; }
 .synth-knobs .knob-label { font-size: .56rem; min-height: 2.1em; }
 
+/* MOD / LFO pod */
+.pod-mod { grid-area: modpod; justify-self: start; }
+.pod-mod[hidden] { display: none; }
+.pod-mod .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
+.mod-knobs { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem .35rem; margin-top: .55rem; }
+.mod-knobs .knob { width: auto; }
+.mod-knobs .knob-dial { width: 36px; height: 36px; }
+.mod-knobs .knob-dial .knob-pointer { height: 14px; }
+.mod-knobs .knob-label { font-size: .56rem; min-height: 2.1em; }
+.lfo-dest { display: flex; gap: .3rem; margin-top: .5rem; }
+.lfo-dest button { flex: 1; font-family: var(--font-mono); font-size: .58rem; color: var(--ink-dim); background: rgba(91,208,230,.06); border: 1.5px solid var(--cyan-2); border-radius: 7px; padding: .24rem 0; cursor: pointer; text-align: center; transition: background .15s, color .15s, border-color .15s; }
+.lfo-dest button:hover { color: var(--ink); }
+.lfo-dest button.on { color: #0a1620; background: var(--mode); border-color: var(--mode); font-weight: 600; }
+
 /* MIDI thru breakout box */
 .pod-midi { grid-area: midipod; justify-self: start; }
 .pod-midi[hidden] { display: none; }
@@ -166,10 +180,10 @@ body::before {
   grid-template-areas:
     "modepod  pedal fxpod"
     "synthpod pedal midipod"
-    "bpmpod   pedal .";
+    "bpmpod   pedal modpod";
   gap: 1.1rem 1.7rem; align-items: start; justify-items: center;
   max-width: 1300px; width: 100%; margin: 0 auto; padding: 1.1rem 1.4rem .5rem;
-  flex: 1 1 auto; min-height: 0; overflow: hidden;
+  flex: 1 1 auto; min-height: 0; overflow: visible;  /* body handles no-scroll; let pods move full-width */
 }
 .pod-left  { grid-area: modepod; justify-self: end; }
 .pod-right { grid-area: fxpod;   justify-self: start; }

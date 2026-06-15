@@ -11,7 +11,7 @@ const CONFIG = {
   ccFx:   [26, 27, 28, 29, 30, 31], // FX-layer knobs 1..6
   ccModeSelect: 16,                 // mode select (0/64/127 -> synth/granular/generative)
   ccFxSelect:   17,                 // FX select   (0/64/127 -> off/delay/reverb)
-  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48],  // extended synth params (last = waveform)
+  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52],  // 0-7 voice, 8 wave, 9-12 LFO
   synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
   modeOrder: ['synth', 'granular', 'generative'], // toggle 1: up / middle / down
   modeLabels: {
@@ -58,7 +58,8 @@ let activeFx = 0;     // 0 off / 1 delay / 2 reverb
 const knobValue = {
   mode:  [0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
   fx:    [0.3, 0.4, 0.35, 0.7, 0.6, 0.7],
-  synth: [0.25, 0.40, 0.70, 0.30, 0.50, 0.30, 0.00, 0.60, 0.66],  // matches firmware (last = waveform)
+  // 0-7 voice · 8 wave · 9 LFO rate · 10 LFO depth · 11 LFO shape · 12 LFO dest
+  synth: [0.25, 0.40, 0.70, 0.30, 0.50, 0.30, 0.00, 0.60, 0.66, 0.30, 0.00, 0.00, 0.33],
 };
 
 /* ===========================================================================
@@ -133,10 +134,27 @@ CONFIG.synthLabels.forEach((lab, i) => synthKnobsEl.appendChild(makeKnob('synth'
 /* waveform selector -> last synth CC */
 $('#synthWaveSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  const w = +b.dataset.w, idx = CONFIG.ccSynth.length - 1;
+  const w = +b.dataset.w, idx = 8;  // SP_WAVE
   document.querySelectorAll('#synthWaveSeg button').forEach(x => x.classList.toggle('on', +x.dataset.w === w));
   knobValue.synth[idx] = w / 3;
   sendCC(CONFIG.ccSynth[idx], w / 3);
+});
+
+/* MOD / LFO pod: rate + depth knobs, shape + destination selectors */
+const modKnobsEl = $('#modKnobs');
+modKnobsEl.appendChild(makeKnob('synth', 9, 'LFO Rate'));
+modKnobsEl.appendChild(makeKnob('synth', 10, 'Depth'));
+$('#lfoShapeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const w = +b.dataset.w;  // SP_LFO_SHAPE -> idx 11
+  document.querySelectorAll('#lfoShapeSeg button').forEach(x => x.classList.toggle('on', +x.dataset.w === w));
+  knobValue.synth[11] = w / 3; sendCC(CONFIG.ccSynth[11], w / 3);
+});
+$('#lfoDestSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const d = +b.dataset.d;  // SP_LFO_DEST -> idx 12
+  document.querySelectorAll('#lfoDestSeg button').forEach(x => x.classList.toggle('on', +x.dataset.d === d));
+  knobValue.synth[12] = d / 3; sendCC(CONFIG.ccSynth[12], d / 3);
 });
 
 /* ===========================================================================
@@ -201,7 +219,8 @@ function setMode(m) {
   $('#modeNote').textContent = CONFIG.modeNotes[name];
   if (stompNames[1]) stompNames[1].textContent = CONFIG.fsActions[name] || 'ACTION';  // FS2 = mode action
   const mp = $('#modePod'); if (mp) mp.classList.remove('closed');   // switch change re-opens its box
-  const sp = $('#synthPod'); if (sp) sp.hidden = (m !== 0);          // synth panel only in Synth mode
+  const sp = $('#synthPod'); if (sp) sp.hidden = (m !== 0);          // synth/mod panels only in Synth mode
+  const mo = $('#modPod'); if (mo) mo.hidden = (m !== 0);
   sendCC(CONFIG.ccModeSelect, m / 2);   // tell the pedal to switch mode
 }
 function setFx(f) {
@@ -549,7 +568,7 @@ function makeDraggable(pod) {
   pod.addEventListener('pointerup', end);
   pod.addEventListener('pointercancel', end);
 }
-['#modePod', '#fxPod', '#bpmPod', '#midiPod', '#synthPod'].forEach(id => makeDraggable($(id)));
+['#modePod', '#fxPod', '#bpmPod', '#midiPod', '#synthPod', '#modPod'].forEach(id => makeDraggable($(id)));
 
 /* close (×) / reset breakout boxes. A closed mode/fx box re-opens when its
    corresponding toggle switch is changed (see setMode / setFx). */
