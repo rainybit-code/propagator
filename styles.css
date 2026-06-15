@@ -143,10 +143,12 @@ body::before {
 .synth-knobs .knob-dial .knob-pointer { height: 14px; }
 .synth-knobs .knob-label { font-size: .56rem; min-height: 2.1em; }
 
-/* MOD / LFO pod */
-.pod-mod { grid-area: modpod; justify-self: start; }
+/* SYNTH MOD pod (waveform + voices + LFO) — left of the pedal */
+.pod-mod { grid-area: modpod; justify-self: end; }
 .pod-mod[hidden] { display: none; }
 .pod-mod .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
+.mod-cap { font-family: var(--font-mono); font-size: .54rem; letter-spacing: .14em; color: var(--ink-dim); opacity: .85; margin-top: .6rem; }
+.mod-cap + .synth-wave { margin-top: .25rem; }
 .mod-knobs { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem .35rem; margin-top: .55rem; }
 .mod-knobs .knob { width: auto; }
 .mod-knobs .knob-dial { width: 36px; height: 36px; }
@@ -207,9 +209,9 @@ body::before {
   position: relative; z-index: 5; display: grid;
   grid-template-columns: minmax(150px, 1fr) minmax(340px, 470px) minmax(150px, 1fr);
   grid-template-areas:
-    "modepod  pedal fxpod"
-    "synthpod pedal modpod"
-    "bpmpod   pedal midipod";
+    "modepod pedal fxpod"
+    "modpod  pedal midipod"
+    "bpmpod  pedal .";
   gap: 1.1rem 1.7rem; align-items: start; justify-items: center;
   max-width: 1300px; width: 100%; margin: 0 auto; padding: 1.1rem 1.4rem .5rem;
   flex: 1 1 auto; min-height: 0; overflow: visible;  /* body handles no-scroll; let pods move full-width */
@@ -475,8 +477,8 @@ button { font-family: var(--font-hand); }
    RESPONSIVE
    ========================================================================== */
 @media (max-width: 980px) {
-  .stage { grid-template-columns: 1fr; grid-template-areas: "pedal" "modepod" "fxpod" "bpmpod"; }
-  .pod-left, .pod-right, .pod-bpm { justify-self: center; }
+  .stage { grid-template-columns: 1fr; grid-template-areas: "pedal" "modepod" "modpod" "fxpod" "midipod" "bpmpod"; }
+  .pod-left, .pod-right, .pod-bpm, .pod-mod, .pod-midi { justify-self: center; }
   .pedal { transform: scale(.92); }
   .wires { display: none; }
 }
