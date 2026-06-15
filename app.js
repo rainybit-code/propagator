@@ -398,14 +398,21 @@ function refreshDevices() {
   if (!midi) return;
   fillSelect($('#midiOut'), midi.outputs, midiOut);
   fillSelect($('#midiIn'), midi.inputs, midiIn);
-  // restore remembered devices (fall back to first output)
-  let savedOut = '', savedIn = '';
-  try { savedOut = localStorage.getItem('propagator.out') || ''; savedIn = localStorage.getItem('propagator.in') || ''; } catch (_) {}
+  // restore remembered devices by id, then by name (fall back to first output)
+  let savedOut = '', savedOutName = '', savedIn = '', savedInName = '';
+  try {
+    savedOut = localStorage.getItem('propagator.out') || ''; savedOutName = localStorage.getItem('propagator.outName') || '';
+    savedIn = localStorage.getItem('propagator.in') || ''; savedInName = localStorage.getItem('propagator.inName') || '';
+  } catch (_) {}
   if (!midiOut) {
-    if (savedOut && midi.outputs.has(savedOut)) { selectOut(savedOut); $('#midiOut').value = savedOut; }
+    const outId = resolveSaved(midi.outputs, savedOut, savedOutName);
+    if (outId) { selectOut(outId); $('#midiOut').value = outId; }
     else if (midi.outputs.size) { const first = midi.outputs.values().next().value; selectOut(first.id); $('#midiOut').value = first.id; }
   }
-  if (!midiIn && savedIn && midi.inputs.has(savedIn)) { selectIn(savedIn); $('#midiIn').value = savedIn; }
+  if (!midiIn) {
+    const inId = resolveSaved(midi.inputs, savedIn, savedInName);
+    if (inId) { selectIn(inId); $('#midiIn').value = inId; }
+  }
   updateConn();
 }
 function updateConn() {
@@ -418,7 +425,10 @@ function updateConn() {
 }
 function selectOut(id) {
   midiOut = id ? midi.outputs.get(id) : null;
-  try { localStorage.setItem('propagator.out', id || ''); } catch (_) {}
+  try {
+    localStorage.setItem('propagator.out', id || '');
+    localStorage.setItem('propagator.outName', midiOut ? (midiOut.name || '') : '');
+  } catch (_) {}
   updateConn();
   if (midiOut) {  // sync the pedal to the UI's current state on connect
     sendCC(CONFIG.ccModeSelect, activeMode / 2);
@@ -430,8 +440,18 @@ function selectIn(id) {
   if (midiIn) midiIn.onmidimessage = null;
   midiIn = id ? midi.inputs.get(id) : null;
   if (midiIn) midiIn.onmidimessage = onMidiMessage;
-  try { localStorage.setItem('propagator.in', id || ''); } catch (_) {}
+  try {
+    localStorage.setItem('propagator.in', id || '');
+    localStorage.setItem('propagator.inName', midiIn ? (midiIn.name || '') : '');
+  } catch (_) {}
   updateConn();
+}
+// resolve a saved device: prefer the exact id, else fall back to a name match
+// (WebMIDI port ids are not stable across sessions, especially on Windows)
+function resolveSaved(map, savedId, savedName) {
+  if (savedId && map.has(savedId)) return savedId;
+  if (savedName) { for (const p of map.values()) if ((p.name || '') === savedName) return p.id; }
+  return '';
 }
 // incoming (for future 2-way sync): reflect CC back onto knobs
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
