@@ -83,6 +83,9 @@ body::before {
   border: 1.5px solid var(--cyan-2); border-radius: 7px; padding: .22rem .5rem; max-width: 168px; cursor: pointer;
 }
 .conn-field select:hover { border-color: var(--cyan); }
+/* the popup option list falls back to a white system bg otherwise -> set it dark */
+.conn-field select option { background: #0c2840; color: var(--ink); }
+.conn-field select optgroup { background: #0c2840; color: var(--cyan); font-style: normal; }
 .conn-status { display: flex; align-items: center; gap: .4rem; letter-spacing: .12em; text-transform: uppercase; }
 .conn-status .dot { width: 11px; height: 11px; border-radius: 50%; background: #6b7a86; }
 .conn-status[data-state="ready"] .dot { background: var(--heat-2); animation: throb 1.6s ease-in-out infinite; }
