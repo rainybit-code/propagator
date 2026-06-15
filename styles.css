@@ -156,12 +156,12 @@ body::before {
 .pod-bpm   .pod-tab { background: var(--cyan); color: #04222b; }
 
 /* info text: subtle, only on hover of the fenced area */
+/* note always reserves its space (box height stays constant); only fades in on hover */
 .pod-note {
   font-family: var(--font-mono); font-size: .62rem; color: var(--ink-dim); line-height: 1.45;
-  margin: 0; max-height: 0; opacity: 0; overflow: hidden;
-  transition: opacity .25s ease, max-height .3s ease, margin-top .25s ease;
+  margin-top: .65rem; opacity: 0; transition: opacity .25s ease;
 }
-.pod:hover .pod-note, .pod:focus-within .pod-note { opacity: .85; max-height: 5em; margin-top: .65rem; }
+.pod:hover .pod-note, .pod:focus-within .pod-note { opacity: .85; }
 
 /* segmented selector — lit pill */
 .seg { display: flex; flex-direction: column; gap: .35rem; margin-top: .2rem; }
