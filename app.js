@@ -671,7 +671,7 @@ function drawWires() {
   const tog = center(toggleEls[2]);
   if (!fxPod || fxPod.classList.contains('closed') || !tog) return;
   const b = edgePoint(fxPod, tog);
-  const a = pedalEdge(b, tog.y);   // start at the pedal edge, not the toggle (stays in the gutter)
+  const a = pedalEdge(b, tog.y - 22);   // pedal edge, lifted above the footswitch LED
   wirePath(a, b, activeFx > 0).forEach(n => wires.appendChild(n));
 }
 
