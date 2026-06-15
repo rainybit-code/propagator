@@ -394,6 +394,11 @@ function refreshDevices() {
   if (!midi) return;
   fillSelect($('#midiOut'), midi.outputs, midiOut);
   fillSelect($('#midiIn'), midi.inputs, midiIn);
+  // virtual "Computer keyboard" input, listed right after "no device"
+  const inSel = $('#midiIn');
+  const ko = el('option'); ko.value = 'kbd'; ko.textContent = '⌨ Computer keyboard';
+  if (kbdOn) ko.selected = true;
+  inSel.insertBefore(ko, inSel.children[1] || null);
   // restore remembered devices by id, then by name (fall back to first output)
   let savedOut = '', savedOutName = '', savedIn = '', savedInName = '';
   try {
@@ -405,9 +410,12 @@ function refreshDevices() {
     if (outId) { selectOut(outId); $('#midiOut').value = outId; }
     else if (midi.outputs.size) { const first = midi.outputs.values().next().value; selectOut(first.id); $('#midiOut').value = first.id; }
   }
-  if (!midiIn) {
-    const inId = resolveSaved(midi.inputs, savedIn, savedInName);
-    if (inId) { selectIn(inId); $('#midiIn').value = inId; }
+  if (!midiIn && !kbdOn) {
+    if (savedIn === 'kbd') { selectIn('kbd'); $('#midiIn').value = 'kbd'; }
+    else {
+      const inId = resolveSaved(midi.inputs, savedIn, savedInName);
+      if (inId) { selectIn(inId); $('#midiIn').value = inId; }
+    }
   }
   updateConn();
 }
@@ -434,13 +442,54 @@ function selectOut(id) {
 }
 function selectIn(id) {
   if (midiIn) midiIn.onmidimessage = null;
-  midiIn = id ? midi.inputs.get(id) : null;
+  setKbd(id === 'kbd');                                  // computer-keyboard "device"
+  midiIn = (id && id !== 'kbd') ? midi.inputs.get(id) : null;
   if (midiIn) midiIn.onmidimessage = onMidiMessage;
   try {
     localStorage.setItem('propagator.in', id || '');
-    localStorage.setItem('propagator.inName', midiIn ? (midiIn.name || '') : '');
+    localStorage.setItem('propagator.inName', midiIn ? (midiIn.name || '') : (id === 'kbd' ? 'kbd' : ''));
   } catch (_) {}
   updateConn();
+}
+
+/* ---- computer keyboard as a note source (a w s e d f t g y h u j ...) ---- */
+const KBD_MAP = { a:0, w:1, s:2, e:3, d:4, f:5, t:6, g:7, y:8, h:9, u:10, j:11,
+                  k:12, o:13, l:14, p:15, ';':16 };
+let kbdOn = false, kbdOctave = 0;
+const kbdHeld = new Map();   // physical key -> note currently sounding
+function kbdSend(note, vel, on) {
+  if (!midiOut) return;
+  try { midiOut.send([(on ? 0x90 : 0x80) | (CONFIG.channel & 0x0f), note, vel]); } catch (_) {}
+}
+function kbdDown(e) {
+  if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.target.closest && e.target.closest('input, textarea, select')) return;  // don't hijack typing
+  const k = e.key.toLowerCase();
+  if (k === 'z') { kbdOctave = Math.max(-3, kbdOctave - 1); return; }
+  if (k === 'x') { kbdOctave = Math.min(3, kbdOctave + 1); return; }
+  if (!(k in KBD_MAP) || kbdHeld.has(k)) return;
+  const note = 60 + KBD_MAP[k] + kbdOctave * 12;
+  kbdHeld.set(k, note); kbdSend(note, 100, true);
+  if (midiAct) { midiAct.classList.add('kick'); setTimeout(() => midiAct.classList.remove('kick'), 130); }
+  e.preventDefault();
+}
+function kbdUp(e) {
+  const k = e.key.toLowerCase();
+  if (!kbdHeld.has(k)) return;
+  kbdSend(kbdHeld.get(k), 0, false); kbdHeld.delete(k);
+}
+function kbdPanic() { kbdHeld.forEach(note => kbdSend(note, 0, false)); kbdHeld.clear(); }
+function setKbd(on) {
+  if (on === kbdOn) return;
+  kbdOn = on;
+  if (on) {
+    window.addEventListener('keydown', kbdDown); window.addEventListener('keyup', kbdUp);
+    window.addEventListener('blur', kbdPanic);
+  } else {
+    window.removeEventListener('keydown', kbdDown); window.removeEventListener('keyup', kbdUp);
+    window.removeEventListener('blur', kbdPanic);
+    kbdPanic();   // release any stuck notes
+  }
 }
 // resolve a saved device: prefer the exact id, else fall back to a name match
 // (WebMIDI port ids are not stable across sessions, especially on Windows)
