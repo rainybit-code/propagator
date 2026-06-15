@@ -97,6 +97,7 @@ body::before {
 .tb-btn:hover { color: var(--ink); border-color: var(--cyan); }
 /* inline preset name editor */
 .preset-saver { display: inline-flex; align-items: center; gap: .4rem; }
+.preset-saver[hidden] { display: none; }
 .preset-name {
   font-family: var(--font-mono); font-size: .72rem; color: var(--ink);
   background: rgba(91,208,230,.08); border: 1.5px solid var(--cyan-2);
