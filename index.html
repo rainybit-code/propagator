@@ -28,13 +28,10 @@
       <feColorMatrix in="g" type="saturate" values="0"/>
       <feComponentTransfer><feFuncA type="linear" slope="0.05"/></feComponentTransfer>
     </filter>
-    <!-- worn ink: roughened, faintly flecked edges for aged engraved labels -->
-    <filter id="worn" x="-25%" y="-25%" width="150%" height="150%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.022 0.03" numOctaves="2" seed="4" result="warp"/>
-      <feDisplacementMap in="SourceGraphic" in2="warp" scale="1.5" xChannelSelector="R" yChannelSelector="G" result="disp"/>
-      <feTurbulence type="fractalNoise" baseFrequency="0.5 0.55" numOctaves="2" seed="11" result="speck"/>
-      <feColorMatrix in="speck" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 7 -3.2" result="speckA"/>
-      <feComposite in="disp" in2="speckA" operator="out"/>
+    <!-- worn ink: GENTLE roughened edges for aged labels (no erosion holes) -->
+    <filter id="worn" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.016 0.022" numOctaves="2" seed="4" result="warp"/>
+      <feDisplacementMap in="SourceGraphic" in2="warp" scale="1.1" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
   </defs>
 </svg>
@@ -47,7 +44,6 @@
   <div class="tb-mark">
     <span class="tb-glyph" id="tbSprout">❀</span>
     <span class="tb-name">PROPAGATOR</span>
-    <span class="tb-rev">rev&nbsp;A · webmidi</span>
   </div>
   <div class="tb-conn">
     <label class="conn-field">
@@ -95,22 +91,22 @@
   <section class="pedal-wrap">
     <div class="pedal" id="pedal">
       <!-- boiling hand-inked chassis (portrait, Hothouse layout) -->
-      <svg class="chassis" viewBox="0 0 340 524" preserveAspectRatio="none" aria-hidden="true">
+      <svg class="chassis" viewBox="0 0 340 560" preserveAspectRatio="none" aria-hidden="true">
         <g class="ink">
-          <rect class="body" x="14" y="14" width="312" height="496" rx="26"/>
-          <rect class="body-inner" x="26" y="26" width="288" height="472" rx="20"/>
+          <rect class="body" x="14" y="14" width="312" height="532" rx="26"/>
+          <rect class="body-inner" x="26" y="26" width="288" height="508" rx="20"/>
           <!-- corner screws -->
           <g class="screws">
             <circle cx="40" cy="42" r="6"/><circle cx="300" cy="42" r="6"/>
-            <circle cx="40" cy="482" r="6"/><circle cx="300" cy="482" r="6"/>
+            <circle cx="40" cy="518" r="6"/><circle cx="300" cy="518" r="6"/>
           </g>
           <!-- top-edge jack nubs (audio out / in) -->
           <g class="jacks">
             <rect x="74" y="1" width="36" height="15" rx="4"/>
             <rect x="230" y="1" width="36" height="15" rx="4"/>
           </g>
-          <!-- decorative heat-coil (propagator warmth) along the base -->
-          <path class="coil" d="M70 500 q14 -13 28 0 q14 13 28 0 q14 -13 28 0 q14 13 28 0 q14 -13 28 0 q14 13 28 0"/>
+          <!-- decorative heat-coil (propagator warmth) — at the base, below the footswitch labels -->
+          <path class="coil" d="M58 544 q19 -10 38 0 q19 10 38 0 q19 -10 38 0 q19 10 38 0 q19 -10 38 0 q19 10 38 0"/>
           <!-- little sprout growing from a corner -->
           <g class="sprout sprout-a">
             <path d="M44 14 q2 -22 -10 -32 q16 4 14 24" />
@@ -177,8 +173,7 @@
 </main>
 
 <footer class="footer">
-  <span>PROPAGATOR</span> · grow your sound ·
-  <span id="footMidi">checking MIDI…</span>
+  <span>PROPAGATOR</span> · <span id="footMidi">checking MIDI…</span>
 </footer>
 
 <script src="app.js"></script>

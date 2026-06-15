@@ -170,6 +170,7 @@ stompNames[0].textContent = 'BYPASS';   // footswitch 1 = engage/bypass (all mod
 function setMode(m) {
   activeMode = m; toggleEls[0].dataset.pos = m; updateToggleVals(0, m);
   const name = CONFIG.modeOrder[m];
+  document.body.dataset.mode = name;   // drives the per-mode color scheme (CSS)
   const labels = CONFIG.modeLabels[name];
   modeKnobs.forEach((k, i) => { k._label.textContent = labels[i]; });
   document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', +b.dataset.mode === m));
