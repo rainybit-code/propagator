@@ -43,6 +43,7 @@ const stompsEl  = $('#stomps');
 
 /* ---------- MIDI state ---------- */
 let midi = null, midiOut = null, midiIn = null;
+let thru = true;   // forward IN-device messages to the pedal (OUT)
 let activeMode = 0;   // 0 synth / 1 granular / 2 generative
 let activeFx = 0;     // 0 off / 1 delay / 2 reverb
 
@@ -236,6 +237,14 @@ function selectIn(id) {
 // incoming (for future 2-way sync): reflect CC back onto knobs
 function onMidiMessage(e) {
   const [status, d1, d2] = e.data;
+  // MIDI thru: forward channel-voice messages (notes, pitch-bend, CC, etc.) from
+  // the IN device to the pedal, so a keyboard plays it. Skip if IN == OUT (loop)
+  // and skip system messages (0xF0+, e.g. clock/sysex).
+  if (thru && midiOut && status >= 0x80 && status < 0xF0 &&
+      !(midiIn && midiOut && midiIn.id === midiOut.id)) {
+    try { midiOut.send(e.data); } catch (_) {}
+  }
+  // Reflect incoming CC onto the on-screen knobs (display follows the pedal).
   if ((status & 0xf0) === 0xb0) {
     const mi = CONFIG.ccMode.indexOf(d1);
     const fi = CONFIG.ccFx.indexOf(d1);
@@ -276,6 +285,7 @@ async function initMidi() {
 }
 $('#midiOut').addEventListener('change', e => selectOut(e.target.value));
 $('#midiIn').addEventListener('change', e => selectIn(e.target.value));
+$('#midiThru').addEventListener('change', e => { thru = e.target.checked; });
 
 function showNotice(title, body) { $('#noticeTitle').textContent = title; $('#noticeBody').innerHTML = body; $('#notice').hidden = false; updateConn(); }
 function hideNotice() { $('#notice').hidden = true; }
