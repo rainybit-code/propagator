@@ -367,6 +367,33 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
+/* ===========================================================================
+   DRAGGABLE PODS — grab an empty part of a breakout box to move it.
+   (Starting a drag on a control inside is ignored so knobs/buttons still work.
+   Uses left/top so the float animation's transform still composes; wires follow.)
+   ========================================================================= */
+function makeDraggable(pod) {
+  if (!pod) return;
+  let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
+  pod.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.knob, button, .bpm-dial, select, .seg, .beat-seed')) return;
+    dragging = true; pod.classList.add('dragging');
+    sx = e.clientX; sy = e.clientY;
+    ox = parseFloat(pod.dataset.dx || '0'); oy = parseFloat(pod.dataset.dy || '0');
+    pod.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  pod.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = ox + (e.clientX - sx), dy = oy + (e.clientY - sy);
+    pod.dataset.dx = dx; pod.dataset.dy = dy;
+    pod.style.left = dx + 'px'; pod.style.top = dy + 'px';
+  });
+  const end = (e) => { if (!dragging) return; dragging = false; pod.classList.remove('dragging'); try { pod.releasePointerCapture(e.pointerId); } catch (_) {} };
+  pod.addEventListener('pointerup', end);
+  pod.addEventListener('pointercancel', end);
+}
+['#modePod', '#fxPod', '#bpmPod'].forEach(id => makeDraggable($(id)));
+
 /* ---------- go ---------- */
 setMode(0); setFx(0);
 window.addEventListener('resize', drawWires);

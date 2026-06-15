@@ -127,11 +127,14 @@ body::before {
    ========================================================================== */
 .pod {
   position: relative; z-index: 6; width: 100%; max-width: 208px; padding: 1.05rem 1rem .9rem;
-  border: 2px solid var(--cyan-2); border-radius: 14px;
+  border: 2px solid var(--cyan-2); border-radius: 14px; cursor: grab;
+  user-select: none; -webkit-user-select: none;
   background: radial-gradient(120% 95% at 50% 26%, rgba(24,64,98,.96), rgba(8,27,46,.97) 72%);
   box-shadow: inset 0 0 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(150,220,240,.08), 0 8px 30px rgba(0,0,0,.4);
 }
 .pod::after { content: ""; position: absolute; inset: 4px; border: 1.5px dashed rgba(91,208,230,.32); border-radius: 10px; pointer-events: none; }
+/* dragged pod: stop bobbing, lift above everything */
+.pod.dragging { animation: none !important; cursor: grabbing; z-index: 25; box-shadow: inset 0 0 28px rgba(0,0,0,.5), 0 16px 44px rgba(0,0,0,.55); }
 .pod-left  { transform: rotate(-1.1deg); animation: float-a 7s ease-in-out infinite; border-color: var(--mode); transition: border-color .3s; }
 .pod-right { transform: rotate(1.1deg);  animation: float-b 8s ease-in-out infinite; }
 .pod-bpm   { transform: rotate(-.7deg);  animation: float-a 9s ease-in-out infinite; }
