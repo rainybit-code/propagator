@@ -95,6 +95,21 @@ body::before {
 .conn-status[data-state="live"] .conn-label { color: var(--grow); }
 .tb-btn { font-family: var(--font-mono); font-size: .66rem; letter-spacing: .08em; color: var(--ink-dim); background: rgba(91,208,230,.08); border: 1.5px solid var(--cyan-2); border-radius: 7px; padding: .24rem .55rem; cursor: pointer; }
 .tb-btn:hover { color: var(--ink); border-color: var(--cyan); }
+/* inline preset name editor */
+.preset-saver { display: inline-flex; align-items: center; gap: .4rem; }
+.preset-name {
+  font-family: var(--font-mono); font-size: .72rem; color: var(--ink);
+  background: rgba(91,208,230,.08); border: 1.5px solid var(--cyan-2);
+  border-radius: 7px; padding: .24rem .5rem; width: 132px;
+}
+.preset-name::placeholder { color: var(--ink-dim); opacity: .7; }
+.preset-name:focus { outline: none; border-color: var(--cyan); }
+.tb-btn-ok { color: #06210f; background: var(--grow); border-color: var(--grow); font-weight: 700; }
+.tb-btn-ok:hover { color: #06210f; border-color: var(--grow); filter: brightness(1.1); }
+/* icon button (trash) */
+.tb-btn-icon { display: inline-flex; align-items: center; justify-content: center; padding: .26rem .42rem; }
+.tb-btn-icon svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
+#presetDel:hover { color: var(--heat); border-color: var(--heat); }
 
 /* top-bar tempo mini (shown when the tempo box is closed) */
 .bpm-mini { display: inline-flex; align-items: center; gap: .4rem; font-family: var(--font-mono); font-size: .68rem; }

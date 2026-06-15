@@ -323,11 +323,32 @@ function loadPresetByKey(key) {
 }
 
 $('#presetSel').addEventListener('change', e => loadPresetByKey(e.target.value));
-$('#presetSave').addEventListener('click', () => {
-  const name = (prompt('Save current settings as preset:', '') || '').trim();
-  if (!name) return;
+
+// Save: the button morphs into a name field + green ✓. Click outside (or Esc)
+// reverts to the button without saving; ✓ or Enter commits.
+const presetSaveBtn = $('#presetSave'), presetSaver = $('#presetSaver'), presetName = $('#presetName');
+function closeSaver() {
+  presetSaver.hidden = true; presetSaveBtn.hidden = false;
+  document.removeEventListener('pointerdown', saverOutside, true);
+}
+function saverOutside(e) { if (!presetSaver.contains(e.target)) closeSaver(); }
+function openSaver() {
+  presetSaveBtn.hidden = true; presetSaver.hidden = false;
+  presetName.value = ''; presetName.focus();
+  setTimeout(() => document.addEventListener('pointerdown', saverOutside, true), 0);
+}
+function commitSave() {
+  const name = presetName.value.trim();
+  if (!name) { closeSaver(); return; }
   const u = loadUserPresets(); u[name] = capturePatch(); saveUserPresets(u);
   rebuildPresetList(); $('#presetSel').value = 'u:' + name;
+  closeSaver();
+}
+presetSaveBtn.addEventListener('click', openSaver);
+$('#presetConfirm').addEventListener('click', commitSave);
+presetName.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); commitSave(); }
+  else if (e.key === 'Escape') { e.preventDefault(); closeSaver(); }
 });
 $('#presetDel').addEventListener('click', () => {
   const sel = $('#presetSel'), key = sel.value;

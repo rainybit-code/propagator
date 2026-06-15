@@ -52,7 +52,16 @@
         <select id="presetSel"><option value="">— preset —</option></select>
       </label>
       <button id="presetSave" class="tb-btn" title="save the current settings as a preset">＋&nbsp;save</button>
-      <button id="presetDel" class="tb-btn" title="delete the selected (user) preset">🗑</button>
+      <span class="preset-saver" id="presetSaver" hidden>
+        <input type="text" id="presetName" class="preset-name" placeholder="preset name…" maxlength="40" autocomplete="off" spellcheck="false" />
+        <button id="presetConfirm" class="tb-btn tb-btn-ok" title="save preset">✓</button>
+      </span>
+      <button id="presetDel" class="tb-btn tb-btn-icon" title="delete the selected (user) preset" aria-label="delete preset">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path d="M4 7h16" /><path d="M10 4h4" /><path d="M6 7l1 13h10l1-13" />
+          <path d="M10 11v6" /><path d="M14 11v6" />
+        </svg>
+      </button>
     </div>
   </div>
   <div class="tb-conn">
