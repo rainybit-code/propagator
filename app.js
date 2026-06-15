@@ -233,6 +233,7 @@ function setMode(m) {
   const sp = $('#synthPod'); if (sp) sp.hidden = (m !== 0);          // synth/mod panels only in Synth mode
   const mo = $('#modPod'); if (mo) mo.hidden = (m !== 0);
   sendCC(CONFIG.ccModeSelect, m / 2);   // tell the pedal to switch mode
+  if (m === 0) requestAnimationFrame(reflowPods);   // synth/mod pods just became visible
 }
 function setFx(f) {
   activeFx = f; toggleEls[2].dataset.pos = f; updateToggleVals(2, f);
@@ -498,7 +499,10 @@ function onMidiMessage(e) {
 }
 
 function updateMidiPod() {
-  if (midiPod) midiPod.hidden = !(thru && midiIn && midiOut);
+  if (!midiPod) return;
+  const show = thru && midiIn && midiOut;
+  midiPod.hidden = !show;
+  if (show) requestAnimationFrame(reflowPods);   // clamp it on-screen when it appears
 }
 
 async function initMidi() {
@@ -685,11 +689,43 @@ function loop(now) {
    (Starting a drag on a control inside is ignored so knobs/buttons still work.
    Uses left/top so the float animation's transform still composes; wires follow.)
    ========================================================================= */
+const POD_IDS = ['#modePod', '#fxPod', '#bpmPod', '#midiPod', '#synthPod', '#modPod'];
+const SNAP_STEP = 28;   // pods tidy onto this px grid when released
+
+// apply a drag offset (dx,dy relative to the grid slot), then nudge the whole
+// box back inside the viewport (there's no scroll to recover an off-screen pod)
+function placePod(pod, dx, dy) {
+  pod.style.left = dx + 'px'; pod.style.top = dy + 'px';
+  const r = pod.getBoundingClientRect(), m = 8;
+  if (r.left < m) dx += m - r.left;
+  else if (r.right > innerWidth - m) dx += (innerWidth - m) - r.right;
+  if (r.top < m) dy += m - r.top;
+  else if (r.bottom > innerHeight - m) dy += (innerHeight - m) - r.bottom;
+  pod.style.left = dx + 'px'; pod.style.top = dy + 'px';
+  pod.dataset.dx = dx; pod.dataset.dy = dy;
+}
+// snap the pod's on-screen position to the grid, then clamp into view
+function snapPod(pod) {
+  const r = pod.getBoundingClientRect();
+  let dx = parseFloat(pod.dataset.dx || '0'), dy = parseFloat(pod.dataset.dy || '0');
+  dx += Math.round(r.left / SNAP_STEP) * SNAP_STEP - r.left;
+  dy += Math.round(r.top / SNAP_STEP) * SNAP_STEP - r.top;
+  placePod(pod, dx, dy);
+}
+// keep every visible pod on-screen (after load / resize / mode change)
+function reflowPods() {
+  POD_IDS.forEach(id => {
+    const p = $(id);
+    if (p && p.offsetParent !== null) placePod(p, parseFloat(p.dataset.dx || '0'), parseFloat(p.dataset.dy || '0'));
+  });
+  drawWires();
+}
+
 function makeDraggable(pod) {
   if (!pod) return;
   let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
   pod.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.knob, button, .bpm-dial, select, .seg, .beat-seed')) return;
+    if (e.target.closest('.knob, button, input, .bpm-dial, select, .seg, .beat-seed')) return;
     dragging = true; pod.classList.add('dragging');
     sx = e.clientX; sy = e.clientY;
     ox = parseFloat(pod.dataset.dx || '0'); oy = parseFloat(pod.dataset.dy || '0');
@@ -697,22 +733,20 @@ function makeDraggable(pod) {
   });
   pod.addEventListener('pointermove', (e) => {
     if (!dragging) return;
-    let dx = ox + (e.clientX - sx), dy = oy + (e.clientY - sy);
-    pod.style.left = dx + 'px'; pod.style.top = dy + 'px';
-    // keep the whole box on screen (no scroll to recover it otherwise)
-    const r = pod.getBoundingClientRect(), m = 8;
-    if (r.left < m) dx += m - r.left;
-    else if (r.right > innerWidth - m) dx += (innerWidth - m) - r.right;
-    if (r.top < m) dy += m - r.top;
-    else if (r.bottom > innerHeight - m) dy += (innerHeight - m) - r.bottom;
-    pod.style.left = dx + 'px'; pod.style.top = dy + 'px';
-    pod.dataset.dx = dx; pod.dataset.dy = dy;
+    placePod(pod, ox + (e.clientX - sx), oy + (e.clientY - sy));   // clamps as you drag
   });
-  const end = (e) => { if (!dragging) return; dragging = false; pod.classList.remove('dragging'); try { pod.releasePointerCapture(e.pointerId); } catch (_) {} };
+  const end = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    snapPod(pod);                       // settle onto the snap grid (CSS eases it)
+    pod.classList.remove('dragging');
+    drawWires();
+    try { pod.releasePointerCapture(e.pointerId); } catch (_) {}
+  };
   pod.addEventListener('pointerup', end);
   pod.addEventListener('pointercancel', end);
 }
-['#modePod', '#fxPod', '#bpmPod', '#midiPod', '#synthPod', '#modPod'].forEach(id => makeDraggable($(id)));
+POD_IDS.forEach(id => makeDraggable($(id)));
 
 /* close (×) / reset breakout boxes. A closed mode/fx box re-opens when its
    corresponding toggle switch is changed (see setMode / setFx). */
@@ -727,14 +761,13 @@ function makeDraggable(pod) {
   p.appendChild(btn);
 });
 function resetPods() {
-  ['#modePod', '#fxPod'].forEach(id => {
+  POD_IDS.forEach(id => {
     const p = $(id); if (!p) return;
     p.classList.remove('closed');
     p.style.left = ''; p.style.top = ''; delete p.dataset.dx; delete p.dataset.dy;
   });
-  const bpm = $('#bpmPod');
-  if (bpm) { bpm.style.left = ''; bpm.style.top = ''; delete bpm.dataset.dx; delete bpm.dataset.dy; }
   setBpmPodClosed(true);   // default layout: tempo collapsed to the mini
+  requestAnimationFrame(reflowPods);   // re-clamp the default grid into view
 }
 $('#resetLayout').addEventListener('click', resetPods);
 
@@ -743,8 +776,8 @@ setMode(0); setFx(0);
 setPlaying(false);       // default: tempo stopped
 setBpmPodClosed(true);   // default: tempo box closed -> shown as the top-bar mini
 updateMidiPod();
-window.addEventListener('resize', drawWires);
-requestAnimationFrame(() => { drawWires(); requestAnimationFrame(loop); });
+window.addEventListener('resize', reflowPods);
+requestAnimationFrame(() => { reflowPods(); requestAnimationFrame(loop); });
 startBoil();
 loadFactoryPresets();    // factory library + any saved user presets -> dropdown
 initMidi();
