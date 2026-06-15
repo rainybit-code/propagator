@@ -75,7 +75,7 @@ body::before {
 .tb-glyph { color: var(--grow); font-size: 1.2rem; animation: sway 3.2s ease-in-out infinite; display: inline-block; transform-origin: 50% 90%; }
 .tb-name { font-weight: 700; letter-spacing: .18em; font-size: 1.05rem; }
 .tb-rev  { font-family: var(--font-mono); font-size: .66rem; color: var(--cyan); letter-spacing: .1em; opacity: .8; }
-.tb-conn { display: flex; align-items: center; gap: .7rem; font-family: var(--font-mono); font-size: .72rem; }
+.tb-conn { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: .5rem .7rem; font-family: var(--font-mono); font-size: .72rem; }
 .conn-field { display: flex; align-items: center; gap: .35rem; color: var(--ink-dim); }
 .conn-field span { letter-spacing: .12em; }
 .conn-field select {

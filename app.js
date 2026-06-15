@@ -246,6 +246,107 @@ $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('butto
 $('#fxSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setFx(+b.dataset.fx); });
 
 /* ===========================================================================
+   PRESETS — factory library (presets.json, shipped in repo) + user store
+   (localStorage). A patch = mode + fx select and every knob bank. Loading one
+   updates the UI and pushes every param to the pedal.
+   ========================================================================= */
+let factoryPresets = [];                       // [{name, patch}] from presets.json
+const PRESET_KEY = 'propagator.presets';
+
+function loadUserPresets() { try { return JSON.parse(localStorage.getItem(PRESET_KEY) || '{}'); } catch (_) { return {}; } }
+function saveUserPresets(obj) { try { localStorage.setItem(PRESET_KEY, JSON.stringify(obj)); } catch (_) {} }
+
+function capturePatch() {
+  return {
+    v: 1, mode: activeMode, fx: activeFx,
+    knobs: { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice() },
+  };
+}
+
+// redraw every knob dial/readout from the current knobValue state
+function refreshKnobs() {
+  document.querySelectorAll('.knob').forEach(k => {
+    const v = knobValue[k.dataset.bank][+k.dataset.idx];
+    k.querySelector('.knob-dial').style.setProperty('--rot', rotFor(v) + 'deg');
+    k.querySelector('.knob-val').textContent = String(Math.round(v * 127)).padStart(3, '0');
+  });
+}
+// re-light the wave / LFO shape / LFO dest / voices selectors from synth state
+function refreshSegments() {
+  const on = (sel, attr, val) =>
+    document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('on', +b.dataset[attr] === val));
+  on('#synthWaveSeg', 'w', Math.round(knobValue.synth[8] * 3));
+  on('#lfoShapeSeg',  'w', Math.round(knobValue.synth[11] * 3));
+  on('#lfoDestSeg',   'd', Math.round(knobValue.synth[12] * 3));
+  on('#voiceSeg',     'v', Math.round(knobValue.synth[13] * 5) + 1);
+}
+function pushAllCC() {
+  CONFIG.ccMode.forEach((cc, i) => sendCC(cc, knobValue.mode[i]));
+  CONFIG.ccFx.forEach((cc, i) => sendCC(cc, knobValue.fx[i]));
+  CONFIG.ccSynth.forEach((cc, i) => sendCC(cc, knobValue.synth[i]));
+}
+
+function applyPatch(p) {
+  if (!p || !p.knobs) return;
+  if (Array.isArray(p.knobs.mode)) p.knobs.mode.forEach((v, i) => { if (i < knobValue.mode.length) knobValue.mode[i] = v; });
+  if (Array.isArray(p.knobs.fx))   p.knobs.fx.forEach((v, i) => { if (i < knobValue.fx.length) knobValue.fx[i] = v; });
+  // tolerate older/shorter synth arrays: keep defaults for any missing tail params
+  if (Array.isArray(p.knobs.synth)) p.knobs.synth.forEach((v, i) => { if (i < knobValue.synth.length) knobValue.synth[i] = v; });
+  setMode(typeof p.mode === 'number' ? p.mode : activeMode);   // sends mode select + updates UI
+  setFx(typeof p.fx === 'number' ? p.fx : activeFx);           // sends fx select
+  refreshKnobs(); refreshSegments();
+  pushAllCC();   // push every param to the pedal
+}
+
+function rebuildPresetList() {
+  const sel = $('#presetSel'); if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— preset —</option>';
+  if (factoryPresets.length) {
+    const g = el('optgroup'); g.label = 'Factory';
+    factoryPresets.forEach(p => { const o = el('option'); o.value = 'f:' + p.name; o.textContent = p.name; g.appendChild(o); });
+    sel.appendChild(g);
+  }
+  const names = Object.keys(loadUserPresets()).sort();
+  if (names.length) {
+    const g = el('optgroup'); g.label = 'Yours';
+    names.forEach(n => { const o = el('option'); o.value = 'u:' + n; o.textContent = n; g.appendChild(o); });
+    sel.appendChild(g);
+  }
+  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
+
+function loadPresetByKey(key) {
+  if (!key) return;
+  if (key[0] === 'f') { const p = factoryPresets.find(x => x.name === key.slice(2)); if (p) applyPatch(p.patch); }
+  else { const u = loadUserPresets(); if (u[key.slice(2)]) applyPatch(u[key.slice(2)]); }
+}
+
+$('#presetSel').addEventListener('change', e => loadPresetByKey(e.target.value));
+$('#presetSave').addEventListener('click', () => {
+  const name = (prompt('Save current settings as preset:', '') || '').trim();
+  if (!name) return;
+  const u = loadUserPresets(); u[name] = capturePatch(); saveUserPresets(u);
+  rebuildPresetList(); $('#presetSel').value = 'u:' + name;
+});
+$('#presetDel').addEventListener('click', () => {
+  const sel = $('#presetSel'), key = sel.value;
+  if (key[0] !== 'u') { alert('Pick one of your saved presets to delete (factory presets are read-only).'); return; }
+  const name = key.slice(2);
+  if (!confirm('Delete preset "' + name + '"?')) return;
+  const u = loadUserPresets(); delete u[name]; saveUserPresets(u);
+  rebuildPresetList(); sel.value = '';
+});
+
+async function loadFactoryPresets() {
+  try {
+    const res = await fetch('presets.json', { cache: 'no-cache' });
+    if (res.ok) factoryPresets = await res.json();
+  } catch (_) { /* offline / file:// — user presets still work */ }
+  rebuildPresetList();
+}
+
+/* ===========================================================================
    WEB MIDI
    ========================================================================= */
 function sendCC(cc, v01) {
@@ -621,4 +722,5 @@ updateMidiPod();
 window.addEventListener('resize', drawWires);
 requestAnimationFrame(() => { drawWires(); requestAnimationFrame(loop); });
 startBoil();
+loadFactoryPresets();    // factory library + any saved user presets -> dropdown
 initMidi();
