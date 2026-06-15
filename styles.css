@@ -134,6 +134,10 @@ body::before {
 .lfo-dest button:hover { color: var(--ink); }
 .lfo-dest button.on { color: #0a1620; background: var(--mode); border-color: var(--mode); font-weight: 600; }
 
+.voice-row { display: flex; align-items: center; gap: .4rem; margin-top: .55rem; }
+.voice-cap { font-family: var(--font-mono); font-size: .54rem; letter-spacing: .12em; color: var(--ink-dim); flex: 0 0 auto; }
+.voice-row .lfo-dest { margin-top: 0; flex: 1; }
+
 /* MIDI thru breakout box */
 .pod-midi { grid-area: midipod; justify-self: start; }
 .pod-midi[hidden] { display: none; }

@@ -11,7 +11,7 @@ const CONFIG = {
   ccFx:   [26, 27, 28, 29, 30, 31], // FX-layer knobs 1..6
   ccModeSelect: 16,                 // mode select (0/64/127 -> synth/granular/generative)
   ccFxSelect:   17,                 // FX select   (0/64/127 -> off/delay/reverb)
-  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52],  // 0-7 voice, 8 wave, 9-12 LFO
+  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53],  // 0-7 voice, 8 wave, 9-12 LFO, 13 voices
   synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
   modeOrder: ['synth', 'granular', 'generative'], // toggle 1: up / middle / down
   modeLabels: {
@@ -49,7 +49,10 @@ const midiPod   = $('#midiPod'), midiAct = $('#midiAct'), midiLast = $('#midiLas
 /* ---------- MIDI state ---------- */
 let midi = null, midiOut = null, midiIn = null;
 let thru = true;   // forward IN-device messages to the pedal (OUT)
-const thruFilter = { notes: true, cc: true, other: true, clock: true };
+// clock OFF by default: the pedal ignores incoming clock, and relaying a 24-PPQN
+// stream floods its USB-MIDI input and can cause it to miss notes. (Beat sync in
+// the web UI is unaffected — it reads clock locally, before this forward filter.)
+const thruFilter = { notes: true, cc: true, other: true, clock: false };
 let clockSync = true;                               // derive BPM + beat from incoming MIDI clock
 let clockCount = 0, lastClockMs = 0, clockBpm = 0;  // MIDI clock tracking (24 PPQN)
 let activeMode = 0;   // 0 synth / 1 granular / 2 generative
@@ -58,8 +61,8 @@ let activeFx = 0;     // 0 off / 1 delay / 2 reverb
 const knobValue = {
   mode:  [0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
   fx:    [0.3, 0.4, 0.35, 0.7, 0.6, 0.7],
-  // 0-7 voice · 8 wave · 9 LFO rate · 10 LFO depth · 11 LFO shape · 12 LFO dest
-  synth: [0.25, 0.40, 0.70, 0.30, 0.50, 0.30, 0.00, 0.60, 0.66, 0.30, 0.00, 0.00, 0.33],
+  // 0-7 voice · 8 wave · 9 LFO rate · 10 LFO depth · 11 LFO shape · 12 LFO dest · 13 voices(0.6->4)
+  synth: [0.25, 0.40, 0.70, 0.30, 0.50, 0.30, 0.00, 0.60, 0.66, 0.30, 0.00, 0.00, 0.33, 0.60],
 };
 
 /* ===========================================================================
@@ -138,6 +141,14 @@ $('#synthWaveSeg').addEventListener('click', e => {
   document.querySelectorAll('#synthWaveSeg button').forEach(x => x.classList.toggle('on', +x.dataset.w === w));
   knobValue.synth[idx] = w / 3;
   sendCC(CONFIG.ccSynth[idx], w / 3);
+});
+/* voices selector -> SP_VOICES (idx 13): 1..6 voices map to (v-1)/5 */
+$('#voiceSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const v = +b.dataset.v;  // 1..6
+  document.querySelectorAll('#voiceSeg button').forEach(x => x.classList.toggle('on', +x.dataset.v === v));
+  knobValue.synth[13] = (v - 1) / 5;
+  sendCC(CONFIG.ccSynth[13], (v - 1) / 5);
 });
 
 /* MOD / LFO pod: rate + depth knobs, shape + destination selectors */
@@ -261,8 +272,14 @@ function refreshDevices() {
   if (!midi) return;
   fillSelect($('#midiOut'), midi.outputs, midiOut);
   fillSelect($('#midiIn'), midi.inputs, midiIn);
-  // auto-pick first output if none chosen
-  if (!midiOut && midi.outputs.size) { const first = midi.outputs.values().next().value; selectOut(first.id); $('#midiOut').value = first.id; }
+  // restore remembered devices (fall back to first output)
+  let savedOut = '', savedIn = '';
+  try { savedOut = localStorage.getItem('propagator.out') || ''; savedIn = localStorage.getItem('propagator.in') || ''; } catch (_) {}
+  if (!midiOut) {
+    if (savedOut && midi.outputs.has(savedOut)) { selectOut(savedOut); $('#midiOut').value = savedOut; }
+    else if (midi.outputs.size) { const first = midi.outputs.values().next().value; selectOut(first.id); $('#midiOut').value = first.id; }
+  }
+  if (!midiIn && savedIn && midi.inputs.has(savedIn)) { selectIn(savedIn); $('#midiIn').value = savedIn; }
   updateConn();
 }
 function updateConn() {
@@ -275,6 +292,7 @@ function updateConn() {
 }
 function selectOut(id) {
   midiOut = id ? midi.outputs.get(id) : null;
+  try { localStorage.setItem('propagator.out', id || ''); } catch (_) {}
   updateConn();
   if (midiOut) {  // sync the pedal to the UI's current state on connect
     sendCC(CONFIG.ccModeSelect, activeMode / 2);
@@ -286,6 +304,7 @@ function selectIn(id) {
   if (midiIn) midiIn.onmidimessage = null;
   midiIn = id ? midi.inputs.get(id) : null;
   if (midiIn) midiIn.onmidimessage = onMidiMessage;
+  try { localStorage.setItem('propagator.in', id || ''); } catch (_) {}
   updateConn();
 }
 // incoming (for future 2-way sync): reflect CC back onto knobs

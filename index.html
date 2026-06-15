@@ -174,7 +174,18 @@
       <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
     </div>
     <div class="synth-knobs" id="synthKnobs"><!-- extended synth params injected by app.js --></div>
-    <p class="pod-note">detuned oscillators · sub · ADSR · filter envelope · glide</p>
+    <div class="voice-row">
+      <span class="voice-cap">VOICES</span>
+      <div class="lfo-dest" id="voiceSeg" title="Polyphony — 1 = mono, fewer voices frees CPU">
+        <button data-v="1">1</button>
+        <button data-v="2">2</button>
+        <button data-v="3">3</button>
+        <button data-v="4" class="on">4</button>
+        <button data-v="5">5</button>
+        <button data-v="6">6</button>
+      </div>
+    </div>
+    <p class="pod-note">detuned oscillators · sub · ADSR · filter envelope · glide · poly/mono</p>
   </aside>
 
   <!-- ---- MOD / LFO (shown in Synth mode) ---- -->
@@ -209,7 +220,7 @@
       <label class="switch-field"><span>notes</span><span class="pill"><input type="checkbox" id="fNotes" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
       <label class="switch-field"><span>CC</span><span class="pill"><input type="checkbox" id="fCC" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
       <label class="switch-field"><span>other</span><span class="pill"><input type="checkbox" id="fOther" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
-      <label class="switch-field"><span>clock</span><span class="pill"><input type="checkbox" id="fClock" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
+      <label class="switch-field"><span>clock</span><span class="pill"><input type="checkbox" id="fClock" /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
       <label class="switch-field" title="set the tempo from the input device's MIDI clock"><span>sync bpm</span><span class="pill"><input type="checkbox" id="fSync" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
     </div>
   </aside>
