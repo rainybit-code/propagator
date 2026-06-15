@@ -23,6 +23,8 @@ const CONFIG = {
   fxLabels: ['Mix', 'Delay Time', 'Feedback', 'Tone', 'Reverb Decay', 'Reverb Damp'],
   fxOrder: ['Off', 'Delay', 'Reverb'],
   toggle2Labels: ['Wave A', 'Wave B', 'Wave C'],
+  // Footswitch 2 action per mode (Footswitch 1 is always bypass/engage).
+  fsActions: { synth: 'SUSTAIN', granular: 'FREEZE', generative: 'RE-SEED' },
 };
 
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -38,7 +40,6 @@ const knobsRow  = $('#knobs');
 const fxKnobsEl = $('#fxKnobs');
 const togglesEl = $('#toggles');
 const stompsEl  = $('#stomps');
-const leds      = document.querySelectorAll('.led');
 
 /* ---------- MIDI state ---------- */
 let midi = null, midiOut = null, midiIn = null;
@@ -64,7 +65,7 @@ function makeKnob(bank, idx, label) {
   const apply = () => {
     const v = knobValue[bank][idx];
     dial.style.setProperty('--rot', rotFor(v) + 'deg');
-    val.textContent = Math.round(v * 127);
+    val.textContent = String(Math.round(v * 127)).padStart(3, '0');
   };
   apply();
   attachKnobDrag(k, dial, bank, idx, apply, lab);
@@ -118,16 +119,19 @@ CONFIG.fxLabels.forEach((lab, i) => fxKnobsEl.appendChild(makeKnob('fx', i, lab)
    TOGGLES (3-position)
    ========================================================================= */
 const toggleDefs = [
-  { name: 'MODE', pos: 0 },
-  { name: 'VAR',  pos: 0 },
-  { name: 'FX',   pos: 0 },
+  { name: 'MODE', pos: 0, vals: ['SYNTH', 'GRAN', 'GEN'] },
+  { name: 'VAR',  pos: 0, vals: ['I', 'II', 'III'] },
+  { name: 'FX',   pos: 0, vals: ['OFF', 'DLY', 'RVB'] },
 ];
 const toggleEls = toggleDefs.map((def, ti) => {
   const t = el('div', 'toggle'); t.dataset.toggle = ti; t.dataset.pos = def.pos;
-  const track = el('div', 'toggle-track'); const lever = el('div', 'toggle-lever');
-  track.appendChild(lever);
-  const lbl = el('div', 'toggle-label'); lbl.textContent = def.name;
-  t.append(track, lbl);
+  const name = el('div', 'toggle-name'); name.textContent = def.name;
+  const rowEl = el('div', 'toggle-row');
+  const track = el('div', 'toggle-track'); track.appendChild(el('div', 'toggle-bat'));
+  const vals = el('div', 'toggle-vals');
+  def.vals.forEach((v, vi) => { const s = el('span'); s.textContent = v; if (vi === def.pos) s.classList.add('on'); vals.appendChild(s); });
+  rowEl.append(track, vals);
+  t.append(name, rowEl);
   t.addEventListener('click', () => {
     const next = (parseInt(t.dataset.pos, 10) + 1) % 3;
     if (ti === 0) setMode(next);
@@ -137,33 +141,43 @@ const toggleEls = toggleDefs.map((def, ti) => {
   togglesEl.appendChild(t);
   return t;
 });
-function setToggle(ti, pos) { toggleEls[ti].dataset.pos = pos; }
+function updateToggleVals(ti, pos) {
+  toggleEls[ti].querySelectorAll('.toggle-vals span').forEach((s, i) => s.classList.toggle('on', i === pos));
+}
+function setToggle(ti, pos) { toggleEls[ti].dataset.pos = pos; updateToggleVals(ti, pos); }
 
 /* ===========================================================================
    FOOTSWITCHES + LEDs
    ========================================================================= */
-['BYPASS', 'ACTION'].forEach((name, si) => {
-  const s = el('div', 'stomp'); s.dataset.stomp = si; s.title = name;
+const stompNames = [];
+[0, 1].forEach((si) => {
+  const unit = el('div', 'stomp-unit');
+  const led = el('span', 'fs-led'); led.dataset.led = si;
+  const s = el('div', 'stomp'); s.dataset.stomp = si;
+  const lbl = el('div', 'stomp-name'); stompNames[si] = lbl;
   s.addEventListener('click', () => {
     s.classList.toggle('pressed');
-    if (leds[si]) leds[si].classList.toggle('on', s.classList.contains('pressed'));
+    led.classList.toggle('on', s.classList.contains('pressed'));
   });
-  stompsEl.appendChild(s);
+  unit.append(led, s, lbl);
+  stompsEl.appendChild(unit);
 });
+stompNames[0].textContent = 'BYPASS';   // footswitch 1 = engage/bypass (all modes)
 
 /* ===========================================================================
    MODE / FX state
    ========================================================================= */
 function setMode(m) {
-  activeMode = m; toggleEls[0].dataset.pos = m;
+  activeMode = m; toggleEls[0].dataset.pos = m; updateToggleVals(0, m);
   const name = CONFIG.modeOrder[m];
   const labels = CONFIG.modeLabels[name];
   modeKnobs.forEach((k, i) => { k._label.textContent = labels[i]; });
   document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', +b.dataset.mode === m));
   $('#modeNote').textContent = CONFIG.modeNotes[name];
+  if (stompNames[1]) stompNames[1].textContent = CONFIG.fsActions[name] || 'ACTION';  // FS2 = mode action
 }
 function setFx(f) {
-  activeFx = f; toggleEls[2].dataset.pos = f;
+  activeFx = f; toggleEls[2].dataset.pos = f; updateToggleVals(2, f);
   document.querySelectorAll('#fxSeg button').forEach(b => b.classList.toggle('on', +b.dataset.fx === f));
   $('#fxPod').dataset.active = f > 0 ? 'on' : 'off';
   drawWires();
@@ -304,22 +318,22 @@ function edgePoint(podEl, toward) {
   return { x, y: r.top + r.height / 2 - s.top };
 }
 function wirePath(a, b, active) {
-  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 + (active ? -10 : 14);
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 + (active ? -5 : 7);
   const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   p.setAttribute('d', `M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`);
   if (active) p.setAttribute('class', 'active');
   const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  dot.setAttribute('cx', a.x); dot.setAttribute('cy', a.y); dot.setAttribute('r', 3);
+  dot.setAttribute('cx', b.x); dot.setAttribute('cy', b.y); dot.setAttribute('r', 2.5);
   return [p, dot];
 }
 function drawWires() {
   if (!wires) return;
   wires.innerHTML = '';
-  const t1 = toggleEls[0], t3 = toggleEls[2];
+  // Tempo pod is intentionally NOT wired (kept separate). Only the two toggle
+  // breakouts get a connector, and they sit behind the pedal (z-order).
   const segs = [
-    { anchor: center(t1), pod: $('#modePod'), active: false },
-    { anchor: center(t3), pod: $('#fxPod'),   active: activeFx > 0 },
-    { anchor: center(document.querySelector('.leds')), pod: $('#bpmPod'), active: false },
+    { anchor: center(toggleEls[0]), pod: $('#modePod'), active: false },
+    { anchor: center(toggleEls[2]), pod: $('#fxPod'),   active: activeFx > 0 },
   ];
   for (const s of segs) {
     if (!s.anchor || !s.pod) continue;

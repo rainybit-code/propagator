@@ -28,6 +28,14 @@
       <feColorMatrix in="g" type="saturate" values="0"/>
       <feComponentTransfer><feFuncA type="linear" slope="0.05"/></feComponentTransfer>
     </filter>
+    <!-- worn ink: roughened, faintly flecked edges for aged engraved labels -->
+    <filter id="worn" x="-25%" y="-25%" width="150%" height="150%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022 0.03" numOctaves="2" seed="4" result="warp"/>
+      <feDisplacementMap in="SourceGraphic" in2="warp" scale="1.5" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.5 0.55" numOctaves="2" seed="11" result="speck"/>
+      <feColorMatrix in="speck" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 7 -3.2" result="speckA"/>
+      <feComposite in="disp" in2="speckA" operator="out"/>
+    </filter>
   </defs>
 </svg>
 
@@ -86,58 +94,48 @@
   <!-- ---- center: the pedal ---- -->
   <section class="pedal-wrap">
     <div class="pedal" id="pedal">
-      <!-- boiling hand-inked chassis -->
-      <svg class="chassis" viewBox="0 0 340 540" preserveAspectRatio="none" aria-hidden="true">
+      <!-- boiling hand-inked chassis (portrait, Hothouse layout) -->
+      <svg class="chassis" viewBox="0 0 340 524" preserveAspectRatio="none" aria-hidden="true">
         <g class="ink">
-          <rect class="body" x="16" y="14" width="308" height="512" rx="26"/>
-          <rect class="body-inner" x="28" y="26" width="284" height="488" rx="20"/>
+          <rect class="body" x="14" y="14" width="312" height="496" rx="26"/>
+          <rect class="body-inner" x="26" y="26" width="288" height="472" rx="20"/>
           <!-- corner screws -->
           <g class="screws">
-            <circle cx="40" cy="40" r="5"/><circle cx="300" cy="40" r="5"/>
-            <circle cx="40" cy="500" r="5"/><circle cx="300" cy="500" r="5"/>
+            <circle cx="40" cy="42" r="6"/><circle cx="300" cy="42" r="6"/>
+            <circle cx="40" cy="482" r="6"/><circle cx="300" cy="482" r="6"/>
           </g>
-          <!-- side jack nubs -->
+          <!-- top-edge jack nubs (audio out / in) -->
           <g class="jacks">
-            <rect x="2" y="92" width="16" height="30" rx="4"/>
-            <rect x="322" y="92" width="16" height="30" rx="4"/>
+            <rect x="74" y="1" width="36" height="15" rx="4"/>
+            <rect x="230" y="1" width="36" height="15" rx="4"/>
           </g>
-          <!-- decorative heat-coil (propagator warmth) -->
-          <path class="coil" d="M60 470 q14 -16 28 0 q14 16 28 0 q14 -16 28 0 q14 16 28 0 q14 -16 28 0 q14 16 28 0"/>
-          <!-- little sprouts growing from the base -->
+          <!-- decorative heat-coil (propagator warmth) along the base -->
+          <path class="coil" d="M70 500 q14 -13 28 0 q14 13 28 0 q14 -13 28 0 q14 13 28 0 q14 -13 28 0 q14 13 28 0"/>
+          <!-- little sprout growing from a corner -->
           <g class="sprout sprout-a">
-            <path d="M150 26 q2 -22 -10 -32 q16 4 14 24" />
-            <path d="M150 26 q-2 -20 12 -30 q-14 6 -10 26" />
-            <line x1="150" y1="26" x2="150" y2="-4"/>
+            <path d="M44 14 q2 -22 -10 -32 q16 4 14 24" />
+            <path d="M44 14 q-2 -20 12 -30 q-14 6 -10 26" />
+            <line x1="44" y1="14" x2="44" y2="-16"/>
           </g>
         </g>
       </svg>
 
       <!-- crisp interactive face -->
       <div class="face">
-        <div class="brand">
+        <div class="dc-label">+&nbsp;⎓&nbsp;9V</div>
+
+        <div class="row knobs" id="knobs"><!-- 6 knobs (2 rows of 3) injected by app.js --></div>
+        <div class="row toggles" id="toggles"><!-- 3 toggles injected by app.js --></div>
+
+        <div class="brandband">
           <span class="brand-name">PROPAGATOR</span>
-          <span class="brand-sub">· hothouse control surface ·</span>
+          <span class="brand-sub">fertilize</span>
         </div>
 
-        <div class="row toggles" id="toggles">
-          <!-- toggles injected by app.js -->
-        </div>
+        <div class="row stomps" id="stomps"><!-- 2 footswitch units (LED + stomp) injected by app.js --></div>
 
-        <div class="row knobs" id="knobs">
-          <!-- 6 knobs injected by app.js -->
-        </div>
-
-        <div class="row leds" id="leds">
-          <span class="led" data-led="0"></span>
-          <span class="led" data-led="1"></span>
-        </div>
-
-        <div class="row stomps" id="stomps">
-          <!-- 2 footswitches injected by app.js -->
-        </div>
-
-        <div class="jack jack-l">IN</div>
-        <div class="jack jack-r">OUT</div>
+        <div class="jack jack-out">OUT</div>
+        <div class="jack jack-in">IN</div>
       </div>
     </div>
   </section>
