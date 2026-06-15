@@ -334,7 +334,10 @@ function closeSaver() {
 function saverOutside(e) { if (!presetSaver.contains(e.target)) closeSaver(); }
 function openSaver() {
   presetSaveBtn.hidden = true; presetSaver.hidden = false;
-  presetName.value = ''; presetName.focus();
+  // if one of the user's presets is selected, pre-fill its name so ✓ updates it
+  const sel = $('#presetSel').value;
+  presetName.value = sel.startsWith('u:') ? sel.slice(2) : '';
+  presetName.focus(); presetName.select();
   setTimeout(() => document.addEventListener('pointerdown', saverOutside, true), 0);
 }
 function commitSave() {
