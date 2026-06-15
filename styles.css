@@ -41,7 +41,8 @@ body {
   font-family: var(--font-hand);
   color: var(--ink);
   background: radial-gradient(120% 90% at 50% -10%, #16456b 0%, var(--paper) 42%, var(--paper-2) 100%);
-  overflow-x: hidden; position: relative; min-height: 100vh;
+  overflow: hidden; position: relative; height: 100vh;
+  display: flex; flex-direction: column;
 }
 
 /* ---- blueprint graph paper ---- */
@@ -66,7 +67,7 @@ body::before {
    TOP CONNECTION FRAME
    ========================================================================== */
 .titleblock {
-  position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between;
+  position: relative; z-index: 30; flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
   gap: 1rem; padding: .5rem 1.1rem; border-bottom: 1.5px dashed var(--cyan-2);
   background: linear-gradient(180deg, rgba(8,29,49,.92), rgba(8,29,49,.55)); backdrop-filter: blur(3px);
 }
@@ -167,7 +168,8 @@ body::before {
     "synthpod pedal midipod"
     "bpmpod   pedal .";
   gap: 1.1rem 1.7rem; align-items: start; justify-items: center;
-  max-width: 1300px; margin: 0 auto; padding: 2.2rem 1.4rem 1rem;
+  max-width: 1300px; width: 100%; margin: 0 auto; padding: 1.1rem 1.4rem .5rem;
+  flex: 1 1 auto; min-height: 0; overflow: hidden;
 }
 .pod-left  { grid-area: modepod; justify-self: end; }
 .pod-right { grid-area: fxpod;   justify-self: start; }
@@ -403,7 +405,7 @@ body::before {
   box-shadow: 0 6px 18px rgba(0,0,0,.45); max-width: 200px; transform: translate(-50%, -120%) rotate(-1deg); }
 .annot b { color: var(--heat-2); } .annot .cc { color: var(--cyan); }
 
-.footer { position: relative; z-index: 5; text-align: center; padding: 1.1rem; font-family: var(--font-mono); font-size: .64rem; letter-spacing: .12em; color: var(--ink-dim); }
+.footer { flex: 0 0 auto; position: relative; z-index: 5; text-align: center; padding: .5rem; font-family: var(--font-mono); font-size: .62rem; letter-spacing: .12em; color: var(--ink-dim); }
 .footer span { color: var(--grow); }
 button { font-family: var(--font-hand); }
 #noticeRetry { background: var(--heat); color: #2a160b; border: none; border-radius: 8px; padding: .4rem 1.1rem; font-size: .9rem; cursor: pointer; }
