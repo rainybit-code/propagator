@@ -131,8 +131,10 @@ const modeKnobs = CONFIG.modeLabels[CONFIG.modeOrder[0]].map((lab, i) => makeKno
 modeKnobs.forEach(k => knobsRow.appendChild(k));
 /* build fx knobs */
 CONFIG.fxLabels.forEach((lab, i) => fxKnobsEl.appendChild(makeKnob('fx', i, lab)));
-/* waveform selector -> synth CC (the extended-param knobs were retired; the
-   SYNTH pod is gone — wave + voices now live in the MOD pod) */
+/* build synth-panel knobs */
+const synthKnobsEl = $('#synthKnobs');
+CONFIG.synthLabels.forEach((lab, i) => synthKnobsEl.appendChild(makeKnob('synth', i, lab)));
+/* waveform selector -> synth CC */
 $('#synthWaveSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const w = +b.dataset.w, idx = 8;  // SP_WAVE
@@ -224,11 +226,9 @@ function setMode(m) {
   document.body.dataset.mode = name;   // drives the per-mode color scheme (CSS)
   const labels = CONFIG.modeLabels[name];
   modeKnobs.forEach((k, i) => { k._label.textContent = labels[i]; });
-  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', +b.dataset.mode === m));
-  $('#modeNote').textContent = CONFIG.modeNotes[name];
   if (stompNames[1]) stompNames[1].textContent = CONFIG.fsActions[name] || 'ACTION';  // FS2 = mode action
-  const mp = $('#modePod'); if (mp) mp.classList.remove('closed');   // switch change re-opens its box
-  const mo = $('#modPod'); if (mo) mo.hidden = (m !== 0);            // synth MOD panel only in Synth mode
+  const sp = $('#synthPod'); if (sp) sp.hidden = (m !== 0);          // synth/mod panels only in Synth mode
+  const mo = $('#modPod'); if (mo) mo.hidden = (m !== 0);
   sendCC(CONFIG.ccModeSelect, m / 2);   // tell the pedal to switch mode
   if (m === 0) requestAnimationFrame(reflowPods);   // synth/mod pods just became visible
 }
@@ -240,7 +240,6 @@ function setFx(f) {
   sendCC(CONFIG.ccFxSelect, f / 2);   // tell the pedal to switch FX
   drawWires();
 }
-$('#modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMode(+b.dataset.mode); });
 $('#fxSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setFx(+b.dataset.fx); });
 
 /* ===========================================================================
@@ -660,8 +659,7 @@ function drawWires() {
   // Tempo pod is intentionally NOT wired (kept separate). Only the two toggle
   // breakouts get a connector, and they sit behind the pedal (z-order).
   const segs = [
-    { anchor: center(toggleEls[0]), pod: $('#modePod'), active: false },
-    { anchor: center(toggleEls[2]), pod: $('#fxPod'),   active: activeFx > 0 },
+    { anchor: center(toggleEls[2]), pod: $('#fxPod'), active: activeFx > 0 },
   ];
   for (const s of segs) {
     if (!s.anchor || !s.pod || s.pod.classList.contains('closed')) continue;
@@ -706,7 +704,7 @@ function loop(now) {
    (Starting a drag on a control inside is ignored so knobs/buttons still work.
    Uses left/top so the float animation's transform still composes; wires follow.)
    ========================================================================= */
-const POD_IDS = ['#modePod', '#fxPod', '#bpmPod', '#midiPod', '#modPod'];
+const POD_IDS = ['#synthPod', '#fxPod', '#bpmPod', '#midiPod', '#modPod'];
 const SNAP_STEP = 28;   // pods tidy onto this px grid when released
 
 // apply a drag offset (dx,dy relative to the grid slot), then nudge the whole
@@ -767,7 +765,7 @@ POD_IDS.forEach(id => makeDraggable($(id)));
 
 /* close (×) / reset breakout boxes. A closed mode/fx box re-opens when its
    corresponding toggle switch is changed (see setMode / setFx). */
-['#modePod', '#fxPod', '#bpmPod'].forEach(id => {
+['#fxPod', '#bpmPod'].forEach(id => {
   const p = $(id); if (!p) return;
   const btn = el('button', 'pod-close'); btn.textContent = '×'; btn.title = 'close';
   btn.addEventListener('click', (e) => {

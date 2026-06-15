@@ -110,17 +110,6 @@
   <!-- wires overlay (connector lines drawn in app.js) -->
   <svg class="wires" id="wires" aria-hidden="true"></svg>
 
-  <!-- ---- left pod: MODE selector legend ---- -->
-  <aside class="pod pod-left sketch" id="modePod" data-anchor="t1">
-    <div class="pod-tab">MODE&nbsp;▸&nbsp;TOGGLE&nbsp;1</div>
-    <div class="seg" id="modeSeg">
-      <button data-mode="0" class="on">Synth</button>
-      <button data-mode="1">Granular</button>
-      <button data-mode="2">Generative</button>
-    </div>
-    <p class="pod-note" id="modeNote">osc → moog filter → envelope · USB&nbsp;MIDI</p>
-  </aside>
-
   <!-- ---- center: the pedal ---- -->
   <section class="pedal-wrap">
     <div class="pedal" id="pedal">
@@ -183,16 +172,16 @@
     </div>
   </aside>
 
-  <!-- ---- SYNTH MOD: waveform + polyphony + LFO (shown in Synth mode) ---- -->
-  <aside class="pod pod-mod sketch" id="modPod">
-    <div class="pod-tab">SYNTH&nbsp;▸&nbsp;MOD</div>
-    <div class="mod-cap">WAVE</div>
+  <!-- ---- SYNTH voice editor (shown in Synth mode) ---- -->
+  <aside class="pod pod-synth sketch" id="synthPod">
+    <div class="pod-tab">SYNTH&nbsp;▸&nbsp;VOICE</div>
     <div class="synth-wave" id="synthWaveSeg">
       <button data-w="0" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
       <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
       <button data-w="2" class="on" title="Saw"><svg viewBox="0 0 26 16"><path d="M3 13 L12 3 L12 13 L21 3 L21 13"/></svg></button>
       <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
     </div>
+    <div class="synth-knobs" id="synthKnobs"><!-- extended synth params injected by app.js --></div>
     <div class="voice-row">
       <span class="voice-cap">VOICES</span>
       <div class="lfo-dest" id="voiceSeg" title="Polyphony — 1 = mono, fewer voices frees CPU">
@@ -204,7 +193,12 @@
         <button data-v="6">6</button>
       </div>
     </div>
-    <div class="mod-cap">LFO</div>
+    <p class="pod-note">detuned oscillators · sub · ADSR · filter envelope · glide · poly/mono</p>
+  </aside>
+
+  <!-- ---- MOD / LFO (shown in Synth mode) ---- -->
+  <aside class="pod pod-mod sketch" id="modPod">
+    <div class="pod-tab">MOD&nbsp;▸&nbsp;LFO</div>
     <div class="synth-wave" id="lfoShapeSeg">
       <button data-w="0" class="on" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
       <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
@@ -218,7 +212,7 @@
       <button data-d="2">Filt</button>
       <button data-d="3">Trem</button>
     </div>
-    <p class="pod-note">waveform · polyphony · LFO → vibrato / filter / tremolo</p>
+    <p class="pod-note">LFO → vibrato / filter / tremolo · knob 5 adds depth</p>
   </aside>
 
   <!-- ---- MIDI thru breakout (shown when thru is on AND both devices connected) ---- -->
