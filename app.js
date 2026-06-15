@@ -176,11 +176,13 @@ function setMode(m) {
   document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', +b.dataset.mode === m));
   $('#modeNote').textContent = CONFIG.modeNotes[name];
   if (stompNames[1]) stompNames[1].textContent = CONFIG.fsActions[name] || 'ACTION';  // FS2 = mode action
+  const mp = $('#modePod'); if (mp) mp.classList.remove('closed');   // switch change re-opens its box
 }
 function setFx(f) {
   activeFx = f; toggleEls[2].dataset.pos = f; updateToggleVals(2, f);
   document.querySelectorAll('#fxSeg button').forEach(b => b.classList.toggle('on', +b.dataset.fx === f));
-  $('#fxPod').dataset.active = f > 0 ? 'on' : 'off';
+  const fp = $('#fxPod');
+  if (fp) { fp.dataset.active = f > 0 ? 'on' : 'off'; fp.classList.remove('closed'); }  // switch change re-opens its box
   drawWires();
 }
 $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMode(+b.dataset.mode); });
@@ -337,7 +339,7 @@ function drawWires() {
     { anchor: center(toggleEls[2]), pod: $('#fxPod'),   active: activeFx > 0 },
   ];
   for (const s of segs) {
-    if (!s.anchor || !s.pod) continue;
+    if (!s.anchor || !s.pod || s.pod.classList.contains('closed')) continue;
     const b = edgePoint(s.pod, s.anchor);
     wirePath(s.anchor, b, s.active).forEach(n => wires.appendChild(n));
   }
@@ -393,6 +395,23 @@ function makeDraggable(pod) {
   pod.addEventListener('pointercancel', end);
 }
 ['#modePod', '#fxPod', '#bpmPod'].forEach(id => makeDraggable($(id)));
+
+/* close (×) / reset breakout boxes. A closed mode/fx box re-opens when its
+   corresponding toggle switch is changed (see setMode / setFx). */
+['#modePod', '#fxPod', '#bpmPod'].forEach(id => {
+  const p = $(id); if (!p) return;
+  const btn = el('button', 'pod-close'); btn.textContent = '×'; btn.title = 'close';
+  btn.addEventListener('click', (e) => { e.stopPropagation(); p.classList.add('closed'); drawWires(); });
+  p.appendChild(btn);
+});
+function resetPods() {
+  ['#modePod', '#fxPod', '#bpmPod'].forEach(id => {
+    const p = $(id); if (!p) return;
+    p.classList.remove('closed');
+    p.style.left = ''; p.style.top = ''; delete p.dataset.dx; delete p.dataset.dy;
+  });
+}
+$('#resetLayout').addEventListener('click', resetPods);
 
 /* ---------- go ---------- */
 setMode(0); setFx(0);
