@@ -107,7 +107,13 @@ body::before {
 .pod-synth { grid-area: synthpod; justify-self: end; }
 .pod-synth[hidden] { display: none; }
 .pod-synth .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
-.synth-knobs { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem .35rem; margin-top: .65rem; }
+.synth-wave { display: flex; gap: .3rem; margin-top: .55rem; }
+.synth-wave button { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--ink-dim); background: rgba(91,208,230,.06); border: 1.5px solid var(--cyan-2); border-radius: 7px; padding: .28rem .2rem; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.synth-wave button svg { width: 100%; height: 13px; display: block; }
+.synth-wave button svg path { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.synth-wave button:hover { color: var(--ink); }
+.synth-wave button.on { color: #0a1620; background: var(--mode); border-color: var(--mode); }
+.synth-knobs { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem .35rem; margin-top: .55rem; }
 .synth-knobs .knob { width: auto; }
 .synth-knobs .knob-dial { width: 36px; height: 36px; }
 .synth-knobs .knob-dial .knob-pointer { height: 14px; }

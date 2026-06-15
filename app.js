@@ -11,7 +11,7 @@ const CONFIG = {
   ccFx:   [26, 27, 28, 29, 30, 31], // FX-layer knobs 1..6
   ccModeSelect: 16,                 // mode select (0/64/127 -> synth/granular/generative)
   ccFxSelect:   17,                 // FX select   (0/64/127 -> off/delay/reverb)
-  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47],  // extended synth params
+  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48],  // extended synth params (last = waveform)
   synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
   modeOrder: ['synth', 'granular', 'generative'], // toggle 1: up / middle / down
   modeLabels: {
@@ -58,7 +58,7 @@ let activeFx = 0;     // 0 off / 1 delay / 2 reverb
 const knobValue = {
   mode:  [0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
   fx:    [0.3, 0.4, 0.35, 0.7, 0.6, 0.7],
-  synth: [0.25, 0.40, 0.70, 0.30, 0.50, 0.30, 0.00, 0.60],  // matches firmware defaults
+  synth: [0.25, 0.40, 0.70, 0.30, 0.50, 0.30, 0.00, 0.60, 0.66],  // matches firmware (last = waveform)
 };
 
 /* ===========================================================================
@@ -130,6 +130,14 @@ CONFIG.fxLabels.forEach((lab, i) => fxKnobsEl.appendChild(makeKnob('fx', i, lab)
 /* build synth-panel knobs */
 const synthKnobsEl = $('#synthKnobs');
 CONFIG.synthLabels.forEach((lab, i) => synthKnobsEl.appendChild(makeKnob('synth', i, lab)));
+/* waveform selector -> last synth CC */
+$('#synthWaveSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const w = +b.dataset.w, idx = CONFIG.ccSynth.length - 1;
+  document.querySelectorAll('#synthWaveSeg button').forEach(x => x.classList.toggle('on', +x.dataset.w === w));
+  knobValue.synth[idx] = w / 3;
+  sendCC(CONFIG.ccSynth[idx], w / 3);
+});
 
 /* ===========================================================================
    TOGGLES (3-position)
