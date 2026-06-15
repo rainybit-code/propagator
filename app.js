@@ -9,6 +9,8 @@ const CONFIG = {
   channel: 0,                       // MIDI channel (0-based)
   ccMode: [20, 21, 22, 23, 24, 25], // MODE-layer knobs 1..6
   ccFx:   [26, 27, 28, 29, 30, 31], // FX-layer knobs 1..6
+  ccModeSelect: 16,                 // mode select (0/64/127 -> synth/granular/generative)
+  ccFxSelect:   17,                 // FX select   (0/64/127 -> off/delay/reverb)
   modeOrder: ['synth', 'granular', 'generative'], // toggle 1: up / middle / down
   modeLabels: {
     synth:      ['Cutoff', 'Resonance', 'Attack', 'Decay', 'Mod Depth', 'Gen-mod Mix'],
@@ -182,12 +184,14 @@ function setMode(m) {
   $('#modeNote').textContent = CONFIG.modeNotes[name];
   if (stompNames[1]) stompNames[1].textContent = CONFIG.fsActions[name] || 'ACTION';  // FS2 = mode action
   const mp = $('#modePod'); if (mp) mp.classList.remove('closed');   // switch change re-opens its box
+  sendCC(CONFIG.ccModeSelect, m / 2);   // tell the pedal to switch mode
 }
 function setFx(f) {
   activeFx = f; toggleEls[2].dataset.pos = f; updateToggleVals(2, f);
   document.querySelectorAll('#fxSeg button').forEach(b => b.classList.toggle('on', +b.dataset.fx === f));
   const fp = $('#fxPod');
   if (fp) { fp.dataset.active = f > 0 ? 'on' : 'off'; fp.classList.remove('closed'); }  // switch change re-opens its box
+  sendCC(CONFIG.ccFxSelect, f / 2);   // tell the pedal to switch FX
   drawWires();
 }
 $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMode(+b.dataset.mode); });
@@ -232,7 +236,14 @@ function updateConn() {
   $('#footMidi').textContent = midi ? `${midi.outputs.size} out · ${midi.inputs.size} in` : 'no MIDI';
   updateMidiPod();
 }
-function selectOut(id) { midiOut = id ? midi.outputs.get(id) : null; updateConn(); }
+function selectOut(id) {
+  midiOut = id ? midi.outputs.get(id) : null;
+  updateConn();
+  if (midiOut) {  // sync the pedal to the UI's current mode/FX on connect
+    sendCC(CONFIG.ccModeSelect, activeMode / 2);
+    sendCC(CONFIG.ccFxSelect, activeFx / 2);
+  }
+}
 function selectIn(id) {
   if (midiIn) midiIn.onmidimessage = null;
   midiIn = id ? midi.inputs.get(id) : null;
