@@ -228,7 +228,26 @@ function onMidiMessage(e) {
 }
 
 async function initMidi() {
-  if (!navigator.requestMIDIAccess) { showNotice('WebMIDI not available', 'This browser has no Web MIDI API. Use <strong>Chrome</strong> or <strong>Edge</strong>.'); return; }
+  if (!navigator.requestMIDIAccess) {
+    let body;
+    if (location.protocol === 'file:') {
+      body = 'You opened this as a <code>file://</code> page — browsers hide Web MIDI there. ' +
+             'Serve it over <strong>localhost</strong> instead:<br>' +
+             '<code>python -m http.server 8000</code><br>' +
+             'then open <code>http://localhost:8000</code> in <strong>Chrome</strong>/<strong>Edge</strong>.';
+    } else if (!window.isSecureContext) {
+      body = `This page isn't a secure context (<code>${location.protocol}//${location.host}</code>). ` +
+             'Web MIDI needs <strong>localhost</strong> or <strong>https</strong>. ' +
+             'Use <code>http://localhost:PORT</code> (not the machine IP) in Chrome/Edge.';
+    } else {
+      body = 'This browser has no Web MIDI API. Use <strong>Chrome</strong> or <strong>Edge</strong> ' +
+             '(Safari and older Firefox lack it).';
+    }
+    console.warn('[propagator] requestMIDIAccess missing · protocol=%s host=%s secureContext=%s',
+                 location.protocol, location.host, window.isSecureContext);
+    showNotice('WebMIDI not available', body);
+    return;
+  }
   try { midi = await navigator.requestMIDIAccess({ sysex: true }); }
   catch (_) {
     try { midi = await navigator.requestMIDIAccess(); }
