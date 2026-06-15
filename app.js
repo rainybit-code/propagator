@@ -534,9 +534,16 @@ function makeDraggable(pod) {
   });
   pod.addEventListener('pointermove', (e) => {
     if (!dragging) return;
-    const dx = ox + (e.clientX - sx), dy = oy + (e.clientY - sy);
-    pod.dataset.dx = dx; pod.dataset.dy = dy;
+    let dx = ox + (e.clientX - sx), dy = oy + (e.clientY - sy);
     pod.style.left = dx + 'px'; pod.style.top = dy + 'px';
+    // keep the whole box on screen (no scroll to recover it otherwise)
+    const r = pod.getBoundingClientRect(), m = 8;
+    if (r.left < m) dx += m - r.left;
+    else if (r.right > innerWidth - m) dx += (innerWidth - m) - r.right;
+    if (r.top < m) dy += m - r.top;
+    else if (r.bottom > innerHeight - m) dy += (innerHeight - m) - r.bottom;
+    pod.style.left = dx + 'px'; pod.style.top = dy + 'px';
+    pod.dataset.dx = dx; pod.dataset.dy = dy;
   });
   const end = (e) => { if (!dragging) return; dragging = false; pod.classList.remove('dragging'); try { pod.releasePointerCapture(e.pointerId); } catch (_) {} };
   pod.addEventListener('pointerup', end);
