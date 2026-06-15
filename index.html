@@ -41,9 +41,19 @@
 
 <!-- ===== top connection frame (subtle) ===== -->
 <header class="titleblock">
-  <div class="tb-mark">
-    <span class="tb-glyph" id="tbSprout">❀</span>
-    <span class="tb-name">PROPAGATOR</span>
+  <div class="tb-left">
+    <div class="tb-mark">
+      <span class="tb-glyph" id="tbSprout">❀</span>
+      <span class="tb-name">PROPAGATOR</span>
+    </div>
+    <div class="tb-preset">
+      <label class="conn-field">
+        <span>PRESET&nbsp;▸</span>
+        <select id="presetSel"><option value="">— preset —</option></select>
+      </label>
+      <button id="presetSave" class="tb-btn" title="save the current settings as a preset">＋&nbsp;save</button>
+      <button id="presetDel" class="tb-btn" title="delete the selected (user) preset">🗑</button>
+    </div>
   </div>
   <div class="tb-conn">
     <div id="bpmMini" class="bpm-mini" hidden>
@@ -71,12 +81,6 @@
     <div class="conn-status" id="connStatus" data-state="off">
       <span class="dot"></span><span class="conn-label" id="connLabel">offline</span>
     </div>
-    <label class="conn-field">
-      <span>PRESET&nbsp;▸</span>
-      <select id="presetSel"><option value="">— preset —</option></select>
-    </label>
-    <button id="presetSave" class="tb-btn" title="save the current settings as a preset">＋&nbsp;save</button>
-    <button id="presetDel" class="tb-btn" title="delete the selected (user) preset">🗑</button>
     <button id="resetLayout" class="tb-btn" title="reset breakout box positions">⟲ layout</button>
   </div>
 </header>
