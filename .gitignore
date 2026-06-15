@@ -1,0 +1,9 @@
+# OS / editor
+.DS_Store
+*.swp
+.vscode/*.log
+
+# local dev
+__pycache__/
+*.pyc
+.cache/

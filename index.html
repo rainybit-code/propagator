@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROPAGATOR — Hothouse control surface</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Shantell+Sans:ital,wght@0,400;0,600;0,700;1,500&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ===== boiling / sketch filters (animated in app.js) ===== -->
+<svg class="svg-defs" width="0" height="0" aria-hidden="true">
+  <defs>
+    <filter id="boil" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="1" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="boil-soft" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="1.8" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="paper-grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" result="g"/>
+      <feColorMatrix in="g" type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.05"/></feComponentTransfer>
+    </filter>
+  </defs>
+</svg>
+
+<div class="paper-grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<!-- ===== top connection frame (subtle) ===== -->
+<header class="titleblock">
+  <div class="tb-mark">
+    <span class="tb-glyph" id="tbSprout">❀</span>
+    <span class="tb-name">PROPAGATOR</span>
+    <span class="tb-rev">rev&nbsp;A · webmidi</span>
+  </div>
+  <div class="tb-conn">
+    <label class="conn-field">
+      <span>OUT&nbsp;▸</span>
+      <select id="midiOut"><option value="">— no device —</option></select>
+    </label>
+    <label class="conn-field">
+      <span>IN&nbsp;◂</span>
+      <select id="midiIn"><option value="">— no device —</option></select>
+    </label>
+    <div class="conn-status" id="connStatus" data-state="off">
+      <span class="dot"></span><span class="conn-label" id="connLabel">offline</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== unsupported / permission notice ===== -->
+<div class="notice" id="notice" hidden>
+  <div class="notice-card sketch">
+    <h2 id="noticeTitle">WebMIDI not available</h2>
+    <p id="noticeBody">This control surface needs the Web MIDI API. Open it in
+    <strong>Chrome</strong> or <strong>Edge</strong> over <code>localhost</code> or https.</p>
+    <button id="noticeRetry">retry</button>
+  </div>
+</div>
+
+<!-- ===== stage ===== -->
+<main class="stage" id="stage">
+
+  <!-- wires overlay (connector lines drawn in app.js) -->
+  <svg class="wires" id="wires" aria-hidden="true"></svg>
+
+  <!-- ---- left pod: MODE selector legend ---- -->
+  <aside class="pod pod-left sketch" id="modePod" data-anchor="t1">
+    <div class="pod-tab">MODE&nbsp;▸&nbsp;TOGGLE&nbsp;1</div>
+    <div class="seg" id="modeSeg">
+      <button data-mode="0" class="on">Synth</button>
+      <button data-mode="1">Granular</button>
+      <button data-mode="2">Generative</button>
+    </div>
+    <p class="pod-note" id="modeNote">osc → moog filter → envelope · USB&nbsp;MIDI</p>
+  </aside>
+
+  <!-- ---- center: the pedal ---- -->
+  <section class="pedal-wrap">
+    <div class="pedal" id="pedal">
+      <!-- boiling hand-inked chassis -->
+      <svg class="chassis" viewBox="0 0 340 540" preserveAspectRatio="none" aria-hidden="true">
+        <g class="ink">
+          <rect class="body" x="16" y="14" width="308" height="512" rx="26"/>
+          <rect class="body-inner" x="28" y="26" width="284" height="488" rx="20"/>
+          <!-- corner screws -->
+          <g class="screws">
+            <circle cx="40" cy="40" r="5"/><circle cx="300" cy="40" r="5"/>
+            <circle cx="40" cy="500" r="5"/><circle cx="300" cy="500" r="5"/>
+          </g>
+          <!-- side jack nubs -->
+          <g class="jacks">
+            <rect x="2" y="92" width="16" height="30" rx="4"/>
+            <rect x="322" y="92" width="16" height="30" rx="4"/>
+          </g>
+          <!-- decorative heat-coil (propagator warmth) -->
+          <path class="coil" d="M60 470 q14 -16 28 0 q14 16 28 0 q14 -16 28 0 q14 16 28 0 q14 -16 28 0 q14 16 28 0"/>
+          <!-- little sprouts growing from the base -->
+          <g class="sprout sprout-a">
+            <path d="M150 26 q2 -22 -10 -32 q16 4 14 24" />
+            <path d="M150 26 q-2 -20 12 -30 q-14 6 -10 26" />
+            <line x1="150" y1="26" x2="150" y2="-4"/>
+          </g>
+        </g>
+      </svg>
+
+      <!-- crisp interactive face -->
+      <div class="face">
+        <div class="brand">
+          <span class="brand-name">PROPAGATOR</span>
+          <span class="brand-sub">· hothouse control surface ·</span>
+        </div>
+
+        <div class="row toggles" id="toggles">
+          <!-- toggles injected by app.js -->
+        </div>
+
+        <div class="row knobs" id="knobs">
+          <!-- 6 knobs injected by app.js -->
+        </div>
+
+        <div class="row leds" id="leds">
+          <span class="led" data-led="0"></span>
+          <span class="led" data-led="1"></span>
+        </div>
+
+        <div class="row stomps" id="stomps">
+          <!-- 2 footswitches injected by app.js -->
+        </div>
+
+        <div class="jack jack-l">IN</div>
+        <div class="jack jack-r">OUT</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- right pod: FX bank (branches from Toggle 3) ---- -->
+  <aside class="pod pod-right sketch" id="fxPod" data-anchor="t3" data-active="off">
+    <div class="pod-tab">FX&nbsp;▸&nbsp;TOGGLE&nbsp;3</div>
+    <div class="seg seg-fx" id="fxSeg">
+      <button data-fx="0" class="on">Off</button>
+      <button data-fx="1">Delay</button>
+      <button data-fx="2">Reverb</button>
+    </div>
+    <div class="fx-knobs" id="fxKnobs">
+      <!-- 6 fx knobs injected by app.js -->
+    </div>
+  </aside>
+
+  <!-- ---- bottom pod: BPM + live beat ---- -->
+  <aside class="pod pod-bpm sketch" id="bpmPod" data-anchor="led">
+    <div class="pod-tab">TEMPO</div>
+    <div class="bpm-main">
+      <div class="bpm-dial" id="bpmDial">
+        <span class="bpm-num" id="bpmNum">96</span>
+        <span class="bpm-unit">BPM</span>
+      </div>
+      <div class="beat-stack">
+        <div class="beat-seed" id="beatSeed" title="the beat">
+          <svg viewBox="0 0 48 48"><path class="seed-leaf" d="M24 44 C8 36 8 14 24 6 C40 14 40 36 24 44 Z"/><line class="seed-vein" x1="24" y1="10" x2="24" y2="40"/></svg>
+        </div>
+        <div class="beat-dots" id="beatDots"><i></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
+    <p class="pod-note">drag the number · scroll to fine-tune</p>
+  </aside>
+
+  <!-- floating blueprint annotation on hover -->
+  <div class="annot" id="annot" hidden></div>
+
+</main>
+
+<footer class="footer">
+  <span>PROPAGATOR</span> · grow your sound ·
+  <span id="footMidi">checking MIDI…</span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
