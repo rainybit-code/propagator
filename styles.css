@@ -103,7 +103,9 @@ body::before {
 /* ============================================================================
    NOTICE
    ========================================================================== */
-.notice { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(6,18,31,.78); backdrop-filter: blur(4px); }
+.notice { position: fixed; inset: 0; z-index: 60; background: rgba(6,18,31,.78); backdrop-filter: blur(4px); }
+.notice[hidden] { display: none; }
+.notice:not([hidden]) { display: grid; place-items: center; }
 .notice-card { max-width: 420px; padding: 1.6rem 1.8rem; background: var(--paper); border: 2.5px solid var(--heat); border-radius: 16px; text-align: center; }
 .notice-card h2 { margin: 0 0 .5rem; color: var(--heat-2); }
 .notice-card p { color: var(--ink-dim); line-height: 1.5; }
