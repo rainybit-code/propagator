@@ -103,8 +103,20 @@ body::before {
 .bpm-mini-led.kick { background: var(--grow); box-shadow: 0 0 8px rgba(147,240,107,.85); }
 .bpm-mini-led.kick.down { background: var(--heat); box-shadow: 0 0 8px rgba(255,124,61,.85); }
 
+/* MIDI thru breakout box */
+.pod-midi { grid-area: midipod; justify-self: start; }
+.pod-midi[hidden] { display: none; }
+.pod-midi .pod-tab { background: var(--cyan); color: #04222b; }
+.midi-act-row { display: flex; align-items: center; gap: .45rem; margin-top: .2rem; font-family: var(--font-mono); font-size: .6rem; color: var(--ink-dim); }
+.midi-act { width: 11px; height: 11px; border-radius: 50%; background: #213b50; border: 1.5px solid var(--cyan-2); }
+.midi-act.kick { background: var(--cyan); box-shadow: 0 0 9px rgba(91,208,230,.9); }
+.midi-last { font-family: var(--font-mono); font-size: .62rem; color: var(--amber); background: #06141e; border: 1px solid #04101a; border-radius: 4px; padding: .25rem .4rem; margin-top: .4rem; min-height: 1.35em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.midi-filters { display: flex; flex-direction: column; gap: .3rem; margin-top: .55rem; }
+.midi-filters-head { font-family: var(--font-mono); font-size: .56rem; letter-spacing: .08em; color: var(--ink-dim); opacity: .8; }
+.midi-filters .switch-field { justify-content: space-between; font-family: var(--font-mono); font-size: .64rem; color: var(--ink-dim); }
+
 /* pill sliding switch (replaces the thru checkbox) */
-.switch-field { gap: .4rem; cursor: pointer; }
+.switch-field { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
 .pill { position: relative; display: inline-flex; }
 .pill input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
 .pill-track { width: 26px; height: 14px; border-radius: 8px; background: #213b50; border: 1.5px solid var(--cyan-2); position: relative; transition: background .15s, border-color .15s; }
@@ -134,7 +146,7 @@ body::before {
 .stage {
   position: relative; z-index: 5; display: grid;
   grid-template-columns: minmax(150px, 1fr) minmax(340px, 470px) minmax(150px, 1fr);
-  grid-template-areas: "modepod pedal fxpod" "bpmpod pedal fxpod";
+  grid-template-areas: "modepod pedal fxpod" "bpmpod pedal midipod";
   gap: 1.1rem 1.7rem; align-items: start; justify-items: center;
   max-width: 1300px; margin: 0 auto; padding: 2.2rem 1.4rem 1rem;
 }

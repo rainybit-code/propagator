@@ -121,7 +121,7 @@
             <rect x="230" y="1" width="36" height="15" rx="4"/>
           </g>
           <!-- decorative heat-coil (propagator warmth) — base band, below footswitch text, inside the plate (body bottom = y546) -->
-          <path class="coil" d="M56 400 q20 -14 40 0 q20 14 40 0 q20 -14 40 0 q20 14 40 0 q20 -14 40 0 q20 14 40 0"/>
+          <path class="coil" d="M56 424 q20 -14 40 0 q20 14 40 0 q20 -14 40 0 q20 14 40 0 q20 -14 40 0 q20 14 40 0"/>
           <!-- little sprout growing from a corner -->
           <g class="sprout sprout-a">
             <path d="M44 14 q2 -22 -10 -32 q16 4 14 24" />
@@ -161,6 +161,24 @@
     </div>
     <div class="fx-knobs" id="fxKnobs">
       <!-- 6 fx knobs injected by app.js -->
+    </div>
+  </aside>
+
+  <!-- ---- MIDI thru breakout (shown when thru is on AND both devices connected) ---- -->
+  <aside class="pod pod-midi sketch" id="midiPod" hidden>
+    <div class="pod-tab">MIDI&nbsp;▸&nbsp;THRU</div>
+    <div class="midi-act-row">
+      <span class="midi-act" id="midiAct"></span>
+      <span class="midi-act-label">activity · last in:</span>
+    </div>
+    <div class="midi-last" id="midiLast">—</div>
+    <div class="midi-filters">
+      <div class="midi-filters-head">forward to pedal:</div>
+      <label class="switch-field"><span>notes</span><span class="pill"><input type="checkbox" id="fNotes" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
+      <label class="switch-field"><span>CC</span><span class="pill"><input type="checkbox" id="fCC" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
+      <label class="switch-field"><span>other</span><span class="pill"><input type="checkbox" id="fOther" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
+      <label class="switch-field"><span>clock</span><span class="pill"><input type="checkbox" id="fClock" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
+      <label class="switch-field" title="set the tempo from the input device's MIDI clock"><span>sync bpm</span><span class="pill"><input type="checkbox" id="fSync" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
     </div>
   </aside>
 

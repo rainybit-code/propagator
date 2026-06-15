@@ -40,10 +40,14 @@ const knobsRow  = $('#knobs');
 const fxKnobsEl = $('#fxKnobs');
 const togglesEl = $('#toggles');
 const stompsEl  = $('#stomps');
+const midiPod   = $('#midiPod'), midiAct = $('#midiAct'), midiLast = $('#midiLast');
 
 /* ---------- MIDI state ---------- */
 let midi = null, midiOut = null, midiIn = null;
 let thru = true;   // forward IN-device messages to the pedal (OUT)
+const thruFilter = { notes: true, cc: true, other: true, clock: true };
+let clockSync = true;                               // derive BPM + beat from incoming MIDI clock
+let clockCount = 0, lastClockMs = 0, clockBpm = 0;  // MIDI clock tracking (24 PPQN)
 let activeMode = 0;   // 0 synth / 1 granular / 2 generative
 let activeFx = 0;     // 0 off / 1 delay / 2 reverb
 
@@ -226,6 +230,7 @@ function updateConn() {
   else if (midi) setStatus('ready', n ? 'pick a device' : 'no devices');
   else setStatus('off', 'offline');
   $('#footMidi').textContent = midi ? `${midi.outputs.size} out · ${midi.inputs.size} in` : 'no MIDI';
+  updateMidiPod();
 }
 function selectOut(id) { midiOut = id ? midi.outputs.get(id) : null; updateConn(); }
 function selectIn(id) {
@@ -235,22 +240,72 @@ function selectIn(id) {
   updateConn();
 }
 // incoming (for future 2-way sync): reflect CC back onto knobs
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+function noteName(n) { return NOTE_NAMES[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1); }
+function describeMidi(d) {
+  const hi = d[0] & 0xf0;
+  if (hi === 0x90 && d[2] > 0) return { cat: 'notes', text: `Note On  ${noteName(d[1])}  v${d[2]}` };
+  if (hi === 0x80 || (hi === 0x90 && d[2] === 0)) return { cat: 'notes', text: `Note Off ${noteName(d[1])}` };
+  if (hi === 0xB0) return { cat: 'cc', text: `CC ${d[1]} → ${d[2]}` };
+  if (hi === 0xE0) return { cat: 'other', text: `Pitch Bend ${((d[2] << 7) | d[1]) - 8192}` };
+  if (hi === 0xC0) return { cat: 'other', text: `Program ${d[1]}` };
+  if (hi === 0xD0) return { cat: 'other', text: `Ch Pressure ${d[1]}` };
+  if (hi === 0xA0) return { cat: 'other', text: `Poly AT ${noteName(d[1])} ${d[2]}` };
+  return { cat: 'other', text: `0x${d[0].toString(16)}` };
+}
+function sameInOut() { return midiIn && midiOut && midiIn.id === midiOut.id; }
+function fwd(data, cat) {
+  if (thru && thruFilter[cat] && midiOut && !sameInOut()) {
+    try { midiOut.send(data); } catch (_) {}
+  }
+}
+
+// MIDI clock (0xF8, 24 per quarter): derive BPM + drive the beat when sync is on.
+function handleClockTick(now) {
+  if (clockSync) {
+    if (lastClockMs) {
+      const dt = now - lastClockMs;
+      if (dt > 0.5 && dt < 200) {
+        const inst = 60000 / (dt * 24);
+        clockBpm = clockBpm ? clockBpm * 0.8 + inst * 0.2 : inst;
+        setBpm(clockBpm);
+      }
+    }
+    if (!playing) { playing = true; updateTransportUI(); }  // external clock = running
+    if ((clockCount % 24) === 0) pulseBeat((clockCount / 24) % 4);
+    clockCount = (clockCount + 1) % 96;
+  }
+  lastClockMs = now;
+}
+
 function onMidiMessage(e) {
-  const [status, d1, d2] = e.data;
-  // MIDI thru: forward channel-voice messages (notes, pitch-bend, CC, etc.) from
-  // the IN device to the pedal, so a keyboard plays it. Skip if IN == OUT (loop)
-  // and skip system messages (0xF0+, e.g. clock/sysex).
-  if (thru && midiOut && status >= 0x80 && status < 0xF0 &&
-      !(midiIn && midiOut && midiIn.id === midiOut.id)) {
-    try { midiOut.send(e.data); } catch (_) {}
+  const d = e.data, status = d[0];
+  // realtime: clock + transport
+  if (status === 0xF8) { handleClockTick(performance.now()); fwd(d, 'clock'); return; }
+  if (status === 0xFA || status === 0xFB || status === 0xFC) {
+    if (status === 0xFA) { clockCount = 0; if (clockSync) setPlaying(true); }      // start
+    else if (status === 0xFC && clockSync) setPlaying(false);                       // stop
+    fwd(d, 'clock'); return;
   }
-  // Reflect incoming CC onto the on-screen knobs (display follows the pedal).
+  if (status < 0x80 || status >= 0xF0) return;   // ignore other system msgs (sysex/sensing)
+
+  // channel-voice: activity LED, last-received readout, filtered thru
+  const info = describeMidi(d);
+  if (midiAct) { midiAct.classList.add('kick'); setTimeout(() => midiAct.classList.remove('kick'), 130); }
+  if (midiLast) midiLast.textContent = info.text;
+  fwd(d, info.cat);
+
+  // reflect CC onto the on-screen knobs
   if ((status & 0xf0) === 0xb0) {
-    const mi = CONFIG.ccMode.indexOf(d1);
-    const fi = CONFIG.ccFx.indexOf(d1);
-    if (mi >= 0) { knobValue.mode[mi] = d2 / 127; modeKnobs[mi]._apply(); }
-    else if (fi >= 0) { knobValue.fx[fi] = d2 / 127; }
+    const mi = CONFIG.ccMode.indexOf(d[1]);
+    const fi = CONFIG.ccFx.indexOf(d[1]);
+    if (mi >= 0) { knobValue.mode[mi] = d[2] / 127; modeKnobs[mi]._apply(); }
+    else if (fi >= 0) { knobValue.fx[fi] = d[2] / 127; }
   }
+}
+
+function updateMidiPod() {
+  if (midiPod) midiPod.hidden = !(thru && midiIn && midiOut);
 }
 
 async function initMidi() {
@@ -285,7 +340,12 @@ async function initMidi() {
 }
 $('#midiOut').addEventListener('change', e => selectOut(e.target.value));
 $('#midiIn').addEventListener('change', e => selectIn(e.target.value));
-$('#midiThru').addEventListener('change', e => { thru = e.target.checked; });
+$('#midiThru').addEventListener('change', e => { thru = e.target.checked; updateMidiPod(); });
+$('#fNotes').addEventListener('change', e => { thruFilter.notes = e.target.checked; });
+$('#fCC').addEventListener('change', e => { thruFilter.cc = e.target.checked; });
+$('#fOther').addEventListener('change', e => { thruFilter.other = e.target.checked; });
+$('#fClock').addEventListener('change', e => { thruFilter.clock = e.target.checked; });
+$('#fSync').addEventListener('change', e => { clockSync = e.target.checked; if (!clockSync) { lastClockMs = 0; clockBpm = 0; } });
 
 function showNotice(title, body) { $('#noticeTitle').textContent = title; $('#noticeBody').innerHTML = body; $('#notice').hidden = false; updateConn(); }
 function hideNotice() { $('#notice').hidden = true; }
@@ -306,10 +366,13 @@ function setBpm(v) {
   if (bpmMiniVal) bpmMiniVal.textContent = bpm;
 }
 
-function setPlaying(p) {
-  playing = p;
+function updateTransportUI() {
   const b1 = $('#bpmMiniPlay'); if (b1) b1.textContent = playing ? '⏹' : '▶';
   const b2 = $('#bpmPlay'); if (b2) b2.textContent = playing ? '⏹ stop' : '▶ start';
+}
+function setPlaying(p) {
+  playing = p;
+  updateTransportUI();
   if (playing) {  // START: restart from the beginning of the bar (downbeat)
     beatIndex = 0;
     nextBeat = performance.now();
@@ -407,15 +470,18 @@ function startBoil() {
    MAIN LOOP (beat + wires)
    ========================================================================= */
 function loop(now) {
-  if (playing) {
+  // When external MIDI clock is live + sync on, the beat is clock-driven
+  // (handleClockTick) and the internal timer steps aside.
+  const clockActive = clockSync && lastClockMs && (now - lastClockMs < 400);
+  if (playing && !clockActive) {
     const interval = 60000 / bpm;
     if (now >= nextBeat) {
       pulseBeat(beatIndex % 4); beatIndex++;
       nextBeat += interval;
       if (now - nextBeat > interval) nextBeat = now + interval; // resync if tab was backgrounded
     }
-  } else {
-    nextBeat = now; // paused: stay ready to resume cleanly
+  } else if (!playing) {
+    nextBeat = now; // stopped: stay ready to resume cleanly
   }
   drawWires();
   requestAnimationFrame(loop);
@@ -446,7 +512,7 @@ function makeDraggable(pod) {
   pod.addEventListener('pointerup', end);
   pod.addEventListener('pointercancel', end);
 }
-['#modePod', '#fxPod', '#bpmPod'].forEach(id => makeDraggable($(id)));
+['#modePod', '#fxPod', '#bpmPod', '#midiPod'].forEach(id => makeDraggable($(id)));
 
 /* close (×) / reset breakout boxes. A closed mode/fx box re-opens when its
    corresponding toggle switch is changed (see setMode / setFx). */
@@ -474,8 +540,9 @@ $('#resetLayout').addEventListener('click', resetPods);
 
 /* ---------- go ---------- */
 setMode(0); setFx(0);
-setPlaying(true);
+setPlaying(false);       // default: tempo stopped
 setBpmPodClosed(true);   // default: tempo box closed -> shown as the top-bar mini
+updateMidiPod();
 window.addEventListener('resize', drawWires);
 requestAnimationFrame(() => { drawWires(); requestAnimationFrame(loop); });
 startBoil();
