@@ -308,10 +308,12 @@ function setBpm(v) {
 
 function setPlaying(p) {
   playing = p;
-  const glyph = playing ? '⏸' : '▶';
-  const b1 = $('#bpmMiniPlay'); if (b1) b1.textContent = glyph;
-  const b2 = $('#bpmPlay'); if (b2) b2.textContent = playing ? '⏸ playing' : '▶ paused';
-  if (!playing) {  // clear the beat visuals when stopped
+  const b1 = $('#bpmMiniPlay'); if (b1) b1.textContent = playing ? '⏹' : '▶';
+  const b2 = $('#bpmPlay'); if (b2) b2.textContent = playing ? '⏹ stop' : '▶ start';
+  if (playing) {  // START: restart from the beginning of the bar (downbeat)
+    beatIndex = 0;
+    nextBeat = performance.now();
+  } else {        // STOP: clear the beat visuals
     beatDots.forEach(d => d.classList.remove('on'));
     if (bpmMiniLed) bpmMiniLed.classList.remove('kick', 'down');
   }
