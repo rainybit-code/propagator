@@ -46,6 +46,13 @@
     <span class="tb-name">PROPAGATOR</span>
   </div>
   <div class="tb-conn">
+    <div id="bpmMini" class="bpm-mini" hidden>
+      <button class="bpm-mini-btn" id="bpmMiniPlay" title="play / pause">⏸</button>
+      <span class="bpm-mini-led" id="bpmMiniLed"></span>
+      <button class="bpm-mini-open" id="bpmMiniOpen" title="open the tempo box">
+        <span id="bpmMiniVal">96</span><span class="bpm-mini-unit">bpm</span>
+      </button>
+    </div>
     <label class="conn-field">
       <span>OUT&nbsp;▸</span>
       <select id="midiOut"><option value="">— no device —</option></select>
@@ -54,8 +61,12 @@
       <span>IN&nbsp;◂</span>
       <select id="midiIn"><option value="">— no device —</option></select>
     </label>
-    <label class="conn-field" title="forward notes/CC from the IN device to the pedal">
-      <input type="checkbox" id="midiThru" checked /><span>thru</span>
+    <label class="conn-field switch-field" title="forward notes/CC from the IN device to the pedal">
+      <span>thru</span>
+      <span class="pill">
+        <input type="checkbox" id="midiThru" checked />
+        <span class="pill-track"><span class="pill-knob"></span></span>
+      </span>
     </label>
     <div class="conn-status" id="connStatus" data-state="off">
       <span class="dot"></span><span class="conn-label" id="connLabel">offline</span>
@@ -156,6 +167,7 @@
   <!-- ---- bottom pod: BPM + live beat ---- -->
   <aside class="pod pod-bpm sketch" id="bpmPod" data-anchor="led">
     <div class="pod-tab">TEMPO</div>
+    <button class="bpm-play" id="bpmPlay" title="play / pause the beat">⏸ playing</button>
     <div class="bpm-main">
       <div class="bpm-dial" id="bpmDial">
         <span class="bpm-num" id="bpmNum">96</span>

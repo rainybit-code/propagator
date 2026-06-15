@@ -295,10 +295,35 @@ $('#noticeRetry').addEventListener('click', initMidi);
    BPM + BEAT ENGINE
    ========================================================================= */
 let bpm = 96;
+let playing = true;
 const bpmNum = $('#bpmNum'), beatSeed = $('#beatSeed'), beatDots = [...document.querySelectorAll('#beatDots i')];
+const bpmMini = $('#bpmMini'), bpmMiniLed = $('#bpmMiniLed'), bpmMiniVal = $('#bpmMiniVal');
 beatDots[0].classList.add('down');
 
-function setBpm(v) { bpm = Math.max(40, Math.min(240, Math.round(v))); bpmNum.textContent = bpm; }
+function setBpm(v) {
+  bpm = Math.max(40, Math.min(240, Math.round(v)));
+  bpmNum.textContent = bpm;
+  if (bpmMiniVal) bpmMiniVal.textContent = bpm;
+}
+
+function setPlaying(p) {
+  playing = p;
+  const glyph = playing ? '⏸' : '▶';
+  const b1 = $('#bpmMiniPlay'); if (b1) b1.textContent = glyph;
+  const b2 = $('#bpmPlay'); if (b2) b2.textContent = playing ? '⏸ playing' : '▶ paused';
+  if (!playing) {  // clear the beat visuals when stopped
+    beatDots.forEach(d => d.classList.remove('on'));
+    if (bpmMiniLed) bpmMiniLed.classList.remove('kick', 'down');
+  }
+}
+
+// show the tempo pod or collapse it to the top-bar mini
+function setBpmPodClosed(closed) {
+  const pod = $('#bpmPod');
+  if (pod) pod.classList.toggle('closed', closed);
+  if (bpmMini) bpmMini.hidden = !closed;
+  drawWires();
+}
 (() => {
   const dial = $('#bpmDial'); let sy = 0, sb = 0, drag = false;
   dial.addEventListener('pointerdown', e => { drag = true; sy = e.clientY; sb = bpm; dial.setPointerCapture(e.pointerId); });
@@ -307,6 +332,11 @@ function setBpm(v) { bpm = Math.max(40, Math.min(240, Math.round(v))); bpmNum.te
   dial.addEventListener('wheel', e => { e.preventDefault(); setBpm(bpm - Math.sign(e.deltaY)); }, { passive: false });
 })();
 
+// transport + mini-box wiring
+$('#bpmPlay').addEventListener('click', () => setPlaying(!playing));
+$('#bpmMiniPlay').addEventListener('click', () => setPlaying(!playing));
+$('#bpmMiniOpen').addEventListener('click', () => setBpmPodClosed(false));
+
 let beatIndex = 0, nextBeat = performance.now();
 function pulseBeat(beatInBar) {
   const down = beatInBar === 0;
@@ -314,6 +344,12 @@ function pulseBeat(beatInBar) {
   beatSeed.classList.add('kick');
   setTimeout(() => beatSeed.classList.remove('kick'), 90);
   beatDots.forEach((d, i) => d.classList.toggle('on', i === beatInBar));
+  // top-bar mini LED
+  if (bpmMiniLed) {
+    bpmMiniLed.classList.toggle('down', down);
+    bpmMiniLed.classList.add('kick');
+    setTimeout(() => bpmMiniLed.classList.remove('kick'), 90);
+  }
 }
 
 /* ===========================================================================
@@ -369,11 +405,15 @@ function startBoil() {
    MAIN LOOP (beat + wires)
    ========================================================================= */
 function loop(now) {
-  const interval = 60000 / bpm;
-  if (now >= nextBeat) {
-    pulseBeat(beatIndex % 4); beatIndex++;
-    nextBeat += interval;
-    if (now - nextBeat > interval) nextBeat = now + interval; // resync if tab was backgrounded
+  if (playing) {
+    const interval = 60000 / bpm;
+    if (now >= nextBeat) {
+      pulseBeat(beatIndex % 4); beatIndex++;
+      nextBeat += interval;
+      if (now - nextBeat > interval) nextBeat = now + interval; // resync if tab was backgrounded
+    }
+  } else {
+    nextBeat = now; // paused: stay ready to resume cleanly
   }
   drawWires();
   requestAnimationFrame(loop);
@@ -411,20 +451,29 @@ function makeDraggable(pod) {
 ['#modePod', '#fxPod', '#bpmPod'].forEach(id => {
   const p = $(id); if (!p) return;
   const btn = el('button', 'pod-close'); btn.textContent = '×'; btn.title = 'close';
-  btn.addEventListener('click', (e) => { e.stopPropagation(); p.classList.add('closed'); drawWires(); });
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (id === '#bpmPod') setBpmPodClosed(true);   // collapse tempo to the top-bar mini
+    else { p.classList.add('closed'); drawWires(); }
+  });
   p.appendChild(btn);
 });
 function resetPods() {
-  ['#modePod', '#fxPod', '#bpmPod'].forEach(id => {
+  ['#modePod', '#fxPod'].forEach(id => {
     const p = $(id); if (!p) return;
     p.classList.remove('closed');
     p.style.left = ''; p.style.top = ''; delete p.dataset.dx; delete p.dataset.dy;
   });
+  const bpm = $('#bpmPod');
+  if (bpm) { bpm.style.left = ''; bpm.style.top = ''; delete bpm.dataset.dx; delete bpm.dataset.dy; }
+  setBpmPodClosed(true);   // default layout: tempo collapsed to the mini
 }
 $('#resetLayout').addEventListener('click', resetPods);
 
 /* ---------- go ---------- */
 setMode(0); setFx(0);
+setPlaying(true);
+setBpmPodClosed(true);   // default: tempo box closed -> shown as the top-bar mini
 window.addEventListener('resize', drawWires);
 requestAnimationFrame(() => { drawWires(); requestAnimationFrame(loop); });
 startBoil();

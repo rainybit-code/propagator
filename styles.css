@@ -90,6 +90,32 @@ body::before {
 .tb-btn { font-family: var(--font-mono); font-size: .66rem; letter-spacing: .08em; color: var(--ink-dim); background: rgba(91,208,230,.08); border: 1.5px solid var(--cyan-2); border-radius: 7px; padding: .24rem .55rem; cursor: pointer; }
 .tb-btn:hover { color: var(--ink); border-color: var(--cyan); }
 
+/* top-bar tempo mini (shown when the tempo box is closed) */
+.bpm-mini { display: inline-flex; align-items: center; gap: .4rem; font-family: var(--font-mono); font-size: .68rem; }
+.bpm-mini[hidden] { display: none; }
+.bpm-mini-btn, .bpm-mini-open { font-family: var(--font-mono); color: var(--ink-dim); background: rgba(91,208,230,.08); border: 1.5px solid var(--cyan-2); border-radius: 7px; cursor: pointer; }
+.bpm-mini-btn { width: 22px; height: 20px; padding: 0; font-size: .58rem; line-height: 1; }
+.bpm-mini-open { padding: .18rem .45rem; font-size: .68rem; }
+.bpm-mini-open #bpmMiniVal { color: var(--ink); font-weight: 600; }
+.bpm-mini-unit { color: var(--ink-dim); opacity: .65; margin-left: .15rem; }
+.bpm-mini-btn:hover, .bpm-mini-open:hover { color: var(--ink); border-color: var(--cyan); }
+.bpm-mini-led { width: 9px; height: 9px; border-radius: 50%; background: #213b50; border: 1px solid var(--cyan-2); }
+.bpm-mini-led.kick { background: var(--grow); box-shadow: 0 0 8px rgba(147,240,107,.85); }
+.bpm-mini-led.kick.down { background: var(--heat); box-shadow: 0 0 8px rgba(255,124,61,.85); }
+
+/* pill sliding switch (replaces the thru checkbox) */
+.switch-field { gap: .4rem; cursor: pointer; }
+.pill { position: relative; display: inline-flex; }
+.pill input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
+.pill-track { width: 26px; height: 14px; border-radius: 8px; background: #213b50; border: 1.5px solid var(--cyan-2); position: relative; transition: background .15s, border-color .15s; }
+.pill-knob { position: absolute; top: 1px; left: 1px; width: 10px; height: 10px; border-radius: 50%; background: var(--ink-dim); transition: left .15s, background .15s; }
+.pill input:checked + .pill-track { background: rgba(147,240,107,.25); border-color: var(--grow); }
+.pill input:checked + .pill-track .pill-knob { left: 13px; background: var(--grow); box-shadow: 0 0 6px rgba(147,240,107,.6); }
+
+/* play/pause in the tempo pod */
+.bpm-play { display: block; margin: .15rem auto .25rem; font-family: var(--font-mono); font-size: .66rem; letter-spacing: .06em; color: var(--cyan); background: rgba(91,208,230,.08); border: 1.5px solid var(--cyan-2); border-radius: 7px; padding: .2rem .6rem; cursor: pointer; }
+.bpm-play:hover { color: var(--ink); border-color: var(--cyan); }
+
 /* ============================================================================
    NOTICE  (respect the [hidden] attribute!)
    ========================================================================== */
