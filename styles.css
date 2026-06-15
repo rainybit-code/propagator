@@ -179,8 +179,8 @@ body::before {
   grid-template-columns: minmax(150px, 1fr) minmax(340px, 470px) minmax(150px, 1fr);
   grid-template-areas:
     "modepod  pedal fxpod"
-    "synthpod pedal midipod"
-    "bpmpod   pedal modpod";
+    "synthpod pedal modpod"
+    "bpmpod   pedal midipod";
   gap: 1.1rem 1.7rem; align-items: start; justify-items: center;
   max-width: 1300px; width: 100%; margin: 0 auto; padding: 1.1rem 1.4rem .5rem;
   flex: 1 1 auto; min-height: 0; overflow: visible;  /* body handles no-scroll; let pods move full-width */
