@@ -644,6 +644,15 @@ function edgePoint(podEl, toward) {
   const x = toward.x > cx ? r.right - s.left : r.left - s.left;
   return { x, y: r.top + r.height / 2 - s.top };
 }
+// a point on the pedal's edge facing `toward`, at height y — keeps the wire in
+// the gutter so it never crosses the pedal face / footswitch LEDs
+function pedalEdge(toward, y) {
+  const pw = $('.pedal-wrap'); if (!pw) return { x: toward.x, y };
+  const r = pw.getBoundingClientRect(); const s = stage.getBoundingClientRect();
+  const cx = r.left + r.width / 2 - s.left;
+  const x = toward.x > cx ? r.right - s.left : r.left - s.left;
+  return { x, y };
+}
 function wirePath(a, b, active) {
   const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 + (active ? -5 : 7);
   const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -658,14 +667,12 @@ function drawWires() {
   wires.innerHTML = '';
   // Tempo pod is intentionally NOT wired (kept separate). Only the two toggle
   // breakouts get a connector, and they sit behind the pedal (z-order).
-  const segs = [
-    { anchor: center(toggleEls[2]), pod: $('#fxPod'), active: activeFx > 0 },
-  ];
-  for (const s of segs) {
-    if (!s.anchor || !s.pod || s.pod.classList.contains('closed')) continue;
-    const b = edgePoint(s.pod, s.anchor);
-    wirePath(s.anchor, b, s.active).forEach(n => wires.appendChild(n));
-  }
+  const fxPod = $('#fxPod');
+  const tog = center(toggleEls[2]);
+  if (!fxPod || fxPod.classList.contains('closed') || !tog) return;
+  const b = edgePoint(fxPod, tog);
+  const a = pedalEdge(b, tog.y);   // start at the pedal edge, not the toggle (stays in the gutter)
+  wirePath(a, b, activeFx > 0).forEach(n => wires.appendChild(n));
 }
 
 /* ===========================================================================
