@@ -1517,7 +1517,7 @@ buildViewMenu();
 function makeSwitches() {
   document.querySelectorAll('.seg, .lfo-dest, .seq-seg, .synth-wave').forEach(sel => {
     const n = sel.querySelectorAll(':scope > button').length;
-    if (n >= 2 && n <= 4) sel.classList.add('sw', 'sw-' + n);
+    if (n >= 2) sel.classList.add('sw', 'sw-' + n);   // all multi-option selectors -> switch styling
   });
 }
 makeSwitches();
