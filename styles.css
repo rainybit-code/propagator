@@ -698,6 +698,22 @@ button { font-family: var(--font-hand); }
 }
 
 /* ============================================================================
+   SILKSCREEN GROUPS — thin painted-on frame around a block of controls with the
+   label breaking the top line, like sections screened onto a synth's metal body
+   ========================================================================== */
+.silk-group {
+  position: relative; margin: .9rem 0 .25rem; padding: .7rem .55rem .55rem;
+  border: 1.3px solid rgba(223,230,232,.30); border-radius: 7px;
+}
+.silk-group:first-of-type { margin-top: .55rem; }
+.silk-label {
+  position: absolute; top: -7px; left: 10px; padding: 0 5px;
+  background: var(--paper);
+  font-family: var(--font-mono); font-size: .55rem; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; color: rgba(232,239,239,.9); text-shadow: 0 1px 1px rgba(0,0,0,.5);
+}
+
+/* ============================================================================
    DYMO LABELS — embossed label-maker tape for pod section captions, clearly
    distinct from the buttons: dark tape, bulky raised off-white text, hand-skew
    ========================================================================== */

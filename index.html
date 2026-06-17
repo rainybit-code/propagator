@@ -313,40 +313,46 @@
   <!-- ---- MODULATION: LFO1 + LFO2 + 3-slot matrix (shown in Synth mode) ---- -->
   <aside class="pod pod-matrix sketch" id="matrixPod">
     <div class="pod-tab">MODULATION</div>
-    <div class="mod-sub">LFO 1 · shape / rate / depth</div>
-    <div class="synth-wave" id="lfoShapeSeg" title="LFO1 shape">
-      <button data-w="0" class="on" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
-      <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
-      <button data-w="2" title="Saw"><svg viewBox="0 0 26 16"><path d="M3 13 L12 3 L12 13 L21 3 L21 13"/></svg></button>
-      <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
-    </div>
-    <div class="mod-knobs" id="modKnobs"><!-- LFO1 rate + depth injected by app.js --></div>
-    <div class="seq-row">
-      <span class="seq-cap">SYNC</span>
-      <div class="seq-seg" id="lfo1SyncSeg" title="LFO1 rate: free (Hz) or locked to the clock">
-        <button data-s="0" class="on">Hz</button><button data-s="1">1/1</button><button data-s="2">1/2</button><button data-s="3">1/4</button><button data-s="4">1/8</button><button data-s="5">16</button>
+    <div class="silk-group">
+      <span class="silk-label">LFO 1</span>
+      <div class="synth-wave" id="lfoShapeSeg" title="LFO1 shape">
+        <button data-w="0" class="on" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
+        <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
+        <button data-w="2" title="Saw"><svg viewBox="0 0 26 16"><path d="M3 13 L12 3 L12 13 L21 3 L21 13"/></svg></button>
+        <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
+      </div>
+      <div class="mod-knobs" id="modKnobs"><!-- LFO1 rate + depth injected by app.js --></div>
+      <div class="seq-row">
+        <span class="seq-cap">SYNC</span>
+        <div class="seq-seg" id="lfo1SyncSeg" title="LFO1 rate: free (Hz) or locked to the clock">
+          <button data-s="0" class="on">Hz</button><button data-s="1">1/1</button><button data-s="2">1/2</button><button data-s="3">1/4</button><button data-s="4">1/8</button><button data-s="5">16</button>
+        </div>
       </div>
     </div>
-    <div class="mod-sub">LFO 2 · shape / rate / depth</div>
-    <div class="synth-wave" id="lfo2ShapeSeg" title="LFO2 shape">
-      <button data-w="0" class="on" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
-      <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
-      <button data-w="2" title="Saw"><svg viewBox="0 0 26 16"><path d="M3 13 L12 3 L12 13 L21 3 L21 13"/></svg></button>
-      <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
-    </div>
-    <div class="mod-knobs" id="lfo2Knobs"><!-- LFO2 rate knob injected by app.js --></div>
-    <div class="seq-row">
-      <span class="seq-cap">SYNC</span>
-      <div class="seq-seg" id="lfo2SyncSeg" title="LFO2 rate: free (Hz) or locked to the clock">
-        <button data-s="0" class="on">Hz</button><button data-s="1">1/1</button><button data-s="2">1/2</button><button data-s="3">1/4</button><button data-s="4">1/8</button><button data-s="5">16</button>
+    <div class="silk-group">
+      <span class="silk-label">LFO 2</span>
+      <div class="synth-wave" id="lfo2ShapeSeg" title="LFO2 shape">
+        <button data-w="0" class="on" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
+        <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
+        <button data-w="2" title="Saw"><svg viewBox="0 0 26 16"><path d="M3 13 L12 3 L12 13 L21 3 L21 13"/></svg></button>
+        <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
+      </div>
+      <div class="mod-knobs" id="lfo2Knobs"><!-- LFO2 rate knob injected by app.js --></div>
+      <div class="seq-row">
+        <span class="seq-cap">SYNC</span>
+        <div class="seq-seg" id="lfo2SyncSeg" title="LFO2 rate: free (Hz) or locked to the clock">
+          <button data-s="0" class="on">Hz</button><button data-s="1">1/1</button><button data-s="2">1/2</button><button data-s="3">1/4</button><button data-s="4">1/8</button><button data-s="5">16</button>
+        </div>
       </div>
     </div>
-    <div class="mod-sub">PATCHBAY · drag source → destination</div>
-    <div class="patchbay" id="patchbay"><!-- SVG pins + cables injected by app.js --></div>
-    <div class="patch-inspect" id="patchInspect" hidden>
-      <span id="patchLabel">—</span>
-      <div id="patchAmtKnob" class="patch-knob" title="amount (bipolar) — drag, wheel, double-click to centre"></div>
-      <button id="patchRemove" title="remove this cable">✕</button>
+    <div class="silk-group">
+      <span class="silk-label">PATCHBAY</span>
+      <div class="patchbay" id="patchbay"><!-- SVG pins + cables injected by app.js --></div>
+      <div class="patch-inspect" id="patchInspect" hidden>
+        <span id="patchLabel">—</span>
+        <div id="patchAmtKnob" class="patch-knob" title="amount (bipolar) — drag, wheel, double-click to centre"></div>
+        <button id="patchRemove" title="remove this cable">✕</button>
+      </div>
     </div>
     <p class="pod-note">drag a cable from a source pin to a destination · click a cable to set amount / remove · up to 6</p>
   </aside>
