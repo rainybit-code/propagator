@@ -82,6 +82,8 @@ const knobValue = {
           1.00,
           0.00, 0.00],
 };
+// pristine defaults, captured before any preset/autosave restore — used by "new"
+const KNOB_DEFAULTS = { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice() };
 
 /* ===========================================================================
    KNOBS
@@ -633,6 +635,7 @@ $('#fxSeg').addEventListener('click', e => { const b = e.target.closest('button'
    ========================================================================= */
 let factoryPresets = [];                       // [{name, patch}] from presets.json
 const PRESET_KEY = 'propagator.presets';
+const AUTOSAVE_KEY = 'propagator.autosave';    // the live working patch, restored on reload
 
 function loadUserPresets() { try { return JSON.parse(localStorage.getItem(PRESET_KEY) || '{}'); } catch (_) { return {}; } }
 function saveUserPresets(obj) { try { localStorage.setItem(PRESET_KEY, JSON.stringify(obj)); } catch (_) {} }
@@ -759,6 +762,64 @@ $('#presetDel').addEventListener('click', () => {
   rebuildPresetList(); sel.value = '';
 });
 
+/* ---- autosave: persist the live patch so a reload doesn't reset everything ---- */
+let autosaveTimer = 0;
+function scheduleAutosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    try { localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(capturePatch())); } catch (_) {}
+  }, 300);
+}
+function restoreAutosave() {
+  try { const a = JSON.parse(localStorage.getItem(AUTOSAVE_KEY) || 'null'); if (a) applyPatch(a); } catch (_) {}
+}
+
+/* ---- start over: reset every bank + the sequence to defaults ---- */
+function newPatch() {
+  if (!confirm('Start a new patch? This resets the current settings to defaults.')) return;
+  KNOB_DEFAULTS.mode.forEach((v, i) => knobValue.mode[i] = v);
+  KNOB_DEFAULTS.fx.forEach((v, i) => knobValue.fx[i] = v);
+  KNOB_DEFAULTS.synth.forEach((v, i) => knobValue.synth[i] = v);
+  loadSeqState(SEQ_DEFAULT); refreshSeqUI();
+  setDelaySync(0);
+  setMode(0); setFx(0);
+  refreshKnobs(); refreshSegments();
+  pushAllCC();
+  $('#presetSel').value = '';
+  scheduleAutosave();
+}
+
+/* ---- export / import the user preset library as a JSON file ---- */
+function exportPresets() {
+  const u = loadUserPresets();
+  if (!Object.keys(u).length) { alert('No saved presets to export yet.'); return; }
+  const a = el('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(u, null, 2)], { type: 'application/json' }));
+  a.download = 'propagator-presets.json';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importPresets(file) {
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const obj = JSON.parse(r.result);
+      if (!obj || typeof obj !== 'object') throw new Error('not a preset file');
+      const u = loadUserPresets();
+      let n = 0;
+      for (const [name, patch] of Object.entries(obj)) if (patch && patch.knobs) { u[name] = patch; n++; }
+      if (!n) throw new Error('no valid presets found');
+      saveUserPresets(u); rebuildPresetList();
+      alert('Imported ' + n + ' preset' + (n === 1 ? '' : 's') + '.');
+    } catch (e) { alert('Could not import: ' + e.message); }
+  };
+  r.readAsText(file);
+}
+
+$('#presetNew').addEventListener('click', newPatch);
+$('#presetExport').addEventListener('click', exportPresets);
+$('#presetImport').addEventListener('click', () => $('#presetFile').click());
+$('#presetFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importPresets(f); e.target.value = ''; });
+
 async function loadFactoryPresets() {
   try {
     const res = await fetch('presets.json', { cache: 'no-cache' });
@@ -771,6 +832,7 @@ async function loadFactoryPresets() {
    WEB MIDI
    ========================================================================= */
 function sendCC(cc, v01) {
+  scheduleAutosave();   // any param change persists the live patch (even when offline)
   if (!midiOut) return;
   const v = Math.max(0, Math.min(127, Math.round(v01 * 127)));
   try { midiOut.send([0xB0 | (CONFIG.channel & 0x0f), cc, v]); } catch (_) {}
@@ -1301,7 +1363,7 @@ function serializeSeq() {
   return { scale: seq.scale, root: seq.root, oct: seq.oct, order: seq.order, gate: seq.gate,
            stepsPerBar: seq.stepsPerBar, bars: seq.bars, cells: [...seq.cells] };
 }
-function saveSeq() { try { localStorage.setItem(SEQ_KEY, JSON.stringify(serializeSeq())); } catch (_) {} }
+function saveSeq() { try { localStorage.setItem(SEQ_KEY, JSON.stringify(serializeSeq())); } catch (_) {} scheduleAutosave(); }
 function loadSeqState(o) {
   if (!o) return;
   ['scale', 'root', 'oct', 'order', 'gate', 'stepsPerBar', 'bars'].forEach(k => { if (typeof o[k] === 'number') seq[k] = o[k]; });
@@ -1320,6 +1382,7 @@ function refreshSeqUI() {
   const os = $('#seqOct');  if (os) os.value = seq.oct;
   buildBarTabs(); buildGrid();
 }
+const SEQ_DEFAULT = serializeSeq();   // pristine sequence (default riff) for "new"
 try { loadSeqState(JSON.parse(localStorage.getItem(SEQ_KEY) || 'null')); } catch (_) {}
 refreshSeqUI();
 
@@ -1709,6 +1772,7 @@ fwEl('fwClose').addEventListener('click', fwClose);
 
 /* ---------- go ---------- */
 setMode(0); setFx(0);
+restoreAutosave();       // bring back the last working patch (reload doesn't reset)
 setPlaying(false);       // default: tempo stopped
 setBpmPodClosed(true);   // default: tempo box closed -> shown as the top-bar mini
 updateMidiPod();
