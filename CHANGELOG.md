@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+
+## [v0.1.0] - 2026-06-17
 - Live on GitHub Pages: <https://rainybit-code.github.io/propagator/>.
 - Firmware flashing: the latest Spore build is now **bundled into the site at deploy
   time** (Pages Actions workflow fetches it server-side, dodging the release-asset
