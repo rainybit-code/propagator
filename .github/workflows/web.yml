@@ -1,0 +1,46 @@
+name: web
+
+# Validate the static site on every push/PR. Deployment to GitHub Pages is handled
+# separately by the Pages "deploy from branch" setting (main / root). On a version
+# tag (vX.Y.Z) we also attach a zipped copy of the site to a GitHub Release so a
+# pinned version can be self-hosted offline.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax-check app.js
+        run: node --check app.js
+
+      - name: Validate presets.json
+        run: node -e "JSON.parse(require('fs').readFileSync('presets.json','utf8')); console.log('presets.json OK')"
+
+      - name: Package site (tags only)
+        if: github.ref_type == 'tag'
+        run: |
+          mkdir -p dist
+          zip -r "dist/propagator-${GITHUB_REF_NAME}.zip" \
+            index.html app.js styles.css presets.json .nojekyll README.md LICENSE
+
+      - name: Publish Release (tags only)
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
