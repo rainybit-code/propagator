@@ -222,12 +222,6 @@
   <!-- ---- SYNTH voice editor (shown in Synth mode) ---- -->
   <aside class="pod pod-synth sketch" id="synthPod">
     <div class="pod-tab">SYNTH&nbsp;▸&nbsp;VOICE</div>
-    <div class="synth-wave" id="synthWaveSeg">
-      <button data-w="0" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
-      <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
-      <button data-w="2" class="on" title="Saw"><svg viewBox="0 0 26 16"><path d="M3 13 L12 3 L12 13 L21 3 L21 13"/></svg></button>
-      <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
-    </div>
     <div class="synth-knobs" id="synthKnobs"><!-- extended synth params injected by app.js --></div>
     <div class="voice-row">
       <span class="voice-cap">VOICES</span>
@@ -274,13 +268,22 @@
     <p class="pod-note">drag: ◦ attack · ◦ decay + sustain · ◦ release · filter-env amount + time</p>
   </aside>
 
-  <!-- ---- WAVE / DIGITAL voice engine (shown in Synth mode) ---- -->
+  <!-- ---- OSC: oscillator source (analog or wavetable) (shown in Synth mode) ---- -->
   <aside class="pod pod-wave sketch" id="wavePod">
-    <div class="pod-tab">WAVE&nbsp;▸&nbsp;DIGITAL</div>
+    <div class="pod-tab">OSC</div>
     <div class="seq-row">
       <span class="seq-cap">ENGINE</span>
       <div class="seq-seg" id="waveEngineSeg">
         <button data-e="0" class="on">Analog</button><button data-e="1">Wavetable</button>
+      </div>
+    </div>
+    <div class="seq-row" id="oscWaveRow">
+      <span class="seq-cap">WAVE</span>
+      <div class="synth-wave" id="synthWaveSeg">
+        <button data-w="0" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
+        <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
+        <button data-w="2" class="on" title="Saw"><svg viewBox="0 0 26 16"><path d="M3 13 L12 3 L12 13 L21 3 L21 13"/></svg></button>
+        <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
       </div>
     </div>
     <div id="wtControls">

@@ -311,7 +311,7 @@ function showEl(sel, show) { const e = $(sel); if (e) e.style.display = show ? '
 function updateEngineUI() {
   const wt = knobValue.synth[14] >= 0.5;   // wavetable engine?
   showEl('#wtControls', wt);               // table / scan / FM / fold
-  showEl('#synthWaveSeg', !wt);            // analog waveform selector
+  showEl('#oscWaveRow', !wt);              // analog waveform selector
   showEl('#unisonRow', !wt);               // unison is analog-only
   const note = $('#waveNote');
   if (note) note.textContent = wt
@@ -1342,7 +1342,7 @@ function loop(now) {
 const PODS = [
   { id: 'synthPod',  label: 'Voice',      group: 'VOICE',  col: 'L', synthOnly: true },
   { id: 'envPod',    label: 'Envelope',   group: 'VOICE',  col: 'L', synthOnly: true },
-  { id: 'wavePod',   label: 'Wavetable',  group: 'VOICE',  col: 'L', synthOnly: true },
+  { id: 'wavePod',   label: 'Oscillator', group: 'VOICE',  col: 'L', synthOnly: true },
   { id: 'matrixPod', label: 'Modulation', group: 'VOICE',  col: 'R', synthOnly: true },
   { id: 'seqPod',    label: 'Sequencer',  group: 'PLAY',   col: 'R' },
   { id: 'fxPod',     label: 'FX',         group: 'PLAY',   col: 'R' },
