@@ -12,9 +12,9 @@ uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
   the bootloader needs the WinUSB driver once (Zadig).
 
 <!--
-Releasing:
-  1. Move the Unreleased items under a new `## [vX.Y.Z] - YYYY-MM-DD` heading.
-  2. Commit, then tag:  git tag -a vX.Y.Z -m "vX.Y.Z"  &&  git push origin vX.Y.Z
-  3. The `web` workflow attaches propagator-vX.Y.Z.zip to the Release.
+Releasing:  scripts/release.sh vX.Y.Z      (or  scripts\release.ps1 vX.Y.Z  on Windows)
+  Add your notes under [Unreleased] above, then run that one command: it moves them
+  under a dated [vX.Y.Z] heading, commits, tags, and pushes. CI attaches
+  propagator-vX.Y.Z.zip and publishes a Release whose body IS this CHANGELOG section.
   (The live site auto-deploys from main on every push — releases are just pinned snapshots.)
 -->
