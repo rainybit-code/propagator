@@ -295,6 +295,20 @@
     <p class="pod-note">wavetable scan (sine→bright) · FM (carrier × ratio) · wavefold · sub kept for body</p>
   </aside>
 
+  <!-- ---- MOD MATRIX: LFO2 + 3 routing slots (shown in Synth mode) ---- -->
+  <aside class="pod pod-matrix sketch" id="matrixPod">
+    <div class="pod-tab">MOD&nbsp;▸&nbsp;MATRIX</div>
+    <div class="synth-wave" id="lfo2ShapeSeg" title="LFO2 shape">
+      <button data-w="0" class="on" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
+      <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
+      <button data-w="2" title="Saw"><svg viewBox="0 0 26 16"><path d="M3 13 L12 3 L12 13 L21 3 L21 13"/></svg></button>
+      <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
+    </div>
+    <div class="mod-knobs" id="lfo2Knobs"><!-- LFO2 rate knob injected by app.js --></div>
+    <div class="matrix-slots" id="matrixSlots"><!-- 3 source/dest/amount rows injected by app.js --></div>
+    <p class="pod-note">LFO2 + 3 routings · source → destination · bipolar amount</p>
+  </aside>
+
   <!-- ---- MOD / LFO (shown in Synth mode) ---- -->
   <aside class="pod pod-mod sketch" id="modPod">
     <div class="pod-tab">MOD&nbsp;▸&nbsp;LFO</div>

@@ -13,7 +13,7 @@ const CONFIG = {
   ccFxSelect:   17,                 // FX select   (0/64/127 -> off/delay/reverb)
   ccSysReboot:  119,                // CC 119 >=64 -> pedal reboots into DFU bootloader
 
-  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14 engine · 15 scan · 16 FM · 17 ratio · 18 fold · 19 bank · 20 drive · 21 filter · 22 unison · 23 sub-oct · 24 sub-wave
+  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14-19 wavetable · 20-24 tone · 25-26 LFO2 · 27-35 mod-matrix (3 slots src/dst/amt)
   synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
   modeOrder: ['synth', 'granular', 'generative'], // toggle 1: up / middle / down
   modeLabels: {
@@ -66,9 +66,11 @@ const knobValue = {
   // 0-7 voice · 8 wave · 9 LFO rate · 10 LFO depth · 11 LFO shape · 12 LFO dest · 13 voices(0.6->4)
   // 14 engine(0=analog) · 15 wt scan · 16 FM amt · 17 FM ratio · 18 fold · 19 wt bank
   // 20 drive · 21 filter(0=Svf) · 22 unison(0.33->2) · 23 sub oct · 24 sub wave
+  // 25 LFO2 rate · 26 LFO2 shape · 27-29 slot1 src/dst/amt · 30-32 slot2 · 33-35 slot3
   synth: [0.25, 0.40, 0.70, 0.30, 0.50, 0.30, 0.00, 0.60, 0.66, 0.30, 0.00, 0.00, 0.33, 0.60,
           0.00, 0.30, 0.00, 0.25, 0.00, 0.00,
-          0.00, 0.00, 0.33, 0.00, 0.00],
+          0.00, 0.00, 0.33, 0.00, 0.00,
+          0.30, 0.00, 0.00, 0.00, 0.50, 0.00, 0.00, 0.50, 0.00, 0.00, 0.50],
 };
 
 /* ===========================================================================
@@ -327,6 +329,41 @@ $('#waveBankSeg').addEventListener('click', e => {
 });
 
 /* ===========================================================================
+   MOD MATRIX pod — LFO2 + 3 routing slots (source -> destination -> amount).
+   ========================================================================= */
+const MOD_SRC = ['Off', 'LFO1', 'LFO2', 'Rnd', 'Sens'];   // -> synth param * 4
+const MOD_DST = ['Cutoff', 'Pitch', 'Scan', 'Drive', 'Sub', 'FM', 'Amp'];   // -> param * 6
+const lfo2KnobsEl = $('#lfo2Knobs');
+if (lfo2KnobsEl) lfo2KnobsEl.appendChild(makeKnob('synth', 25, 'LFO2 Rate'));
+$('#lfo2ShapeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const w = +b.dataset.w;   // SP_LFO2_SHAPE -> idx 26
+  document.querySelectorAll('#lfo2ShapeSeg button').forEach(x => x.classList.toggle('on', +x.dataset.w === w));
+  knobValue.synth[26] = w / 3; sendCC(CONFIG.ccSynth[26], w / 3);
+});
+const matrixRows = [];
+const matrixSlotsEl = $('#matrixSlots');
+if (matrixSlotsEl) [[27, 28, 29], [30, 31, 32], [33, 34, 35]].forEach(([si, di, ai]) => {
+  const row = el('div', 'matrix-row');
+  const ssel = el('select', 'seq-sel');
+  MOD_SRC.forEach((n, i) => { const o = el('option'); o.value = i; o.textContent = n; ssel.appendChild(o); });
+  const dsel = el('select', 'seq-sel');
+  MOD_DST.forEach((n, i) => { const o = el('option'); o.value = i; o.textContent = n; dsel.appendChild(o); });
+  ssel.addEventListener('change', e => { const v = +e.target.value / 4; knobValue.synth[si] = v; sendCC(CONFIG.ccSynth[si], v); });
+  dsel.addEventListener('change', e => { const v = +e.target.value / 6; knobValue.synth[di] = v; sendCC(CONFIG.ccSynth[di], v); });
+  row.append(ssel, dsel, makeKnob('synth', ai, 'Amt'));
+  matrixSlotsEl.appendChild(row);
+  matrixRows.push({ ssel, dsel, si, di });
+});
+function refreshMatrix() {
+  matrixRows.forEach(r => {
+    r.ssel.value = Math.round(knobValue.synth[r.si] * 4);
+    r.dsel.value = Math.round(knobValue.synth[r.di] * 6);
+  });
+}
+refreshMatrix();
+
+/* ===========================================================================
    TOGGLES (3-position)
    ========================================================================= */
 const toggleDefs = [
@@ -389,6 +426,7 @@ function setMode(m) {
   const mo = $('#modPod'); if (mo) mo.hidden = (m !== 0);
   const ev = $('#envPod'); if (ev) ev.hidden = (m !== 0);
   const wv = $('#wavePod'); if (wv) wv.hidden = (m !== 0);
+  const mx = $('#matrixPod'); if (mx) mx.hidden = (m !== 0);
   sendCC(CONFIG.ccModeSelect, m / 2);   // tell the pedal to switch mode
   if (m === 0) requestAnimationFrame(reflowPods);   // synth/mod pods just became visible
 }
@@ -445,6 +483,8 @@ function refreshSegments() {
   on('#synthUniSeg',    'u', Math.round(knobValue.synth[22] * 3) + 1);
   on('#subOctSeg',      'o', Math.round(knobValue.synth[23]));
   on('#subWaveSeg',     'w', Math.round(knobValue.synth[24]));
+  on('#lfo2ShapeSeg',   'w', Math.round(knobValue.synth[26] * 3));
+  refreshMatrix();
 }
 function pushAllCC() {
   CONFIG.ccMode.forEach((cc, i) => sendCC(cc, knobValue.mode[i]));
@@ -1131,7 +1171,7 @@ function loop(now) {
    (Starting a drag on a control inside is ignored so knobs/buttons still work.
    Uses left/top so the float animation's transform still composes; wires follow.)
    ========================================================================= */
-const POD_IDS = ['#synthPod', '#fxPod', '#bpmPod', '#midiPod', '#modPod', '#seqPod', '#envPod', '#wavePod'];
+const POD_IDS = ['#synthPod', '#fxPod', '#bpmPod', '#midiPod', '#modPod', '#seqPod', '#envPod', '#wavePod', '#matrixPod'];
 const SNAP_STEP = 28;   // pods tidy onto this px grid when released
 
 // apply a drag offset (dx,dy relative to the grid slot), then nudge the whole

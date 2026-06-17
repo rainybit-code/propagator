@@ -227,7 +227,8 @@ body::before {
     "modpod   pedal fxpod"
     "synthpod pedal midipod"
     "envpod   pedal seqpod"
-    "bpmpod   pedal wavepod";
+    "bpmpod   pedal wavepod"
+    ".        pedal matrixpod";
   gap: 1.1rem 1.7rem; align-items: start; justify-items: center;
   max-width: 1300px; width: 100%; margin: 0 auto; padding: 1.1rem 1.4rem .5rem;
   flex: 1 1 auto; min-height: 0; overflow: visible;  /* body handles no-scroll; let pods move full-width */
@@ -238,6 +239,7 @@ body::before {
 .pod-seq   { grid-area: seqpod;  justify-self: start; }
 .pod-env   { grid-area: envpod;  justify-self: end; }
 .pod-wave  { grid-area: wavepod; justify-self: start; }
+.pod-matrix{ grid-area: matrixpod; justify-self: start; }
 .pedal-wrap{ grid-area: pedal; position: relative; z-index: 5; }
 
 /* wires sit BEHIND the pedal (z-index 3 < pedal 5): only the gutter segment
@@ -278,6 +280,13 @@ body::before {
 .pod-wave  { transform: rotate(.8deg);   animation: float-b 9.5s ease-in-out infinite; max-width: 248px; }
 .pod-wave  .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
 .wave-knobs { display: flex; gap: .7rem; justify-content: center; margin: .45rem 0 .2rem; }
+.pod-matrix { transform: rotate(-.7deg); animation: float-a 8s ease-in-out infinite; max-width: 270px; }
+.pod-matrix .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
+.mod-knobs { display: flex; gap: .7rem; justify-content: center; margin: .4rem 0 .2rem; }
+.matrix-slots { display: flex; flex-direction: column; gap: .35rem; margin-top: .35rem; }
+.matrix-row { display: flex; align-items: center; gap: .35rem; }
+.matrix-row select { flex: 1 1 0; min-width: 0; }
+.matrix-row .knob { transform: scale(.78); margin: -.3rem -.2rem; }
 .pod-tab {
   position: absolute; top: -12px; left: 14px; font-family: var(--font-mono); font-size: .6rem; letter-spacing: .14em;
   padding: .14rem .5rem; border-radius: 5px; transform: rotate(-1.5deg); box-shadow: 0 2px 6px rgba(0,0,0,.35);
