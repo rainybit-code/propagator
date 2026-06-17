@@ -516,10 +516,11 @@ body::before {
 .knob.grabbing .knob-dial { cursor: grabbing; animation: none; box-shadow: inset 0 -3px 6px rgba(0,0,0,.55), 0 0 12px rgba(0,0,0,.4); }
 /* label sits in a little lit "window" like the real pedal (pods keep this theme) */
 .knob-label {
-  font-size: .58rem; line-height: 1.08; text-align: center; min-height: 2.3em; color: var(--ink);
-  display: flex; align-items: center; justify-content: center; padding: 2px 5px; border-radius: 6px;
-  background: linear-gradient(180deg, rgba(150,205,230,.15), rgba(91,208,230,.05));
-  border: 1px solid rgba(91,208,230,.22); box-shadow: inset 0 0 6px rgba(0,0,0,.35);
+  font-size: .58rem; line-height: 1.1; text-align: center; min-height: 2.3em; color: #e9eef0;
+  display: flex; align-items: center; justify-content: center; padding: 1.5px 5px; border-radius: 5px;
+  font-family: var(--font-mono); font-weight: 600; letter-spacing: .03em;
+  background: rgba(6,13,20,.55); border: 1px solid rgba(255,255,255,.07);
+  text-shadow: 0 1px 1px rgba(0,0,0,.6);
 }
 /* PEDAL knobs only: stenciled stickers slapped on, slightly crooked + worn */
 .knobs .knob-label {
