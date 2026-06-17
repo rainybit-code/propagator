@@ -13,7 +13,7 @@ const CONFIG = {
   ccFxSelect:   17,                 // FX select   (0/64/127 -> off/delay/reverb)
   ccSysReboot:  119,                // CC 119 >=64 -> pedal reboots into DFU bootloader
 
-  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14 engine · 15 scan · 16 FM · 17 FM-ratio · 18 fold · 19 wt-bank
+  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14 engine · 15 scan · 16 FM · 17 ratio · 18 fold · 19 bank · 20 drive · 21 filter · 22 unison · 23 sub-oct · 24 sub-wave
   synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
   modeOrder: ['synth', 'granular', 'generative'], // toggle 1: up / middle / down
   modeLabels: {
@@ -65,8 +65,10 @@ const knobValue = {
   fx:    [0.3, 0.4, 0.35, 0.7, 0.6, 0.7],
   // 0-7 voice · 8 wave · 9 LFO rate · 10 LFO depth · 11 LFO shape · 12 LFO dest · 13 voices(0.6->4)
   // 14 engine(0=analog) · 15 wt scan · 16 FM amt · 17 FM ratio · 18 fold · 19 wt bank
+  // 20 drive · 21 filter(0=Svf) · 22 unison(0.33->2) · 23 sub oct · 24 sub wave
   synth: [0.25, 0.40, 0.70, 0.30, 0.50, 0.30, 0.00, 0.60, 0.66, 0.30, 0.00, 0.00, 0.33, 0.60,
-          0.00, 0.30, 0.00, 0.25, 0.00, 0.00],
+          0.00, 0.30, 0.00, 0.25, 0.00, 0.00,
+          0.00, 0.00, 0.33, 0.00, 0.00],
 };
 
 /* ===========================================================================
@@ -141,6 +143,7 @@ CONFIG.fxLabels.forEach((lab, i) => fxKnobsEl.appendChild(makeKnob('fx', i, lab)
 const synthKnobsEl = $('#synthKnobs');
 const VOICE_KNOBS = [0, 1, 6, 7];   // Detune, Sub, Glide, Width
 VOICE_KNOBS.forEach(i => synthKnobsEl.appendChild(makeKnob('synth', i, CONFIG.synthLabels[i])));
+synthKnobsEl.appendChild(makeKnob('synth', 20, 'Drive'));   // pre-filter saturation (grit)
 /* waveform selector -> synth CC */
 $('#synthWaveSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
@@ -156,6 +159,34 @@ $('#voiceSeg').addEventListener('click', e => {
   document.querySelectorAll('#voiceSeg button').forEach(x => x.classList.toggle('on', +x.dataset.v === v));
   knobValue.synth[13] = (v - 1) / 5;
   sendCC(CONFIG.ccSynth[13], (v - 1) / 5);
+});
+/* filter type -> SP_FILTER (idx 21): 0 = clean Svf, 1 = fat Moog */
+$('#synthFilterSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const f = +b.dataset.f;
+  document.querySelectorAll('#synthFilterSeg button').forEach(x => x.classList.toggle('on', +x.dataset.f === f));
+  knobValue.synth[21] = f; sendCC(CONFIG.ccSynth[21], f);
+});
+/* unison -> SP_UNISON (idx 22): 1..4 osc map to (u-1)/3 */
+$('#synthUniSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const u = +b.dataset.u;
+  document.querySelectorAll('#synthUniSeg button').forEach(x => x.classList.toggle('on', +x.dataset.u === u));
+  knobValue.synth[22] = (u - 1) / 3; sendCC(CONFIG.ccSynth[22], (u - 1) / 3);
+});
+/* sub octave -> SP_SUB_OCT (idx 23): 0 = -1, 1 = -2 */
+$('#subOctSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const o = +b.dataset.o;
+  document.querySelectorAll('#subOctSeg button').forEach(x => x.classList.toggle('on', +x.dataset.o === o));
+  knobValue.synth[23] = o; sendCC(CONFIG.ccSynth[23], o);
+});
+/* sub waveform -> SP_SUB_WAVE (idx 24): 0 = square, 1 = sine */
+$('#subWaveSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const w = +b.dataset.w;
+  document.querySelectorAll('#subWaveSeg button').forEach(x => x.classList.toggle('on', +x.dataset.w === w));
+  knobValue.synth[24] = w; sendCC(CONFIG.ccSynth[24], w);
 });
 
 /* MOD / LFO pod: rate + depth knobs, shape + destination selectors */
@@ -410,6 +441,10 @@ function refreshSegments() {
   on('#waveEngineSeg', 'e', Math.round(knobValue.synth[14]));
   on('#waveRatioSeg',  'r', Math.round(knobValue.synth[17] * 3));
   on('#waveBankSeg',   'b', Math.round(knobValue.synth[19] * 4));
+  on('#synthFilterSeg', 'f', Math.round(knobValue.synth[21]));
+  on('#synthUniSeg',    'u', Math.round(knobValue.synth[22] * 3) + 1);
+  on('#subOctSeg',      'o', Math.round(knobValue.synth[23]));
+  on('#subWaveSeg',     'w', Math.round(knobValue.synth[24]));
 }
 function pushAllCC() {
   CONFIG.ccMode.forEach((cc, i) => sendCC(cc, knobValue.mode[i]));
