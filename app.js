@@ -483,10 +483,14 @@ function renderPatch() {
   for (let i = 0; i < 6; i++) {
     const s = slotGet(i); if (s.src === 0) continue;
     const d = cablePath(PB_SPIN, SRCY[s.src - 1], PB_DPIN, DSTY[s.dst]);
+    const mag = Math.abs(s.amt * 2 - 1);   // bipolar amount magnitude -> brightness
     const cg = elNS('g'); cg.setAttribute('class', 'patch-cable' + (i === patchSel ? ' sel' : ''));
+    const hit = elNS('path'); hit.setAttribute('d', d); hit.setAttribute('class', 'cab-hit');   // wide invisible click target
     const under = elNS('path'); under.setAttribute('d', d); under.setAttribute('class', 'cab-under');
     const core = elNS('path'); core.setAttribute('d', d); core.setAttribute('class', 'cab-core');
-    cg.append(under, core);
+    core.style.opacity = (0.28 + 0.72 * mag).toFixed(3);
+    core.style.strokeWidth = (1.7 + 1.7 * mag).toFixed(2);
+    cg.append(hit, under, core);
     cg.addEventListener('pointerdown', (e) => { e.stopPropagation(); patchSel = i; renderPatch(); });
     g.appendChild(cg);
   }
@@ -505,7 +509,7 @@ function renderPatch() {
   }
 }
 const patchAmtEl = $('#patchAmt');
-if (patchAmtEl) patchAmtEl.addEventListener('input', (e) => { if (patchSel < 0) return; slotSet(patchSel, null, null, (+e.target.value / 100 + 1) / 2); });
+if (patchAmtEl) patchAmtEl.addEventListener('input', (e) => { if (patchSel < 0) return; slotSet(patchSel, null, null, (+e.target.value / 100 + 1) / 2); renderPatch(); });
 const patchRmEl = $('#patchRemove');
 if (patchRmEl) patchRmEl.addEventListener('click', () => { if (patchSel < 0) return; slotSet(patchSel, 0, 0, 0.5); patchSel = -1; renderPatch(); });
 function refreshMatrix() { renderPatch(); }   // called on preset load
