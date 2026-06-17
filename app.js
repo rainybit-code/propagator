@@ -1,5 +1,5 @@
 /* ============================================================================
-   PROPAGATOR — control surface (WebMIDI)
+   PROPAGATOR (WebMIDI) — the cultivating surface for the Spore pedal
    The CC map is the contract with the firmware (see daisy repo
    docs/MIDI_PROTOCOL.md). Edit CONFIG to extend.
    ========================================================================== */

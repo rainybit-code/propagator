@@ -1,8 +1,8 @@
 /* ============================================================================
-   PROPAGATOR — hothouse control surface
+   PROPAGATOR — the cultivating surface for the Spore pedal
    Theme: hand-inked "boiling line" cartoon on cyanotype blueprint paper, with
    an old-school lit-panel pedal. Everything breathes, vibrates, and grows.
-   Layout mirrors the real Hothouse (Chase-Bliss style): 6 knobs in a row,
+   Layout mirrors the real Spore (Chase-Bliss style): 6 knobs in a row,
    3 toggles below, 2 footswitches at the bottom with an LED above each.
    ========================================================================== */
 
@@ -474,7 +474,7 @@ body::before {
   background: radial-gradient(78% 66% at 50% 30%, rgba(130,205,235,.12), rgba(10,30,50,0) 72%);
   box-shadow: inset 0 0 46px rgba(0,0,0,.55);
 }
-/* wordmark band (lower-middle, like the real Hothouse) */
+/* wordmark band (lower-middle, like the real Spore pedal) */
 .brandband {
   position: relative; z-index: 1; width: 86%; margin: .55rem 0; padding: .4rem 0 .35rem; text-align: center;
   background: linear-gradient(180deg, #07151f, #0b2338); border: 1.6px solid #050f18; border-radius: 9px;

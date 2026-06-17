@@ -1,6 +1,6 @@
-# 🌱 Propagator — Hothouse control surface
+# 🌱 Propagator
 
-A browser-based **WebMIDI** editor for the DIY **Hothouse** pedal (Electrosmith
+A browser-based **WebMIDI** editor for the DIY **Spore** pedal (Electrosmith
 Daisy Seed firmware lives in the separate `daisy` repo). Configure the pedal's
 parameters live over USB MIDI — no install, no drivers.
 
