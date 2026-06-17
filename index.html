@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PROPAGATOR — Hothouse control surface</title>
+<title>PROPAGATOR — surface</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e2c47'/%3E%3Cpath d='M16 27 V13' stroke='%2345c069' stroke-width='2.4'/%3E%3Cpath d='M16 17 q-9 -2 -10 -11 q9 0 10 9 q1 -9 10 -9 q-1 9 -10 11 Z' fill='%2393f06b'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -116,7 +116,11 @@
     <div class="conn-status" id="connStatus" data-state="off">
       <span class="dot"></span><span class="conn-label" id="connLabel">offline</span>
     </div>
-    <button id="resetLayout" class="tb-btn" title="reset breakout box positions">⟲ layout</button>
+    <div class="view-wrap">
+      <button id="viewBtn" class="tb-btn" title="show / hide panels">▦ view</button>
+      <div id="viewMenu" class="view-menu" hidden></div>
+    </div>
+    <button id="resetLayout" class="tb-btn" title="reset panels to the default layout">⟲ layout</button>
     <button id="dfuBtn" class="tb-btn tb-dfu" title="reboot the pedal into DFU mode for firmware flashing" disabled>⤓ dfu</button>
   </div>
 </header>

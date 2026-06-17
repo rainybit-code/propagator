@@ -594,20 +594,20 @@ function setMode(m) {
   const labels = CONFIG.modeLabels[name];
   modeKnobs.forEach((k, i) => { k._label.textContent = labels[i]; });
   if (stompNames[1]) stompNames[1].textContent = CONFIG.fsActions[name] || 'ACTION';  // FS2 = mode action
-  const sp = $('#synthPod'); if (sp) sp.hidden = (m !== 0);          // synth panels only in Synth mode
-  const ev = $('#envPod'); if (ev) ev.hidden = (m !== 0);
-  const wv = $('#wavePod'); if (wv) wv.hidden = (m !== 0);
-  const mx = $('#matrixPod'); if (mx) mx.hidden = (m !== 0);
   sendCC(CONFIG.ccModeSelect, m / 2);   // tell the pedal to switch mode
-  if (m === 0) requestAnimationFrame(reflowPods);   // synth/mod pods just became visible
+  if (typeof applyPods === 'function') applyPods();   // synth-only panels follow the mode
 }
 function setFx(f) {
   activeFx = f; toggleEls[2].dataset.pos = f; updateToggleVals(2, f);
   document.querySelectorAll('#fxSeg button').forEach(b => b.classList.toggle('on', +b.dataset.fx === f));
   const fp = $('#fxPod');
-  if (fp) { fp.dataset.active = f > 0 ? 'on' : 'off'; fp.classList.remove('closed'); }  // switch change re-opens its box
+  if (fp) fp.dataset.active = f > 0 ? 'on' : 'off';
+  // changing FX re-opens the FX panel (and ticks it in View)
+  if (typeof podShown !== 'undefined' && !podShown.fxPod) {
+    podShown.fxPod = true; const fm = podMeta('fxPod'); if (fm && fm._cb) fm._cb.checked = true; saveView();
+  }
   sendCC(CONFIG.ccFxSelect, f / 2);   // tell the pedal to switch FX
-  drawWires();
+  if (typeof applyPods === 'function') applyPods(); else drawWires();
 }
 $('#fxSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setFx(+b.dataset.fx); });
 
@@ -952,10 +952,7 @@ function onMidiMessage(e) {
 }
 
 function updateMidiPod() {
-  if (!midiPod) return;
-  const show = thru && midiIn && midiOut;
-  midiPod.hidden = !show;
-  if (show) requestAnimationFrame(reflowPods);   // clamp it on-screen when it appears
+  if (typeof applyPods === 'function') applyPods();   // MIDI-thru pod context may have changed
 }
 
 async function initMidi() {
@@ -1342,37 +1339,67 @@ function loop(now) {
    (Starting a drag on a control inside is ignored so knobs/buttons still work.
    Uses left/top so the float animation's transform still composes; wires follow.)
    ========================================================================= */
-const POD_IDS = ['#synthPod', '#fxPod', '#bpmPod', '#midiPod', '#seqPod', '#envPod', '#wavePod', '#matrixPod'];
-const SNAP_STEP = 28;   // pods tidy onto this px grid when released
-
-// apply a drag offset (dx,dy relative to the grid slot), then nudge the whole
-// box back inside the viewport (there's no scroll to recover an off-screen pod)
-function placePod(pod, dx, dy) {
-  pod.style.left = dx + 'px'; pod.style.top = dy + 'px';
-  const r = pod.getBoundingClientRect(), m = 8;
-  if (r.left < m) dx += m - r.left;
-  else if (r.right > innerWidth - m) dx += (innerWidth - m) - r.right;
-  if (r.top < m) dy += m - r.top;
-  else if (r.bottom > innerHeight - m) dy += (innerHeight - m) - r.bottom;
-  pod.style.left = dx + 'px'; pod.style.top = dy + 'px';
-  pod.dataset.dx = dx; pod.dataset.dy = dy;
+const PODS = [
+  { id: 'synthPod',  label: 'Voice',      group: 'VOICE',  col: 'L', synthOnly: true },
+  { id: 'envPod',    label: 'Envelope',   group: 'VOICE',  col: 'L', synthOnly: true },
+  { id: 'wavePod',   label: 'Wavetable',  group: 'VOICE',  col: 'L', synthOnly: true },
+  { id: 'matrixPod', label: 'Modulation', group: 'VOICE',  col: 'R', synthOnly: true },
+  { id: 'seqPod',    label: 'Sequencer',  group: 'PLAY',   col: 'R' },
+  { id: 'fxPod',     label: 'FX',         group: 'PLAY',   col: 'R' },
+  { id: 'bpmPod',    label: 'Tempo',      group: 'SYSTEM', col: 'L', tempo: true },
+  { id: 'midiPod',   label: 'MIDI Thru',  group: 'SYSTEM', col: 'R', needThru: true },
+];
+const VIEW_KEY = 'propagator.view';
+const VIEW_DEFAULT = { synthPod: true, envPod: false, wavePod: false, matrixPod: false, seqPod: false, fxPod: true, bpmPod: false, midiPod: true };
+let podShown = Object.assign({}, VIEW_DEFAULT);
+try { Object.assign(podShown, JSON.parse(localStorage.getItem(VIEW_KEY) || '{}')); } catch (_) {}
+function saveView() { try { localStorage.setItem(VIEW_KEY, JSON.stringify(podShown)); } catch (_) {} }
+function podMeta(id) { return PODS.find(p => p.id === id); }
+function podContextOK(p) {
+  if (p.synthOnly && activeMode !== 0) return false;
+  if (p.needThru && !(thru && midiIn && midiOut)) return false;
+  return true;
 }
-// snap the pod's on-screen position to the grid, then clamp into view
-function snapPod(pod) {
-  const r = pod.getBoundingClientRect();
-  let dx = parseFloat(pod.dataset.dx || '0'), dy = parseFloat(pod.dataset.dy || '0');
-  dx += Math.round(r.left / SNAP_STEP) * SNAP_STEP - r.left;
-  dy += Math.round(r.top / SNAP_STEP) * SNAP_STEP - r.top;
-  placePod(pod, dx, dy);
+// show/hide every pod from podShown + context, then re-stack
+function applyPods() {
+  PODS.forEach(p => {
+    const pe = $('#' + p.id); if (!pe) return;
+    const want = podShown[p.id] && podContextOK(p);
+    if (p.tempo) { setBpmPodClosed(!want); }
+    else { pe.hidden = false; pe.style.display = want ? '' : 'none'; }
+  });
+  layoutPods();
 }
-// keep every visible pod on-screen (after load / resize / mode change)
-function reflowPods() {
-  POD_IDS.forEach(id => {
-    const p = $(id);
-    if (p && p.offsetParent !== null) placePod(p, parseFloat(p.dataset.dx || '0'), parseFloat(p.dataset.dy || '0'));
+function applyPod(pe) {
+  const bx = +(pe.dataset.bx || 0), by = +(pe.dataset.by || 0);
+  const dx = +(pe.dataset.dx || 0), dy = +(pe.dataset.dy || 0);
+  pe.style.left = (bx + dx) + 'px'; pe.style.top = (by + dy) + 'px';
+}
+function clampPod(pe) {
+  const r = pe.getBoundingClientRect(), m = 8;
+  let dx = +(pe.dataset.dx || 0), dy = +(pe.dataset.dy || 0);
+  if (r.left < m) dx += m - r.left; else if (r.right > innerWidth - m) dx += (innerWidth - m) - r.right;
+  if (r.top < m) dy += m - r.top; else if (r.bottom > innerHeight - m) dy += (innerHeight - m) - r.bottom;
+  pe.dataset.dx = dx; pe.dataset.dy = dy; applyPod(pe);
+}
+function podLaidOut(pe) { return pe && getComputedStyle(pe).display !== 'none' && !pe.classList.contains('closed'); }
+// Absolute layout: stack visible pods top-down per column. Called on view/mode/
+// resize/reset only -- NOT on a pod's own content change, so nothing jumps.
+function layoutPods() {
+  const m = 14, gap = 14, sw = stage.clientWidth;
+  ['L', 'R'].forEach(side => {
+    let y = 14;
+    PODS.filter(p => p.col === side).forEach(p => {
+      const pe = $('#' + p.id); if (!pe || !podLaidOut(pe)) return;
+      pe.dataset.bx = side === 'L' ? m : (sw - pe.offsetWidth - m);
+      pe.dataset.by = y;
+      applyPod(pe); clampPod(pe);
+      y += pe.offsetHeight + gap;
+    });
   });
   drawWires();
 }
+const reflowPods = layoutPods;   // keep the name used by other callers
 
 function makeDraggable(pod) {
   if (!pod) return;
@@ -1380,49 +1407,57 @@ function makeDraggable(pod) {
   pod.addEventListener('pointerdown', (e) => {
     if (e.target.closest('.knob, button, input, label, .pill, .switch-field, .bpm-dial, select, .seg, .seq-grid, .env-graph, .patchbay, .beat-seed')) return;
     dragging = true; pod.classList.add('dragging');
-    sx = e.clientX; sy = e.clientY;
-    ox = parseFloat(pod.dataset.dx || '0'); oy = parseFloat(pod.dataset.dy || '0');
+    sx = e.clientX; sy = e.clientY; ox = +(pod.dataset.dx || 0); oy = +(pod.dataset.dy || 0);
     pod.setPointerCapture(e.pointerId); e.preventDefault();
   });
   pod.addEventListener('pointermove', (e) => {
     if (!dragging) return;
-    placePod(pod, ox + (e.clientX - sx), oy + (e.clientY - sy));   // clamps as you drag
+    pod.dataset.dx = ox + (e.clientX - sx); pod.dataset.dy = oy + (e.clientY - sy);
+    applyPod(pod); drawWires();
   });
   const end = (e) => {
     if (!dragging) return;
-    dragging = false;
-    snapPod(pod);                       // settle onto the snap grid (CSS eases it)
-    pod.classList.remove('dragging');
-    drawWires();
+    dragging = false; clampPod(pod); pod.classList.remove('dragging'); drawWires();
     try { pod.releasePointerCapture(e.pointerId); } catch (_) {}
   };
   pod.addEventListener('pointerup', end);
   pod.addEventListener('pointercancel', end);
 }
-POD_IDS.forEach(id => makeDraggable($(id)));
+PODS.forEach(p => makeDraggable($('#' + p.id)));
 
-/* close (×) / reset breakout boxes. A closed mode/fx box re-opens when its
-   corresponding toggle switch is changed (see setMode / setFx). */
-['#fxPod', '#bpmPod'].forEach(id => {
-  const p = $(id); if (!p) return;
-  const btn = el('button', 'pod-close'); btn.textContent = '×'; btn.title = 'close';
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (id === '#bpmPod') setBpmPodClosed(true);   // collapse tempo to the top-bar mini
-    else { p.classList.add('closed'); drawWires(); }
-  });
-  p.appendChild(btn);
+// × on every pod -> hide it (and untick it in the View menu)
+PODS.forEach(p => {
+  const pe = $('#' + p.id); if (!pe) return;
+  const btn = el('button', 'pod-close'); btn.textContent = '×'; btn.title = 'hide (re-open from View)';
+  btn.addEventListener('click', (e) => { e.stopPropagation(); podShown[p.id] = false; if (p._cb) p._cb.checked = false; saveView(); applyPods(); });
+  pe.appendChild(btn);
 });
+
 function resetPods() {
-  POD_IDS.forEach(id => {
-    const p = $(id); if (!p) return;
-    p.classList.remove('closed');
-    p.style.left = ''; p.style.top = ''; delete p.dataset.dx; delete p.dataset.dy;
-  });
-  setBpmPodClosed(true);   // default layout: tempo collapsed to the mini
-  requestAnimationFrame(reflowPods);   // re-clamp the default grid into view
+  PODS.forEach(p => { const pe = $('#' + p.id); if (pe) { delete pe.dataset.dx; delete pe.dataset.dy; } });
+  podShown = Object.assign({}, VIEW_DEFAULT); saveView();
+  PODS.forEach(p => { if (p._cb) p._cb.checked = !!podShown[p.id]; });
+  applyPods();
 }
 $('#resetLayout').addEventListener('click', resetPods);
+
+/* View menu — grouped show/hide toggles in the topbar */
+function buildViewMenu() {
+  const menu = $('#viewMenu'); if (!menu) return;
+  let lastGroup = '';
+  PODS.forEach(p => {
+    if (p.group !== lastGroup) { const h = el('div', 'view-group'); h.textContent = p.group; menu.appendChild(h); lastGroup = p.group; }
+    const lab = el('label', 'view-item');
+    const cb = el('input'); cb.type = 'checkbox'; cb.checked = !!podShown[p.id];
+    cb.addEventListener('change', () => { podShown[p.id] = cb.checked; saveView(); applyPods(); });
+    const sp = el('span'); sp.textContent = p.label;
+    lab.append(cb, sp); menu.appendChild(lab); p._cb = cb;
+  });
+}
+const viewBtn = $('#viewBtn');
+if (viewBtn) viewBtn.addEventListener('click', (e) => { e.stopPropagation(); const m = $('#viewMenu'); if (m) m.hidden = !m.hidden; });
+document.addEventListener('click', (e) => { const m = $('#viewMenu'); if (m && !m.hidden && !e.target.closest('.view-wrap')) m.hidden = true; });
+buildViewMenu();
 
 /* DFU: ask the pedal to reboot into the STM bootloader for flashing. The pedal
    then drops off USB-MIDI (expected) until it's reflashed / power-cycled. */
