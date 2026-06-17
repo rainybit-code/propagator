@@ -1522,6 +1522,15 @@ if (viewBtn) viewBtn.addEventListener('click', (e) => { e.stopPropagation(); con
 document.addEventListener('click', (e) => { const m = $('#viewMenu'); if (m && !m.hidden && !e.target.closest('.view-wrap')) m.hidden = true; });
 buildViewMenu();
 
+/* turn 2-4-option selectors into panel-style N-way switches (CSS does the look) */
+function makeSwitches() {
+  document.querySelectorAll('.seg, .lfo-dest, .seq-seg, .synth-wave').forEach(sel => {
+    const n = sel.querySelectorAll(':scope > button').length;
+    if (n >= 2 && n <= 4) sel.classList.add('sw', 'sw-' + n);
+  });
+}
+makeSwitches();
+
 /* DFU: ask the pedal to reboot into the STM bootloader for flashing. The pedal
    then drops off USB-MIDI (expected) until it's reflashed / power-cycled. */
 $('#dfuBtn').addEventListener('click', () => {

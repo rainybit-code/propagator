@@ -722,3 +722,32 @@ button { font-family: var(--font-hand); }
 .mod-sub:nth-of-type(2) { transform: rotate(1deg); }
 .env-cap { transform: rotate(-.9deg); }
 .env-cap:nth-of-type(2) { transform: rotate(1.3deg) translateY(1px); }
+
+/* ============================================================================
+   N-WAY SWITCHES — 2/3/4-option selectors styled as recessed panel switches
+   with the active position as a raised lever (replaces those selection boxes)
+   ========================================================================== */
+.sw {
+  display: flex; flex-direction: row; flex: 1 1 auto; gap: 2px; padding: 2.5px; width: auto;
+  border-radius: 8px; background: linear-gradient(180deg, #060c12, #0d1a25);
+  border: 1px solid #050a10; box-shadow: inset 0 1px 3px rgba(0,0,0,.7);
+}
+.seg.sw { flex-direction: row; margin-top: .2rem; }
+.sw button {
+  flex: 1 1 0; min-width: 0; border: 1px solid transparent; background: transparent;
+  color: var(--ink-dim); border-radius: 5px; padding: .26rem .3rem; cursor: pointer;
+  box-shadow: none; text-shadow: none; transition: background .12s, color .12s, box-shadow .12s;
+}
+.sw button:hover { color: var(--ink); transform: none; }
+.sw button.on {
+  color: #f4efe2; font-weight: 600;
+  background: linear-gradient(180deg, #323c46, #19222a);
+  border-color: #0a1219;
+  box-shadow: 0 1px 0 rgba(255,255,255,.14), 0 2px 4px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.1),
+              0 0 6px color-mix(in srgb, var(--mode) 28%, transparent);
+  text-shadow: 0 1px 1px rgba(0,0,0,.6);
+}
+.sw.seg-fx button.on {
+  box-shadow: 0 1px 0 rgba(255,255,255,.14), 0 2px 4px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.1),
+              0 0 6px color-mix(in srgb, var(--heat) 30%, transparent);
+}
