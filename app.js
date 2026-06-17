@@ -388,7 +388,7 @@ const PB_LX = 6, PB_RX = PB_W - 6 - PADW;             // left / right pad x
 const PB_SPIN = PB_LX + PADW + 3, PB_DPIN = PB_RX - 3; // pin (cable anchor) x
 const SRCY = [14, 43, 72, 101, 130, 158];              // 6 source pads (LFO1/2/Rnd/Sens/Vel/Key)
 const DSTY = [14, 32, 50, 68, 86, 104, 122, 140, 158]; // 9 destination pads
-let patchSvg = null, patchSel = -1;
+let patchSvg = null, patchSel = -1, patchKnobApply = null;
 
 function slotGet(i) {
   const b = PATCH_SLOTS[i];
@@ -488,6 +488,7 @@ function renderPatch() {
     const hit = elNS('path'); hit.setAttribute('d', d); hit.setAttribute('class', 'cab-hit');   // wide invisible click target
     const under = elNS('path'); under.setAttribute('d', d); under.setAttribute('class', 'cab-under');
     const core = elNS('path'); core.setAttribute('d', d); core.setAttribute('class', 'cab-core');
+    core.style.stroke = (s.amt * 2 - 1) >= 0 ? 'var(--mode)' : 'var(--blue)';   // + green / - blue
     core.style.opacity = (0.28 + 0.72 * mag).toFixed(3);
     core.style.strokeWidth = (1.7 + 1.7 * mag).toFixed(2);
     cg.append(hit, under, core);
@@ -505,11 +506,28 @@ function renderPatch() {
     const ok = patchSel >= 0 && slotGet(patchSel).src > 0;
     ins.hidden = !ok;
     if (ok) { const s = slotGet(patchSel); $('#patchLabel').textContent = MOD_SRC[s.src] + ' → ' + MOD_DST[s.dst];
-      const a = $('#patchAmt'); if (a) a.value = Math.round((s.amt * 2 - 1) * 100); }
+      if (patchKnobApply) patchKnobApply(); }
   }
 }
-const patchAmtEl = $('#patchAmt');
-if (patchAmtEl) patchAmtEl.addEventListener('input', (e) => { if (patchSel < 0) return; slotSet(patchSel, null, null, (+e.target.value / 100 + 1) / 2); renderPatch(); });
+/* bipolar AMOUNT knob for the currently-selected cable (value display = +/-100) */
+(function buildPatchKnob() {
+  const host = $('#patchAmtKnob'); if (!host) return;
+  const k = el('div', 'knob'); const dial = el('div', 'knob-dial'); dial.appendChild(el('span', 'knob-pointer'));
+  const lab = el('div', 'knob-label'); lab.textContent = 'AMT';
+  const val = el('div', 'knob-val'); val.textContent = '+0';
+  k.append(dial, lab, val); host.appendChild(k);
+  const cur = () => patchSel >= 0 ? slotGet(patchSel).amt : 0.5;
+  const apply = () => { const v = cur(); dial.style.setProperty('--rot', rotFor(v) + 'deg'); const b = Math.round((v * 2 - 1) * 100); val.textContent = (b > 0 ? '+' : '') + b; };
+  patchKnobApply = apply;
+  let sy = 0, sv = 0, drag = false;
+  const set = (v) => { v = Math.max(0, Math.min(1, v)); slotSet(patchSel, null, null, v); apply(); renderPatch(); };
+  dial.addEventListener('pointerdown', (e) => { if (patchSel < 0) return; drag = true; sy = e.clientY; sv = cur(); try { dial.setPointerCapture(e.pointerId); } catch (_) {} e.preventDefault(); });
+  dial.addEventListener('pointermove', (e) => { if (drag) set(sv + (sy - e.clientY) / 200); });
+  const end = (e) => { if (!drag) return; drag = false; try { dial.releasePointerCapture(e.pointerId); } catch (_) {} };
+  dial.addEventListener('pointerup', end); dial.addEventListener('pointercancel', end);
+  dial.addEventListener('dblclick', () => { if (patchSel >= 0) set(0.5); });   // centre = 0
+  dial.addEventListener('wheel', (e) => { if (patchSel < 0) return; e.preventDefault(); set(cur() - Math.sign(e.deltaY) * 0.02); }, { passive: false });
+})();
 const patchRmEl = $('#patchRemove');
 if (patchRmEl) patchRmEl.addEventListener('click', () => { if (patchSel < 0) return; slotSet(patchSel, 0, 0, 0.5); patchSel = -1; renderPatch(); });
 function refreshMatrix() { renderPatch(); }   // called on preset load

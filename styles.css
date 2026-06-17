@@ -307,9 +307,13 @@ body::before {
 .cab-hit   { fill: none; stroke: transparent; stroke-width: 16; stroke-linecap: round; pointer-events: stroke; }
 .cab-under { fill: none; stroke: #0a1620; stroke-width: 5; stroke-linecap: round; opacity: .6; pointer-events: none; }
 .cab-core  { fill: none; stroke: var(--mode); stroke-width: 2.6; stroke-linecap: round; pointer-events: none; }
-.patch-cable.sel .cab-core { stroke: var(--heat); }
-.patch-cable:hover .cab-core { stroke: var(--ink); }
+/* core stroke colour is set inline: + = green (--mode), - = blue (--blue). Selection glows. */
+.patch-cable.sel { filter: drop-shadow(0 0 3px var(--heat)) drop-shadow(0 1.5px 1px rgba(0,0,0,.5)); }
+.patch-cable.sel .cab-under { stroke: var(--heat); opacity: .85; }
 .cab-temp { fill: none; stroke: #e8eef0; stroke-width: 2.4; stroke-linecap: round; opacity: .8; pointer-events: none; }
+/* inspector amount knob (compact) */
+.patch-knob { display: flex; }
+.patch-knob .knob { transform: scale(.66); transform-origin: center; margin: -.5rem -.25rem; }
 .patch-inspect { display: flex; align-items: center; gap: .4rem; margin-top: .25rem; font-family: var(--font-mono); font-size: .58rem; color: var(--ink-dim); }
 .patch-inspect[hidden] { display: none; }
 .patch-inspect input[type=range] { flex: 1 1 auto; min-width: 0; accent-color: var(--heat); }
