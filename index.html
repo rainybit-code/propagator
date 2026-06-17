@@ -264,10 +264,13 @@
         </div>
       </div>
       <div class="voice-row">
-        <span class="voice-cap">SUB</span>
+        <span class="voice-cap">SUB OCT</span>
         <div class="lfo-dest" id="subOctSeg" title="Sub-oscillator octave">
           <button data-o="0" class="on">-1</button><button data-o="1">-2</button>
         </div>
+      </div>
+      <div class="voice-row">
+        <span class="voice-cap">SUB WAV</span>
         <div class="lfo-dest" id="subWaveSeg" title="Sub-oscillator shape">
           <button data-w="0" class="on">Sqr</button><button data-w="1">Sin</button>
         </div>
@@ -321,7 +324,7 @@
       </div>
       <div class="wave-knobs" id="waveKnobs"><!-- scan / FM / fold knobs injected by app.js --></div>
       <div class="seq-row">
-        <span class="seq-cap">FM&nbsp;×</span>
+        <span class="seq-cap">RATIO</span>
         <div class="seq-seg" id="waveRatioSeg">
           <button data-r="0">½</button><button data-r="1" class="on">1</button><button data-r="2">2</button><button data-r="3">3</button>
         </div>
@@ -423,11 +426,8 @@
     </div>
     <div class="silk-group">
       <span class="silk-label">CLOCK</span>
-      <div class="voice-row">
-        <span class="voice-cap">MASTER</span>
-        <div class="lfo-dest" id="clockMasterSeg" title="who is tempo master for the pedal">
-          <button data-c="off" class="on">Off</button><button data-c="gui">GUI</button><button data-c="in">MIDI-in</button>
-        </div>
+      <div class="lfo-dest" id="clockMasterSeg" title="who is tempo master for the pedal">
+        <button data-c="off" class="on">Off</button><button data-c="gui">GUI</button><button data-c="in">MIDI</button>
       </div>
     </div>
     <p class="pod-note">drag the number · scroll to fine-tune · CLOCK sends tempo to the pedal (delay sync)</p>
@@ -464,7 +464,9 @@
       <select class="seq-sel" id="seqOct" title="octave">
         <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
       </select>
-      <span class="seq-cap seq-cap-sm">GATE</span>
+    </div>
+    <div class="seq-row">
+      <span class="seq-cap">GATE</span>
       <div class="seq-seg" id="seqGateSeg">
         <button data-g="0">¼</button><button data-g="1" class="on">½</button><button data-g="2">¾</button><button data-g="3">F</button>
       </div>
@@ -474,7 +476,9 @@
       <div class="seq-seg" id="seqStepsSeg">
         <button data-p="8">8</button><button data-p="16" class="on">16</button>
       </div>
-      <span class="seq-cap seq-cap-sm">BARS</span>
+    </div>
+    <div class="seq-row">
+      <span class="seq-cap">BARS</span>
       <div class="seq-seg" id="seqBarsSeg">
         <button data-b="1" class="on">1</button><button data-b="2">2</button><button data-b="4">4</button>
       </div>

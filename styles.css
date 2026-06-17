@@ -283,7 +283,7 @@ body::before {
 .pod-wave  { transform: rotate(.8deg);   animation: float-b 9.5s ease-in-out infinite; max-width: 248px; }
 .pod-wave  .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
 .wave-knobs { display: flex; gap: .7rem; justify-content: center; margin: .45rem 0 .2rem; }
-.pod-matrix { transform: rotate(-.7deg); animation: float-a 8s ease-in-out infinite; max-width: 270px; }
+.pod-matrix { transform: rotate(-.7deg); animation: float-a 8s ease-in-out infinite; max-width: 330px; }
 .pod-matrix .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
 .mod-knobs { display: flex; gap: .7rem; justify-content: center; margin: .4rem 0 .2rem; }
 .mod-sub { font-family: var(--font-mono); font-size: .54rem; letter-spacing: .12em; color: var(--ink-dim); text-transform: uppercase; margin: .55rem 0 .2rem; opacity: .85; }
@@ -300,7 +300,7 @@ body::before {
 .patch-jack.src.used .jack-hole { fill: var(--mode); }
 .patch-jack.dst.used .jack-hole { fill: var(--heat); }
 /* labels matching the silkscreen group style (off-white, mono, uppercase) */
-.patch-silk { fill: #e8eef0; font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; pointer-events: none; text-shadow: 0 1px 1px rgba(0,0,0,.5); }
+.patch-silk { fill: #eef3f4; font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; pointer-events: none; text-shadow: 0 1px 1px rgba(0,0,0,.6); }
 /* cables drawn as wire: dark casing + bright core, round ends, soft shadow */
 .patch-cable { cursor: pointer; filter: drop-shadow(0 1.5px 1px rgba(0,0,0,.5)); }
 .cab-hit   { fill: none; stroke: transparent; stroke-width: 16; stroke-linecap: round; pointer-events: stroke; }
@@ -704,7 +704,7 @@ button { font-family: var(--font-hand); }
    label breaking the top line, like sections screened onto a synth's metal body
    ========================================================================== */
 .silk-group {
-  position: relative; margin: .95rem 0 .3rem; padding: .75rem .55rem .6rem;
+  position: relative; margin: .95rem 0 .3rem; padding: .7rem .4rem .55rem;
   border: 2.2px solid rgba(226,233,235,.42); border-radius: 8px;
 }
 .silk-group:first-of-type { margin-top: .55rem; }

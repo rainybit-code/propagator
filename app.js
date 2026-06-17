@@ -407,8 +407,8 @@ updateLfoSyncUI();
 const NSV = 'http://www.w3.org/2000/svg';
 const elNS = (n) => document.createElementNS(NSV, n);
 const PATCH_SLOTS = [27, 30, 33, 36, 39, 42];   // synth idx of each slot's SRC (DST=+1, AMT=+2)
-const PB_W = 282, PB_H = 176;
-const PB_SPIN = 56, PB_DPIN = PB_W - 56;               // source / dest jack centres (cable anchors)
+const PB_W = 300, PB_H = 176;
+const PB_SPIN = 66, PB_DPIN = PB_W - 66;               // source / dest jack centres (cable anchors)
 const SRCY = [14, 43, 72, 101, 130, 158];              // 6 source jacks (LFO1/2/Rnd/Sens/Vel/Key)
 const DSTY = [14, 32, 50, 68, 86, 104, 122, 140, 158]; // 9 destination jacks
 let patchSvg = null, patchSel = -1, patchKnobApply = null;
