@@ -209,18 +209,24 @@
   <!-- ---- right pod: FX bank (branches from Toggle 3) ---- -->
   <aside class="pod pod-right sketch" id="fxPod" data-anchor="t3" data-active="off">
     <div class="pod-tab">FX&nbsp;▸&nbsp;TOGGLE&nbsp;3</div>
-    <div class="seg seg-fx" id="fxSeg">
-      <button data-fx="0" class="on">Off</button>
-      <button data-fx="1">Delay</button>
-      <button data-fx="2">Reverb</button>
+    <div class="silk-group">
+      <span class="silk-label">EFFECT</span>
+      <div class="seg seg-fx" id="fxSeg">
+        <button data-fx="0" class="on">Off</button>
+        <button data-fx="1">Delay</button>
+        <button data-fx="2">Reverb</button>
+      </div>
     </div>
-    <div class="fx-knobs" id="fxKnobs">
-      <!-- 6 fx knobs injected by app.js -->
-    </div>
-    <div class="voice-row">
-      <span class="voice-cap">DLY&nbsp;SYNC</span>
-      <div class="lfo-dest" id="delaySyncSeg" title="lock delay time to the clock tempo">
-        <button data-s="0" class="on">Off</button><button data-s="1">¼</button><button data-s="2">⅛</button><button data-s="3">⅛.</button><button data-s="4">16</button>
+    <div class="silk-group">
+      <span class="silk-label">PARAMS</span>
+      <div class="fx-knobs" id="fxKnobs">
+        <!-- 6 fx knobs injected by app.js -->
+      </div>
+      <div class="voice-row">
+        <span class="voice-cap">DLY&nbsp;SYNC</span>
+        <div class="lfo-dest" id="delaySyncSeg" title="lock delay time to the clock tempo">
+          <button data-s="0" class="on">Off</button><button data-s="1">¼</button><button data-s="2">⅛</button><button data-s="3">⅛.</button><button data-s="4">16</button>
+        </div>
       </div>
     </div>
   </aside>
@@ -228,37 +234,43 @@
   <!-- ---- SYNTH voice editor (shown in Synth mode) ---- -->
   <aside class="pod pod-synth sketch" id="synthPod">
     <div class="pod-tab">SYNTH&nbsp;▸&nbsp;VOICE</div>
-    <div class="synth-knobs" id="synthKnobs"><!-- extended synth params injected by app.js --></div>
-    <div class="voice-row">
-      <span class="voice-cap">VOICES</span>
-      <div class="lfo-dest" id="voiceSeg" title="Polyphony — 1 = mono, fewer voices frees CPU">
-        <button data-v="1">1</button>
-        <button data-v="2">2</button>
-        <button data-v="3">3</button>
-        <button data-v="4" class="on">4</button>
-        <button data-v="5">5</button>
-        <button data-v="6">6</button>
-      </div>
+    <div class="silk-group">
+      <span class="silk-label">TONE</span>
+      <div class="synth-knobs" id="synthKnobs"><!-- extended synth params injected by app.js --></div>
     </div>
-    <div class="voice-row">
-      <span class="voice-cap">FILTER</span>
-      <div class="lfo-dest" id="synthFilterSeg" title="Clean 2-pole Svf vs fat 4-pole Moog">
-        <button data-f="0" class="on">Clean</button><button data-f="1">Fat</button>
+    <div class="silk-group">
+      <span class="silk-label">VOICING</span>
+      <div class="voice-row">
+        <span class="voice-cap">VOICES</span>
+        <div class="lfo-dest" id="voiceSeg" title="Polyphony — 1 = mono, fewer voices frees CPU">
+          <button data-v="1">1</button>
+          <button data-v="2">2</button>
+          <button data-v="3">3</button>
+          <button data-v="4" class="on">4</button>
+          <button data-v="5">5</button>
+          <button data-v="6">6</button>
+        </div>
       </div>
-    </div>
-    <div class="voice-row" id="unisonRow">
-      <span class="voice-cap">UNISON</span>
-      <div class="lfo-dest" id="synthUniSeg" title="Stacked detuned oscillators (super-saw)">
-        <button data-u="1">1</button><button data-u="2" class="on">2</button><button data-u="3">3</button><button data-u="4">4</button>
+      <div class="voice-row">
+        <span class="voice-cap">FILTER</span>
+        <div class="lfo-dest" id="synthFilterSeg" title="Clean 2-pole Svf vs fat 4-pole Moog">
+          <button data-f="0" class="on">Clean</button><button data-f="1">Fat</button>
+        </div>
       </div>
-    </div>
-    <div class="voice-row">
-      <span class="voice-cap">SUB</span>
-      <div class="lfo-dest" id="subOctSeg" title="Sub-oscillator octave">
-        <button data-o="0" class="on">-1</button><button data-o="1">-2</button>
+      <div class="voice-row" id="unisonRow">
+        <span class="voice-cap">UNISON</span>
+        <div class="lfo-dest" id="synthUniSeg" title="Stacked detuned oscillators (super-saw)">
+          <button data-u="1">1</button><button data-u="2" class="on">2</button><button data-u="3">3</button><button data-u="4">4</button>
+        </div>
       </div>
-      <div class="lfo-dest" id="subWaveSeg" title="Sub-oscillator shape">
-        <button data-w="0" class="on">Sqr</button><button data-w="1">Sin</button>
+      <div class="voice-row">
+        <span class="voice-cap">SUB</span>
+        <div class="lfo-dest" id="subOctSeg" title="Sub-oscillator octave">
+          <button data-o="0" class="on">-1</button><button data-o="1">-2</button>
+        </div>
+        <div class="lfo-dest" id="subWaveSeg" title="Sub-oscillator shape">
+          <button data-w="0" class="on">Sqr</button><button data-w="1">Sin</button>
+        </div>
       </div>
     </div>
     <p class="pod-note">super-saw unison · drive · clean/fat filter · sub octave + shape · glide</p>
@@ -281,22 +293,26 @@
   <!-- ---- OSC: oscillator source (analog or wavetable) (shown in Synth mode) ---- -->
   <aside class="pod pod-wave sketch" id="wavePod">
     <div class="pod-tab">OSC</div>
-    <div class="seq-row">
-      <span class="seq-cap">ENGINE</span>
-      <div class="seq-seg" id="waveEngineSeg">
-        <button data-e="0" class="on">Analog</button><button data-e="1">Wavetable</button>
+    <div class="silk-group">
+      <span class="silk-label">ENGINE</span>
+      <div class="seq-row">
+        <span class="seq-cap">TYPE</span>
+        <div class="seq-seg" id="waveEngineSeg">
+          <button data-e="0" class="on">Analog</button><button data-e="1">Wavetable</button>
+        </div>
+      </div>
+      <div class="seq-row" id="oscWaveRow">
+        <span class="seq-cap">WAVE</span>
+        <div class="synth-wave" id="synthWaveSeg">
+          <button data-w="0" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
+          <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
+          <button data-w="2" class="on" title="Saw"><svg viewBox="0 0 26 16"><path d="M3 13 L12 3 L12 13 L21 3 L21 13"/></svg></button>
+          <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
+        </div>
       </div>
     </div>
-    <div class="seq-row" id="oscWaveRow">
-      <span class="seq-cap">WAVE</span>
-      <div class="synth-wave" id="synthWaveSeg">
-        <button data-w="0" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
-        <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
-        <button data-w="2" class="on" title="Saw"><svg viewBox="0 0 26 16"><path d="M3 13 L12 3 L12 13 L21 3 L21 13"/></svg></button>
-        <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
-      </div>
-    </div>
-    <div id="wtControls">
+    <div class="silk-group" id="wtControls">
+      <span class="silk-label">WAVETABLE</span>
       <div class="seq-row">
         <span class="seq-cap">TABLE</span>
         <div class="seq-seg" id="waveBankSeg">
@@ -366,41 +382,52 @@
   <!-- ---- MIDI thru breakout (shown when thru is on AND both devices connected) ---- -->
   <aside class="pod pod-midi sketch" id="midiPod" hidden>
     <div class="pod-tab">MIDI&nbsp;▸&nbsp;THRU</div>
-    <div class="midi-act-row">
-      <span class="midi-act" id="midiAct"></span>
-      <span class="midi-act-label">activity · last in:</span>
+    <div class="silk-group">
+      <span class="silk-label">MONITOR</span>
+      <div class="midi-act-row">
+        <span class="midi-act" id="midiAct"></span>
+        <span class="midi-act-label">activity · last in:</span>
+      </div>
+      <div class="midi-last" id="midiLast">—</div>
     </div>
-    <div class="midi-last" id="midiLast">—</div>
-    <div class="midi-filters">
-      <div class="midi-filters-head">forward to pedal:</div>
-      <label class="switch-field"><span>notes</span><span class="pill"><input type="checkbox" id="fNotes" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
-      <label class="switch-field"><span>CC</span><span class="pill"><input type="checkbox" id="fCC" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
-      <label class="switch-field"><span>other</span><span class="pill"><input type="checkbox" id="fOther" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
-      <label class="switch-field"><span>clock</span><span class="pill"><input type="checkbox" id="fClock" /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
-      <label class="switch-field" title="set the tempo from the input device's MIDI clock"><span>sync bpm</span><span class="pill"><input type="checkbox" id="fSync" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
+    <div class="silk-group">
+      <span class="silk-label">FORWARD</span>
+      <div class="midi-filters">
+        <label class="switch-field"><span>notes</span><span class="pill"><input type="checkbox" id="fNotes" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
+        <label class="switch-field"><span>CC</span><span class="pill"><input type="checkbox" id="fCC" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
+        <label class="switch-field"><span>other</span><span class="pill"><input type="checkbox" id="fOther" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
+        <label class="switch-field"><span>clock</span><span class="pill"><input type="checkbox" id="fClock" /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
+        <label class="switch-field" title="set the tempo from the input device's MIDI clock"><span>sync bpm</span><span class="pill"><input type="checkbox" id="fSync" checked /><span class="pill-track"><span class="pill-knob"></span></span></span></label>
+      </div>
     </div>
   </aside>
 
   <!-- ---- bottom pod: BPM + live beat ---- -->
   <aside class="pod pod-bpm sketch" id="bpmPod" data-anchor="led">
     <div class="pod-tab">TEMPO</div>
-    <button class="bpm-play" id="bpmPlay" title="play / pause the beat">⏸ playing</button>
-    <div class="bpm-main">
-      <div class="bpm-dial" id="bpmDial">
-        <span class="bpm-num" id="bpmNum">96</span>
-        <span class="bpm-unit">BPM</span>
-      </div>
-      <div class="beat-stack">
-        <div class="beat-seed" id="beatSeed" title="the beat">
-          <svg viewBox="0 0 48 48"><path class="seed-leaf" d="M24 44 C8 36 8 14 24 6 C40 14 40 36 24 44 Z"/><line class="seed-vein" x1="24" y1="10" x2="24" y2="40"/></svg>
+    <div class="silk-group">
+      <span class="silk-label">TRANSPORT</span>
+      <button class="bpm-play" id="bpmPlay" title="play / pause the beat">⏸ playing</button>
+      <div class="bpm-main">
+        <div class="bpm-dial" id="bpmDial">
+          <span class="bpm-num" id="bpmNum">96</span>
+          <span class="bpm-unit">BPM</span>
         </div>
-        <div class="beat-dots" id="beatDots"><i></i><i></i><i></i><i></i></div>
+        <div class="beat-stack">
+          <div class="beat-seed" id="beatSeed" title="the beat">
+            <svg viewBox="0 0 48 48"><path class="seed-leaf" d="M24 44 C8 36 8 14 24 6 C40 14 40 36 24 44 Z"/><line class="seed-vein" x1="24" y1="10" x2="24" y2="40"/></svg>
+          </div>
+          <div class="beat-dots" id="beatDots"><i></i><i></i><i></i><i></i></div>
+        </div>
       </div>
     </div>
-    <div class="voice-row">
-      <span class="voice-cap">CLOCK</span>
-      <div class="lfo-dest" id="clockMasterSeg" title="who is tempo master for the pedal">
-        <button data-c="off" class="on">Off</button><button data-c="gui">GUI</button><button data-c="in">MIDI-in</button>
+    <div class="silk-group">
+      <span class="silk-label">CLOCK</span>
+      <div class="voice-row">
+        <span class="voice-cap">MASTER</span>
+        <div class="lfo-dest" id="clockMasterSeg" title="who is tempo master for the pedal">
+          <button data-c="off" class="on">Off</button><button data-c="gui">GUI</button><button data-c="in">MIDI-in</button>
+        </div>
       </div>
     </div>
     <p class="pod-note">drag the number · scroll to fine-tune · CLOCK sends tempo to the pedal (delay sync)</p>
@@ -409,15 +436,20 @@
   <!-- ---- bottom-right pod: step SEQUENCER (web-side piano-roll) ---- -->
   <aside class="pod pod-seq sketch" id="seqPod">
     <div class="pod-tab">SEQ&nbsp;▸&nbsp;ROLL</div>
-    <div class="seq-head">
-      <button class="seq-run" id="seqRun" title="run / stop the sequencer">▶ run</button>
-      <div class="seq-bartabs" id="seqBarTabs" title="bar to edit" hidden></div>
-      <div class="seq-mini">
-        <button id="seqClear" title="clear all notes">clr</button>
-        <button id="seqSeed" title="randomize">⚄</button>
+    <div class="silk-group">
+      <span class="silk-label">ROLL</span>
+      <div class="seq-head">
+        <button class="seq-run" id="seqRun" title="run / stop the sequencer">▶ run</button>
+        <div class="seq-bartabs" id="seqBarTabs" title="bar to edit" hidden></div>
+        <div class="seq-mini">
+          <button id="seqClear" title="clear all notes">clr</button>
+          <button id="seqSeed" title="randomize">⚄</button>
+        </div>
       </div>
+      <div class="seq-grid" id="seqGrid" title="click or drag to place notes"></div>
     </div>
-    <div class="seq-grid" id="seqGrid" title="click or drag to place notes"></div>
+    <div class="silk-group">
+      <span class="silk-label">PATTERN</span>
     <div class="seq-row">
       <span class="seq-cap">SCALE</span>
       <div class="seq-seg" id="seqScaleSeg">
@@ -452,6 +484,7 @@
       <div class="seq-seg" id="seqOrderSeg">
         <button data-o="0" class="on" title="forward">→</button><button data-o="1" title="backward">←</button><button data-o="2" title="ping-pong">↔</button><button data-o="3" title="random">⚄</button>
       </div>
+    </div>
     </div>
     <p class="pod-note">piano-roll → MIDI notes · scale-locked rows · 1–4 bar loop · synced to tempo / MIDI clock</p>
   </aside>

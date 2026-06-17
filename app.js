@@ -407,11 +407,10 @@ updateLfoSyncUI();
 const NSV = 'http://www.w3.org/2000/svg';
 const elNS = (n) => document.createElementNS(NSV, n);
 const PATCH_SLOTS = [27, 30, 33, 36, 39, 42];   // synth idx of each slot's SRC (DST=+1, AMT=+2)
-const PB_W = 260, PB_H = 176, PADW = 64, PADH = 15;
-const PB_LX = 6, PB_RX = PB_W - 6 - PADW;             // left / right pad x
-const PB_SPIN = PB_LX + PADW + 3, PB_DPIN = PB_RX - 3; // pin (cable anchor) x
-const SRCY = [14, 43, 72, 101, 130, 158];              // 6 source pads (LFO1/2/Rnd/Sens/Vel/Key)
-const DSTY = [14, 32, 50, 68, 86, 104, 122, 140, 158]; // 9 destination pads
+const PB_W = 282, PB_H = 176;
+const PB_SPIN = 56, PB_DPIN = PB_W - 56;               // source / dest jack centres (cable anchors)
+const SRCY = [14, 43, 72, 101, 130, 158];              // 6 source jacks (LFO1/2/Rnd/Sens/Vel/Key)
+const DSTY = [14, 32, 50, 68, 86, 104, 122, 140, 158]; // 9 destination jacks
 let patchSvg = null, patchSel = -1, patchKnobApply = null;
 
 function slotGet(i) {
@@ -436,37 +435,29 @@ function buildPatch() {
   patchSvg = elNS('svg');
   patchSvg.setAttribute('viewBox', `0 0 ${PB_W} ${PB_H}`);
   patchSvg.setAttribute('class', 'patch-svg');
-  const defs = elNS('defs');
-  defs.innerHTML = '<linearGradient id="pbsteel" x1="0" y1="0" x2="0" y2="1">' +
-    '<stop offset="0" stop-color="#3a434b"/><stop offset="0.5" stop-color="#212931"/><stop offset="1" stop-color="#2b343b"/></linearGradient>';
-  patchSvg.appendChild(defs);
-  const plate = elNS('rect');
-  plate.setAttribute('x', 1); plate.setAttribute('y', 1); plate.setAttribute('width', PB_W - 2); plate.setAttribute('height', PB_H - 2);
-  plate.setAttribute('rx', 9); plate.setAttribute('class', 'patch-metal');
-  patchSvg.appendChild(plate);
 
   const cables = elNS('g'); cables.setAttribute('class', 'patch-cables');
   patchSvg.appendChild(cables); patchSvg._cables = cables;
 
-  const pad = (kind, i, cy, label) => {
-    const g = elNS('g'); g.setAttribute('class', 'patch-pad ' + kind); g.dataset.kind = kind; g.dataset.i = i;
-    const x = kind === 'src' ? PB_LX : PB_RX;
-    const r = elNS('rect'); r.setAttribute('x', x); r.setAttribute('y', cy - PADH / 2);
-    r.setAttribute('width', PADW); r.setAttribute('height', PADH); r.setAttribute('rx', 4); r.setAttribute('class', 'patch-plate');
-    const t = elNS('text'); t.setAttribute('x', x + PADW / 2); t.setAttribute('y', cy + 3);
-    t.setAttribute('text-anchor', 'middle'); t.setAttribute('class', 'patch-silk'); t.textContent = label;
-    const pin = elNS('circle'); pin.setAttribute('cx', kind === 'src' ? PB_SPIN : PB_DPIN); pin.setAttribute('cy', cy);
-    pin.setAttribute('r', 3.4); pin.setAttribute('class', 'patch-pin');
+  // each source/destination is a panel jack (metal nut + hole) with a label beside it
+  const jack = (kind, i, cy, label) => {
+    const g = elNS('g'); g.setAttribute('class', 'patch-jack ' + kind); g.dataset.kind = kind; g.dataset.i = i;
+    const jx = kind === 'src' ? PB_SPIN : PB_DPIN;
     const tip = elNS('title'); tip.textContent = (kind === 'src' ? PATCH_SRC_TIP : PATCH_DST_TIP)[i] || label;
-    g.append(tip, r, t, pin); patchSvg.appendChild(g);
+    const nut = elNS('circle'); nut.setAttribute('cx', jx); nut.setAttribute('cy', cy); nut.setAttribute('r', 6.5); nut.setAttribute('class', 'jack-nut');
+    const hole = elNS('circle'); hole.setAttribute('cx', jx); hole.setAttribute('cy', cy); hole.setAttribute('r', 2.8); hole.setAttribute('class', 'jack-hole');
+    const t = elNS('text'); t.setAttribute('y', cy + 3); t.setAttribute('class', 'patch-silk'); t.textContent = label;
+    if (kind === 'src') { t.setAttribute('x', 6); t.setAttribute('text-anchor', 'start'); }
+    else { t.setAttribute('x', PB_W - 6); t.setAttribute('text-anchor', 'end'); }
+    g.append(tip, nut, hole, t); patchSvg.appendChild(g);
   };
-  MOD_SRC.slice(1).forEach((n, i) => pad('src', i, SRCY[i], n));
-  MOD_DST.forEach((n, j) => pad('dst', j, DSTY[j], n));
+  MOD_SRC.slice(1).forEach((n, i) => jack('src', i, SRCY[i], n));
+  MOD_DST.forEach((n, j) => jack('dst', j, DSTY[j], n));
   host.appendChild(patchSvg);
 
-  // drag a wire from either side (source pad/dot OR destination pad/dot)
+  // drag a wire from either jack (source or destination)
   patchSvg.addEventListener('pointerdown', (e) => {
-    const g = e.target.closest('.patch-pad');
+    const g = e.target.closest('.patch-jack');
     if (!g) { if (patchSel !== -1) { patchSel = -1; renderPatch(); } return; }   // empty space -> deselect
     const startKind = g.dataset.kind, startI = +g.dataset.i;
     const ax = startKind === 'src' ? PB_SPIN : PB_DPIN;
@@ -479,7 +470,7 @@ function buildPatch() {
       try { patchSvg.releasePointerCapture(ev.pointerId); } catch (_) {}
       temp.remove();
       const t = document.elementFromPoint(ev.clientX, ev.clientY);
-      const tg = t && t.closest ? t.closest('.patch-pad') : null;
+      const tg = t && t.closest ? t.closest('.patch-jack') : null;
       if (tg && tg.dataset.kind !== startKind) {                     // connect to the opposite side
         const srcI = startKind === 'src' ? startI : +tg.dataset.i;
         const dstI = startKind === 'src' ? +tg.dataset.i : startI;
@@ -512,7 +503,7 @@ function renderPatch() {
     cg.addEventListener('pointerdown', (e) => { e.stopPropagation(); patchSel = i; renderPatch(); });
     g.appendChild(cg);
   }
-  patchSvg.querySelectorAll('.patch-pad').forEach((p) => {
+  patchSvg.querySelectorAll('.patch-jack').forEach((p) => {
     const kind = p.dataset.kind, i = +p.dataset.i; let used = false;
     for (let s = 0; s < 6; s++) { const sl = slotGet(s); if (sl.src === 0) continue;
       if (kind === 'src' && sl.src - 1 === i) used = true; if (kind === 'dst' && sl.dst === i) used = true; }
