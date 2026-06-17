@@ -450,7 +450,8 @@ function buildPatch() {
 
   // drag a wire from either side (source pad/dot OR destination pad/dot)
   patchSvg.addEventListener('pointerdown', (e) => {
-    const g = e.target.closest('.patch-pad'); if (!g) return;
+    const g = e.target.closest('.patch-pad');
+    if (!g) { if (patchSel !== -1) { patchSel = -1; renderPatch(); } return; }   // empty space -> deselect
     const startKind = g.dataset.kind, startI = +g.dataset.i;
     const ax = startKind === 'src' ? PB_SPIN : PB_DPIN;
     const ay = startKind === 'src' ? SRCY[startI] : DSTY[startI];
