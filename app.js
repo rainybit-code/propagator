@@ -387,10 +387,18 @@ function wireLfoSync(sel, idx) {
     const s = +b.dataset.s;
     document.querySelectorAll(sel + ' button').forEach(x => x.classList.toggle('on', +x.dataset.s === s));
     knobValue.synth[idx] = s / 5; sendCC(CONFIG.ccSynth[idx], s / 5);
+    updateLfoSyncUI();
   });
 }
 wireLfoSync('#lfo1SyncSeg', 46);
 wireLfoSync('#lfo2SyncSeg', 47);
+// when an LFO is clock-synced, its free-rate knob does nothing -> dim it
+function updateLfoSyncUI() {
+  const dim = (idx, synced) => { const k = document.querySelector('.knob[data-bank="synth"][data-idx="' + idx + '"]'); if (k) k.classList.toggle('knob-off', synced); };
+  dim(9,  knobValue.synth[46] > 0.05);   // LFO1 rate
+  dim(25, knobValue.synth[47] > 0.05);   // LFO2 rate
+}
+updateLfoSyncUI();
 /* ---- PATCHBAY: a silkscreen-on-metal patch field. Source pads (left) and
    destination pads (right) are white silkscreen labels; faint guide lines show
    every possible connection. Drag from a source pad to a destination pad to lay
@@ -674,6 +682,7 @@ function refreshSegments() {
   on('#lfo2SyncSeg',    's', Math.round(knobValue.synth[47] * 5));
   refreshMatrix();
   updateEngineUI();
+  updateLfoSyncUI();
 }
 function pushAllCC() {
   CONFIG.ccMode.forEach((cc, i) => sendCC(cc, knobValue.mode[i]));
