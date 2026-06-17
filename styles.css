@@ -669,8 +669,34 @@ button { font-family: var(--font-hand); }
    RESPONSIVE
    ========================================================================== */
 @media (max-width: 980px) {
-  .stage { grid-template-columns: 1fr; grid-template-areas: "pedal" "modpod" "synthpod" "fxpod" "midipod" "bpmpod"; }
-  .pod-synth, .pod-right, .pod-bpm, .pod-mod, .pod-midi { justify-self: center; }
   .pedal { transform: scale(.92); }
-  .wires { display: none; }
+}
+
+/* ============================================================================
+   LIT SELECTOR BUTTONS — dim, warm, non-uniform "bulb-backlit display" glow
+   (overrides the earlier bright fills; uses color-mix, Chrome/Edge)
+   ========================================================================== */
+.synth-wave button.on,
+.lfo-dest button.on,
+.seg button.on,
+.seq-seg button.on,
+.seq-bartabs button.on,
+.seq-run.on {
+  color: color-mix(in srgb, var(--mode) 86%, #fff4e0);
+  font-weight: 600;
+  border-color: color-mix(in srgb, var(--mode) 50%, #0a1620);
+  background:
+    radial-gradient(135% 150% at 30% 22%, rgba(255,238,200,.10), rgba(0,0,0,0) 58%),
+    color-mix(in srgb, var(--mode) 20%, #0a1620);
+  box-shadow: inset 0 0 8px rgba(0,0,0,.5), 0 0 5px color-mix(in srgb, var(--mode) 30%, transparent);
+  text-shadow: 0 0 5px color-mix(in srgb, var(--mode) 50%, transparent);
+}
+.seg-fx button.on {
+  color: color-mix(in srgb, var(--heat-2) 92%, #fff4e0);
+  border-color: color-mix(in srgb, var(--heat) 50%, #160c06);
+  background:
+    radial-gradient(135% 150% at 30% 22%, rgba(255,226,188,.10), rgba(0,0,0,0) 58%),
+    color-mix(in srgb, var(--heat) 22%, #160c06);
+  box-shadow: inset 0 0 8px rgba(0,0,0,.5), 0 0 5px color-mix(in srgb, var(--heat) 30%, transparent);
+  text-shadow: 0 0 5px color-mix(in srgb, var(--heat) 50%, transparent);
 }
