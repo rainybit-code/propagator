@@ -24,11 +24,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  # Canonical Pages structure: a build job that produces the single "github-pages"
+  # artifact, and a separate deploy job that consumes it. Keeping deploy isolated
+  # avoids the "multiple artifacts named github-pages" error you hit when a combined
+  # job is re-run (the re-run re-uploads while the first attempt's artifact lingers).
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -55,5 +56,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
       - id: deploy
         uses: actions/deploy-pages@v4
