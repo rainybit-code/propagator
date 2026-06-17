@@ -826,7 +826,7 @@ function updateConn() {
   else if (midi) setStatus('ready', n ? 'pick a device' : 'no devices');
   else setStatus('off', 'offline');
   $('#footMidi').textContent = midi ? `${midi.outputs.size} out · ${midi.inputs.size} in` : 'no MIDI';
-  const dfu = $('#dfuBtn'); if (dfu) dfu.disabled = !midiOut;   // only when a pedal is connected
+  const dfu = $('#dfuBtn'); if (dfu) dfu.disabled = false;   // flash wizard works via WebUSB even without MIDI
   // THRU only makes sense with a distinct IN + OUT — disable the toggle otherwise
   const thruEl = $('#midiThru'); const thruField = thruEl && thruEl.closest('.switch-field');
   const thruOk = !!(midiIn && midiOut && !sameInOut());
