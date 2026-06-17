@@ -733,7 +733,7 @@ button { font-family: var(--font-hand); }
    -------------------------------------------------------------------------- */
 .pod-matrix, .pod-synth {
   display: flex; flex-wrap: wrap; gap: 0 .55rem;
-  align-content: flex-start; align-items: flex-start;
+  align-content: flex-start; align-items: stretch;   /* side-by-side boxes match the taller one's height */
 }
 .pod-matrix { max-width: 440px; }
 .pod-synth  { max-width: 430px; }
