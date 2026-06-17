@@ -321,6 +321,12 @@
       <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
     </div>
     <div class="mod-knobs" id="modKnobs"><!-- LFO1 rate + depth injected by app.js --></div>
+    <div class="seq-row">
+      <span class="seq-cap">SYNC</span>
+      <div class="seq-seg" id="lfo1SyncSeg" title="LFO1 rate: free (Hz) or locked to the clock">
+        <button data-s="0" class="on">Hz</button><button data-s="1">1/1</button><button data-s="2">1/2</button><button data-s="3">1/4</button><button data-s="4">1/8</button><button data-s="5">16</button>
+      </div>
+    </div>
     <div class="mod-sub">LFO 2 · shape / rate / depth</div>
     <div class="synth-wave" id="lfo2ShapeSeg" title="LFO2 shape">
       <button data-w="0" class="on" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
@@ -329,6 +335,12 @@
       <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
     </div>
     <div class="mod-knobs" id="lfo2Knobs"><!-- LFO2 rate knob injected by app.js --></div>
+    <div class="seq-row">
+      <span class="seq-cap">SYNC</span>
+      <div class="seq-seg" id="lfo2SyncSeg" title="LFO2 rate: free (Hz) or locked to the clock">
+        <button data-s="0" class="on">Hz</button><button data-s="1">1/1</button><button data-s="2">1/2</button><button data-s="3">1/4</button><button data-s="4">1/8</button><button data-s="5">16</button>
+      </div>
+    </div>
     <div class="mod-sub">PATCHBAY · drag source → destination</div>
     <div class="patchbay" id="patchbay"><!-- SVG pins + cables injected by app.js --></div>
     <div class="patch-inspect" id="patchInspect" hidden>

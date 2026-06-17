@@ -15,7 +15,7 @@ const CONFIG = {
   ccDelaySync:  15,                 // delay tempo-sync division (0 off / ¼ / ⅛ / ⅛. / 16)
   ccSysReboot:  119,                // CC 119 >=64 -> pedal reboots into DFU bootloader
 
-  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14-19 wavetable · 20-24 tone · 25-26 LFO2 · 27-44 matrix (6 slots) · 45 LFO2 depth
+  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14-19 wavetable · 20-24 tone · 25-26 LFO2 · 27-44 matrix · 45 LFO2 depth · 46 LFO1 sync · 47 LFO2 sync
   synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
   modeOrder: ['synth', 'granular', 'generative'], // toggle 1: up / middle / down
   modeLabels: {
@@ -54,6 +54,7 @@ const midiPod   = $('#midiPod'), midiAct = $('#midiAct'), midiLast = $('#midiLas
 let midi = null, midiOut = null, midiIn = null;
 let thru = true;   // forward IN-device messages to the pedal (OUT)
 let clockMaster = 'off';   // tempo master for the pedal: 'off' | 'gui' | 'in'
+let delaySyncIdx = 0;      // delay tempo-sync division (part of a patch/preset)
 // clock OFF by default: the pedal ignores incoming clock, and relaying a 24-PPQN
 // stream floods its USB-MIDI input and can cause it to miss notes. (Beat sync in
 // the web UI is unaffected — it reads clock locally, before this forward filter.)
@@ -76,7 +77,8 @@ const knobValue = {
           0.30, 0.00,
           0.00, 0.00, 0.50, 0.00, 0.00, 0.50, 0.00, 0.00, 0.50,
           0.00, 0.00, 0.50, 0.00, 0.00, 0.50, 0.00, 0.00, 0.50,
-          1.00],
+          1.00,
+          0.00, 0.00],
 };
 
 /* ===========================================================================
@@ -378,6 +380,17 @@ $('#lfo2ShapeSeg').addEventListener('click', e => {
   document.querySelectorAll('#lfo2ShapeSeg button').forEach(x => x.classList.toggle('on', +x.dataset.w === w));
   knobValue.synth[26] = w / 3; sendCC(CONFIG.ccSynth[26], w / 3);
 });
+/* LFO clock-sync selectors (free Hz vs locked division) */
+function wireLfoSync(sel, idx) {
+  $(sel).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const s = +b.dataset.s;
+    document.querySelectorAll(sel + ' button').forEach(x => x.classList.toggle('on', +x.dataset.s === s));
+    knobValue.synth[idx] = s / 5; sendCC(CONFIG.ccSynth[idx], s / 5);
+  });
+}
+wireLfoSync('#lfo1SyncSeg', 46);
+wireLfoSync('#lfo2SyncSeg', 47);
 /* ---- PATCHBAY: a silkscreen-on-metal patch field. Source pads (left) and
    destination pads (right) are white silkscreen labels; faint guide lines show
    every possible connection. Drag from a source pad to a destination pad to lay
@@ -627,7 +640,7 @@ function saveUserPresets(obj) { try { localStorage.setItem(PRESET_KEY, JSON.stri
 
 function capturePatch() {
   return {
-    v: 1, mode: activeMode, fx: activeFx,
+    v: 1, mode: activeMode, fx: activeFx, delaySync: delaySyncIdx,
     knobs: { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice() },
     seq: serializeSeq(),
   };
@@ -657,6 +670,8 @@ function refreshSegments() {
   on('#subOctSeg',      'o', Math.round(knobValue.synth[23]));
   on('#subWaveSeg',     'w', Math.round(knobValue.synth[24]));
   on('#lfo2ShapeSeg',   'w', Math.round(knobValue.synth[26] * 3));
+  on('#lfo1SyncSeg',    's', Math.round(knobValue.synth[46] * 5));
+  on('#lfo2SyncSeg',    's', Math.round(knobValue.synth[47] * 5));
   refreshMatrix();
   updateEngineUI();
 }
@@ -675,6 +690,7 @@ function applyPatch(p) {
   setMode(typeof p.mode === 'number' ? p.mode : activeMode);   // sends mode select + updates UI
   setFx(typeof p.fx === 'number' ? p.fx : activeFx);           // sends fx select
   refreshKnobs(); refreshSegments();
+  if (typeof p.delaySync === 'number') setDelaySync(p.delaySync);   // restore delay sync
   if (p.seq) { loadSeqState(p.seq); refreshSeqUI(); }   // restore the sequence too
   pushAllCC();   // push every param to the pedal
 }
@@ -810,6 +826,11 @@ function updateConn() {
   else setStatus('off', 'offline');
   $('#footMidi').textContent = midi ? `${midi.outputs.size} out · ${midi.inputs.size} in` : 'no MIDI';
   const dfu = $('#dfuBtn'); if (dfu) dfu.disabled = !midiOut;   // only when a pedal is connected
+  // THRU only makes sense with a distinct IN + OUT — disable the toggle otherwise
+  const thruEl = $('#midiThru'); const thruField = thruEl && thruEl.closest('.switch-field');
+  const thruOk = !!(midiIn && midiOut && !sameInOut());
+  if (thruEl) thruEl.disabled = !thruOk;
+  if (thruField) thruField.classList.toggle('disabled', !thruOk);
   updateMidiPod();
 }
 function selectOut(id) {
@@ -1082,12 +1103,12 @@ function setClockMaster(c) {
   try { localStorage.setItem('propagator.clock', c); } catch (_) {}
 }
 $('#clockMasterSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setClockMaster(b.dataset.c); });
-$('#delaySyncSeg').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  const s = +b.dataset.s;
+function setDelaySync(s) {
+  delaySyncIdx = s;
   document.querySelectorAll('#delaySyncSeg button').forEach(x => x.classList.toggle('on', +x.dataset.s === s));
   sendCC(CONFIG.ccDelaySync, s / 4);
-});
+}
+$('#delaySyncSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setDelaySync(+b.dataset.s); });
 try { setClockMaster(localStorage.getItem('propagator.clock') || 'off'); } catch (_) { setClockMaster('off'); }
 
 let beatIndex = 0, nextBeat = performance.now();
@@ -1388,7 +1409,7 @@ const PODS = [
   { id: 'seqPod',    label: 'Sequencer',  group: 'PLAY',   col: 'R' },
   { id: 'fxPod',     label: 'FX',         group: 'PLAY',   col: 'R' },
   { id: 'bpmPod',    label: 'Tempo',      group: 'SYSTEM', col: 'L', tempo: true },
-  { id: 'midiPod',   label: 'MIDI Thru',  group: 'SYSTEM', col: 'R', needThru: true },
+  { id: 'midiPod',   label: 'MIDI Thru',  group: 'SYSTEM', col: 'R' },
 ];
 const VIEW_KEY = 'propagator.view';
 const VIEW_DEFAULT = { synthPod: true, envPod: false, wavePod: false, matrixPod: false, seqPod: false, fxPod: true, bpmPod: false, midiPod: true };
