@@ -77,6 +77,9 @@ librarian (browser + device QSPI), and sample upload. Already **live on GitHub
 Pages** at <https://rainybit-code.github.io/propagator/> (https = secure context,
 usable from any machine).
 
+See [`docs/IDEAS.md`](docs/IDEAS.md) for the backlog — notably making Propagator a
+**universal device editor** driven by per-device templates (Spore as device #1).
+
 ## License
 
 **GPL-3.0-or-later.** Copyright (C) 2026 Joakim Langkilde. See [`LICENSE`](LICENSE).
