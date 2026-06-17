@@ -648,6 +648,34 @@ body::before {
 button { font-family: var(--font-hand); }
 #noticeRetry { background: var(--heat); color: #2a160b; border: none; border-radius: 8px; padding: .4rem 1.1rem; font-size: .9rem; cursor: pointer; }
 
+/* ---- firmware update (WebUSB DFU) wizard ---- */
+.flash-card { max-width: 460px; text-align: left; border-color: var(--cyan-2); }
+.flash-card h2 { color: var(--cyan); margin: 0 0 .15rem; }
+.flash-sub { margin: 0 0 .9rem; color: var(--ink-dim); font-size: .9rem; }
+.flash-step { display: flex; gap: .7rem; margin: .55rem 0; }
+.flash-num { flex: 0 0 1.5rem; height: 1.5rem; display: grid; place-items: center; border-radius: 50%;
+  background: var(--cyan-2); color: #06121f; font-weight: 700; font-size: .8rem; }
+.flash-body { flex: 1 1 auto; min-width: 0; }
+.flash-label { font-weight: 700; color: var(--ink); margin-bottom: .35rem; font-size: .9rem; }
+.flash-src { display: flex; gap: 1.1rem; font-size: .85rem; color: var(--ink-dim); margin-bottom: .35rem; }
+.flash-src label { cursor: pointer; }
+.flash-info { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-dim); margin-top: .3rem; word-break: break-word; }
+.flash-info[data-kind="ok"] { color: var(--mode, #45c069); }
+.flash-info[data-kind="err"] { color: var(--heat-2); }
+.flash-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.flash-btn { background: rgba(91,208,230,.1); color: var(--ink); border: 1.5px solid var(--cyan-2);
+  border-radius: 8px; padding: .4rem .9rem; font-size: .85rem; cursor: pointer; transition: background .15s, border-color .15s; }
+.flash-btn:hover:not(:disabled) { background: rgba(91,208,230,.2); }
+.flash-btn:disabled { opacity: .4; cursor: not-allowed; }
+.flash-btn-sm { padding: .28rem .7rem; font-size: .78rem; }
+.flash-go { background: var(--cyan); color: #06121f; border-color: var(--cyan); font-weight: 700; }
+.flash-progress { margin-top: .5rem; height: 8px; border-radius: 5px; background: rgba(91,208,230,.12);
+  border: 1px solid var(--cyan-2); overflow: hidden; }
+.flash-bar { height: 100%; width: 0; background: var(--cyan); transition: width .15s; }
+.flash-note { margin: 1rem 0 .4rem; font-size: .72rem; line-height: 1.5; color: var(--ink-dim); }
+.flash-note a { color: var(--cyan); }
+.flash-actions { text-align: right; }
+
 /* ============================================================================
    ANIMATIONS
    ========================================================================== */

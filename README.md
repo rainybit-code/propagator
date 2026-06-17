@@ -47,7 +47,10 @@ Safari has no Web MIDI; recent Firefox is partial.
   graph, **LFO 1 / LFO 2** (free-Hz or clock-synced), a drag-to-wire **patchbay**
   (6-slot mod matrix), a piano-roll **step sequencer**, and a **tempo/clock** section
   (GUI- or MIDI-master, tempo-synced delay).
-- Preset save/load (browser localStorage) and a one-click reboot-to-**DFU** for flashing.
+- Preset save/load (browser localStorage).
+- **Firmware flashing in the browser** (WebUSB DFU) — the ⤓ dfu button opens a wizard
+  that fetches the latest `spore` release `.bin` (or takes a local file), reboots the
+  pedal to DFU over MIDI, and flashes it. Chrome/Edge; Windows needs WinUSB once (Zadig).
 
 ## MIDI map (the contract)
 

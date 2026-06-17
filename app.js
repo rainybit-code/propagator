@@ -1532,14 +1532,141 @@ function makeSwitches() {
 }
 makeSwitches();
 
-/* DFU: ask the pedal to reboot into the STM bootloader for flashing. The pedal
-   then drops off USB-MIDI (expected) until it's reflashed / power-cycled. */
-$('#dfuBtn').addEventListener('click', () => {
-  if (!midiOut) return;
-  if (!confirm('Reboot the pedal into DFU mode for flashing?\nIt will disconnect from MIDI until you flash it or power-cycle.')) return;
-  sendCC(CONFIG.ccSysReboot, 1);   // -> 127, firmware reboots to STM DFU
-  if (midiLast) midiLast.textContent = 'sent: reboot to DFU';
+/* ===========================================================================
+   FIRMWARE UPDATE (WebUSB DFU)
+   A 3-step wizard: pick firmware (latest GitHub release .bin or a local file),
+   reboot the pedal into the STM DFU bootloader (CC 119), connect over WebUSB, and
+   flash to internal flash @ 0x08000000 via dfu.js (DfuSe). The pedal drops off
+   USB-MIDI when it reboots to DFU — that's expected.
+   =========================================================================== */
+const FLASH = {
+  repo: 'rainybit-code/spore',     // GitHub repo to pull releases from
+  addr: 0x08000000,                // STM32H750 internal flash base (this firmware)
+  buf: null,                       // ArrayBuffer of the firmware to write
+  bufName: '',
+  dev: null,                       // connected DfuseDevice
+};
+const fwEl = (id) => document.getElementById(id);
+function fwStatus(msg, kind) {
+  const s = fwEl('fwStatus'); if (!s) return;
+  s.textContent = msg; s.dataset.kind = kind || '';
+}
+function fwSetFlashEnabled() {
+  const b = fwEl('fwFlash'); if (b) b.disabled = !(FLASH.buf && FLASH.dev);
+}
+function fwProgress(p) {
+  const wrap = fwEl('fwProgWrap'), bar = fwEl('fwBar');
+  if (wrap) wrap.hidden = false;
+  if (bar) bar.style.width = Math.round((p.ratio || 0) * 100) + '%';
+  fwStatus(p.phase === 'erase' ? 'Erasing…' : p.phase === 'write'
+    ? 'Writing ' + Math.round((p.ratio || 0) * 100) + '%' : 'Finishing…');
+}
+
+async function fwLoadLatestRelease() {
+  const info = fwEl('fwReleaseInfo');
+  FLASH.buf = null; FLASH.bufName = ''; fwSetFlashEnabled();
+  info.textContent = 'checking latest release…';
+  try {
+    const r = await fetch('https://api.github.com/repos/' + FLASH.repo + '/releases/latest',
+                          { headers: { Accept: 'application/vnd.github+json' } });
+    if (r.status === 404) { info.textContent = 'no published release yet — use a local .bin'; return; }
+    if (!r.ok) throw new Error('GitHub API ' + r.status);
+    const rel = await r.json();
+    const asset = (rel.assets || []).find((a) => /\.bin$/i.test(a.name));
+    if (!asset) { info.textContent = rel.tag_name + ': no .bin asset — use a local file'; return; }
+    info.textContent = 'downloading ' + asset.name + ' (' + rel.tag_name + ')…';
+    const bin = await fetch(asset.browser_download_url);
+    if (!bin.ok) throw new Error('download ' + bin.status);
+    FLASH.buf = await bin.arrayBuffer(); FLASH.bufName = asset.name;
+    info.textContent = '✓ ' + asset.name + ' · ' + rel.tag_name + ' · ' + (FLASH.buf.byteLength / 1024).toFixed(1) + ' KB';
+    fwSetFlashEnabled();
+  } catch (e) {
+    info.textContent = 'could not fetch release (' + e.message + ') — use a local .bin';
+  }
+}
+
+function fwOpen() {
+  const m = fwEl('flash'); if (!m) return;
+  m.hidden = false;
+  // reset transient UI
+  fwEl('fwProgWrap').hidden = true; fwEl('fwBar').style.width = '0%';
+  fwStatus(WebDFU.supported() ? '—' : 'WebUSB unavailable — use Chrome/Edge over https/localhost', 'err');
+  fwEl('fwConnect').disabled = !WebDFU.supported();
+  fwEl('fwReboot').disabled = !midiOut;
+  // default to release source
+  fwEl('fwSrcRelease').checked = true;
+  fwEl('fwReleaseInfo').hidden = false; fwEl('fwPick').hidden = true; fwEl('fwFileInfo').hidden = true;
+  fwLoadLatestRelease();
+}
+async function fwClose() {
+  fwEl('flash').hidden = true;
+  if (FLASH.dev) { try { await FLASH.dev.close(); } catch (e) {} FLASH.dev = null; }
+  fwSetFlashEnabled();
+}
+
+// open the wizard from the topbar DFU button (works even with no pedal connected,
+// since you can flash a freshly-DFU'd board via the BOOT+RESET gesture)
+$('#dfuBtn').addEventListener('click', fwOpen);
+
+// --- source selection ---
+fwEl('fwSrcRelease').addEventListener('change', () => {
+  fwEl('fwReleaseInfo').hidden = false; fwEl('fwPick').hidden = true; fwEl('fwFileInfo').hidden = true;
+  fwLoadLatestRelease();
 });
+fwEl('fwSrcFile').addEventListener('change', () => {
+  fwEl('fwReleaseInfo').hidden = true; fwEl('fwPick').hidden = false; fwEl('fwFileInfo').hidden = false;
+  FLASH.buf = null; FLASH.bufName = ''; fwSetFlashEnabled();
+});
+fwEl('fwPick').addEventListener('click', () => fwEl('fwFile').click());
+fwEl('fwFile').addEventListener('change', async (e) => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  FLASH.buf = await f.arrayBuffer(); FLASH.bufName = f.name;
+  fwEl('fwFileInfo').textContent = '✓ ' + f.name + ' · ' + (FLASH.buf.byteLength / 1024).toFixed(1) + ' KB';
+  fwSetFlashEnabled();
+});
+
+// --- step 2: reboot to DFU over MIDI ---
+fwEl('fwReboot').addEventListener('click', () => {
+  if (!midiOut) { fwStatus('connect the pedal as MIDI OUT first (or use BOOT+RESET)', 'err'); return; }
+  sendCC(CONFIG.ccSysReboot, 1);     // -> 127, firmware reboots into STM DFU
+  if (midiLast) midiLast.textContent = 'sent: reboot to DFU';
+  fwStatus('reboot sent — wait ~2 s, then Connect', 'ok');
+});
+
+// --- step 3: connect over WebUSB ---
+fwEl('fwConnect').addEventListener('click', async () => {
+  try {
+    fwStatus('select “STM32 BOOTLOADER” in the picker…');
+    const dev = await WebDFU.requestDevice();
+    await dev.connect();
+    FLASH.dev = dev;
+    const seg = dev.memory && dev.memory.segments[0];
+    fwStatus('connected' + (seg ? ' · ' + dev.memory.name : '') + ' · ready to flash', 'ok');
+    fwSetFlashEnabled();
+  } catch (e) {
+    fwStatus('connect failed: ' + e.message + (/no device|chosen/i.test(e.message) ? '' : ' (Windows: WinUSB via Zadig?)'), 'err');
+  }
+});
+
+// --- step 3: flash ---
+fwEl('fwFlash').addEventListener('click', async () => {
+  if (!FLASH.buf || !FLASH.dev) return;
+  const btn = fwEl('fwFlash'), cn = fwEl('fwConnect');
+  btn.disabled = cn.disabled = true;
+  try {
+    await FLASH.dev.download(FLASH.buf, FLASH.addr, fwProgress);
+    fwEl('fwBar').style.width = '100%';
+    fwStatus('✓ done — pedal is rebooting into the new firmware', 'ok');
+    try { await FLASH.dev.close(); } catch (e) {} FLASH.dev = null;
+  } catch (e) {
+    fwStatus('flash failed: ' + e.message + ' — re-enter DFU and retry', 'err');
+  } finally {
+    cn.disabled = !WebDFU.supported();
+    fwSetFlashEnabled();
+  }
+});
+
+fwEl('fwClose').addEventListener('click', fwClose);
 
 /* ---------- go ---------- */
 setMode(0); setFx(0);

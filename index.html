@@ -137,6 +137,59 @@
   </div>
 </div>
 
+<!-- ===== firmware update (WebUSB DFU) ===== -->
+<div class="notice" id="flash" hidden>
+  <div class="notice-card sketch flash-card">
+    <h2>Update firmware</h2>
+    <p class="flash-sub">Flash the <b>Spore</b> pedal over USB — no extra tools.</p>
+
+    <div class="flash-step">
+      <span class="flash-num">1</span>
+      <div class="flash-body">
+        <div class="flash-label">Choose firmware</div>
+        <div class="flash-src">
+          <label><input type="radio" name="fwsrc" id="fwSrcRelease" value="release" checked /> Latest release</label>
+          <label><input type="radio" name="fwsrc" id="fwSrcFile" value="file" /> Local <code>.bin</code></label>
+        </div>
+        <div id="fwReleaseInfo" class="flash-info">checking latest release…</div>
+        <input type="file" id="fwFile" accept=".bin" hidden />
+        <button id="fwPick" class="flash-btn flash-btn-sm" hidden>choose .bin…</button>
+        <div id="fwFileInfo" class="flash-info" hidden>no file chosen</div>
+      </div>
+    </div>
+
+    <div class="flash-step">
+      <span class="flash-num">2</span>
+      <div class="flash-body">
+        <div class="flash-label">Put the pedal in DFU mode</div>
+        <button id="fwReboot" class="flash-btn">⤓ Reboot to DFU (via MIDI)</button>
+        <div class="flash-info">…or hold <b>BOOT</b> + tap <b>RESET</b> on the Daisy, or hold both footswitches 2&nbsp;s.</div>
+      </div>
+    </div>
+
+    <div class="flash-step">
+      <span class="flash-num">3</span>
+      <div class="flash-body">
+        <div class="flash-label">Connect &amp; flash</div>
+        <div class="flash-row">
+          <button id="fwConnect" class="flash-btn">🔌 Connect (WebUSB)</button>
+          <button id="fwFlash" class="flash-btn flash-go" disabled>⤴ Flash</button>
+        </div>
+        <div class="flash-progress" id="fwProgWrap" hidden><div class="flash-bar" id="fwBar"></div></div>
+        <div id="fwStatus" class="flash-info">—</div>
+      </div>
+    </div>
+
+    <p class="flash-note">Chrome/Edge only. On <b>Windows</b> the bootloader may need the
+      <b>WinUSB</b> driver once, via <a href="https://zadig.akeo.ie/" target="_blank" rel="noopener">Zadig</a>.
+      A failed flash can't brick the pedal — just re-enter DFU and retry.</p>
+
+    <div class="flash-actions">
+      <button id="fwClose" class="flash-btn">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== stage ===== -->
 <main class="stage" id="stage">
 
@@ -504,6 +557,7 @@
   <span>PROPAGATOR</span> · <span id="footMidi">checking MIDI…</span>
 </footer>
 
+<script src="dfu.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
