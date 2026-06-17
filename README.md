@@ -1,8 +1,13 @@
 # 🌱 Propagator
 
 A browser-based **WebMIDI** editor for the DIY **Spore** pedal (the Electrosmith
-Daisy Seed firmware lives in the separate **`spore`** repo). Configure the pedal's
+Daisy Seed firmware lives in the separate
+[**`spore`**](https://github.com/rainybit-code/spore) repo). Configure the pedal's
 parameters live over USB MIDI — no install, no drivers.
+
+**▶ Live: <https://rainybit-code.github.io/propagator/>** — open in Chrome or Edge
+with the Spore pedal connected over USB. (It's the editor UI; it needs the pedal to
+do anything.)
 
 The look: a hand-inked **"boiling line"** cartoon of the pedal on cyanotype
 blueprint paper. Everything breathes, vibrates, and grows. The pedal is the hero
@@ -11,7 +16,10 @@ MIDI connection lives subtly in the top frame; a tempo dial drives a live beat.
 
 ## Run it
 
-It's a static site — no build step.
+Easiest: just open the **[live site](https://rainybit-code.github.io/propagator/)** in
+Chrome/Edge (HTTPS = secure context, so Web MIDI + SysEx work).
+
+To run locally for development — it's a static site, no build step:
 
 ```sh
 # from this folder
@@ -42,7 +50,8 @@ Safari has no Web MIDI; recent Firefox is partial.
 ## MIDI map (the contract)
 
 The CC / SysEx map is defined by the firmware and is the single source of truth:
-see **`spore/docs/MIDI_PROTOCOL.md`**. The mirror of it lives in the `CONFIG` block at
+see [**`spore/docs/MIDI_PROTOCOL.md`**](https://github.com/rainybit-code/spore/blob/main/docs/MIDI_PROTOCOL.md).
+The mirror of it lives in the `CONFIG` block at
 the top of `app.js` (labels, CC numbers, channel) — edit there to extend the surface.
 Values are 0–127 (0..1 normalized).
 
@@ -63,4 +72,5 @@ once it stabilizes (https = secure context, usable from any machine).
 ## License
 
 **GPL-3.0-or-later.** Copyright (C) 2026 Joakim Langkilde. See [`LICENSE`](LICENSE).
-Pairs with the **Spore** firmware (`spore` repo), which is GPL-3.0 for the same reason.
+Pairs with the **Spore** firmware ([`spore`](https://github.com/rainybit-code/spore) repo),
+which is GPL-3.0 for the same reason.
