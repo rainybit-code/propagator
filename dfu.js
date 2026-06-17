@@ -1,12 +1,11 @@
 /* ============================================================================
-   dfu.js — minimal WebDFU + DfuSe (ST) flasher for the Spore pedal.
+   dfu.js — WebUSB DfuSe flasher for Spore.
    SPDX-License-Identifier: GPL-3.0-or-later
    Copyright (C) 2026 Joakim Langkilde
+   Adapted from webdfu by Devan Lai (https://github.com/devanlai/webdfu, MIT).
 
-   Adapted from webdfu by Devan Lai (https://github.com/devanlai/webdfu, MIT) —
-   reduced to just what Propagator needs: enumerate the STM32 ROM bootloader
-   (VID 0x0483 / PID 0xDF11), read its DfuSe memory map, and DOWNLOAD (flash) a
-   raw .bin to internal flash at 0x08000000. No upload/read-back.
+   Enumerates the STM32 ROM bootloader (VID 0x0483 / PID 0xDF11), reads its DfuSe
+   memory map, and flashes a raw .bin to internal flash at 0x08000000.
 
    Exposes a global `WebDFU` with:
      WebDFU.supported()                      -> boolean (navigator.usb present)

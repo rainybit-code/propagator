@@ -1,12 +1,8 @@
 name: pages
 
-# Deploy the static site to GitHub Pages AND bundle the latest Spore firmware .bin
-# into it at deploy time. GitHub release assets aren't CORS-enabled, so the browser
-# can't fetch them directly — but here we curl it server-side (no CORS) and serve it
-# same-origin under /firmware/, which the flash wizard can then fetch with no CORS.
-#
-# Runs on every push to main, daily (to pick up new firmware releases), and on demand.
-# NOTE: this needs Pages "Source" set to "GitHub Actions" (Settings → Pages).
+# Deploy the static site to GitHub Pages, bundling the latest Spore firmware .bin
+# under /firmware/ so the flash wizard can fetch it same-origin.
+# Runs on push to main, daily, and on demand. Needs Pages "Source" = "GitHub Actions".
 on:
   push:
     branches: [main]
@@ -24,10 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Canonical Pages structure: a build job that produces the single "github-pages"
-  # artifact, and a separate deploy job that consumes it. Keeping deploy isolated
-  # avoids the "multiple artifacts named github-pages" error you hit when a combined
-  # job is re-run (the re-run re-uploads while the first attempt's artifact lingers).
+  # build assembles the site + firmware artifact; deploy publishes it.
   build:
     runs-on: ubuntu-latest
     steps:

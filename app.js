@@ -1,5 +1,5 @@
 /* ============================================================================
-   PROPAGATOR (WebMIDI) — the cultivating surface for the Spore pedal
+   PROPAGATOR (WebMIDI) — the cultivating surface for Spore
    SPDX-License-Identifier: GPL-3.0-or-later
    Copyright (C) 2026 Joakim Langkilde
    The CC map is the contract with the firmware (see daisy repo
@@ -15,7 +15,7 @@ const CONFIG = {
   ccFxSelect:   17,                 // FX select   (0/64/127 -> off/delay/reverb)
   ccTempo:      14,                 // internal clock BPM (0..1 -> 40..200)
   ccDelaySync:  15,                 // delay tempo-sync division (0 off / ¼ / ⅛ / ⅛. / 16)
-  ccSysReboot:  119,                // CC 119 >=64 -> pedal reboots into DFU bootloader
+  ccSysReboot:  119,                // CC 119 >=64 -> Spore reboots into DFU bootloader
 
   ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14-19 wavetable · 20-24 tone · 25-26 LFO2 · 27-44 matrix · 45 LFO2 depth · 46 LFO1 sync · 47 LFO2 sync
   synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
@@ -54,14 +54,12 @@ const midiPod   = $('#midiPod'), midiAct = $('#midiAct'), midiLast = $('#midiLas
 
 /* ---------- MIDI state ---------- */
 let midi = null, midiOut = null, midiIn = null;
-let thru = true;   // forward IN-device messages to the pedal (OUT)
-let latestFw = null;     // {version,size,file} from ./firmware/latest.json (bundled at deploy)
-let connectedFw = null;  // version string reported by the pedal's SysEx identify reply
-let clockMaster = 'off';   // tempo master for the pedal: 'off' | 'gui' | 'in'
+let thru = true;   // forward IN-device messages to Spore (OUT)
+let latestFw = null;     // {version,size,file} from ./firmware/latest.json
+let connectedFw = null;  // version string from Spore's SysEx identify reply
+let clockMaster = 'off';   // tempo master: 'off' | 'gui' | 'in'
 let delaySyncIdx = 0;      // delay tempo-sync division (part of a patch/preset)
-// clock OFF by default: the pedal ignores incoming clock, and relaying a 24-PPQN
-// stream floods its USB-MIDI input and can cause it to miss notes. (Beat sync in
-// the web UI is unaffected — it reads clock locally, before this forward filter.)
+// clock forwarding off by default; the UI's beat sync reads clock locally
 const thruFilter = { notes: true, cc: true, other: true, clock: false };
 let clockSync = true;                               // derive BPM + beat from incoming MIDI clock
 let clockCount = 0, lastClockMs = 0, clockBpm = 0;  // MIDI clock tracking (24 PPQN)
@@ -235,7 +233,7 @@ function envSet(bank, idx, v) {
 }
 
 function drawEnv() {
-  if (!envSvg) { buildEnv(); if (!envSvg) return; }   // lazy-build if it wasn't ready at load
+  if (!envSvg) { buildEnv(); if (!envSvg) return; }   // build on first draw
   const { A, D, S, R } = envGet();
   const peakX = ENV.X0 + A * ENV.AW;
   const susStartX = peakX + D * ENV.DW;
@@ -326,7 +324,6 @@ function updateEngineUI() {
   if (note) note.textContent = wt
     ? 'wavetable scan (sine→bright) · FM (carrier × ratio) · wavefold · sub for body'
     : 'analog: 2–4 detuned oscillators (super-saw via UNISON) + sub';
-  // note: no relayout here — the panel resizes in place so nothing else jumps
 }
 const waveKnobsEl = $('#waveKnobs');
 if (waveKnobsEl) {
@@ -407,7 +404,7 @@ updateLfoSyncUI();
    destination pads (right) are white silkscreen labels; faint guide lines show
    every possible connection. Drag from a source pad to a destination pad to lay
    a cable (= one of the 6 matrix slots). Many cables can share a source or a
-   destination; the pedal sums per destination. ---- */
+   destination; Spore sums per destination. ---- */
 const NSV = 'http://www.w3.org/2000/svg';
 const elNS = (n) => document.createElementNS(NSV, n);
 const PATCH_SLOTS = [27, 30, 33, 36, 39, 42];   // synth idx of each slot's SRC (DST=+1, AMT=+2)
@@ -612,7 +609,7 @@ function setMode(m) {
   const labels = CONFIG.modeLabels[name];
   modeKnobs.forEach((k, i) => { k._label.textContent = labels[i]; });
   if (stompNames[1]) stompNames[1].textContent = CONFIG.fsActions[name] || 'ACTION';  // FS2 = mode action
-  sendCC(CONFIG.ccModeSelect, m / 2);   // tell the pedal to switch mode
+  sendCC(CONFIG.ccModeSelect, m / 2);   // tell Spore to switch mode
   if (typeof applyPods === 'function') applyPods();   // synth-only panels follow the mode
 }
 function setFx(f) {
@@ -624,7 +621,7 @@ function setFx(f) {
   if (typeof podShown !== 'undefined' && !podShown.fxPod) {
     podShown.fxPod = true; const fm = podMeta('fxPod'); if (fm && fm._cb) fm._cb.checked = true; saveView();
   }
-  sendCC(CONFIG.ccFxSelect, f / 2);   // tell the pedal to switch FX
+  sendCC(CONFIG.ccFxSelect, f / 2);   // tell Spore to switch FX
   if (typeof applyPods === 'function') applyPods(); else drawWires();
 }
 $('#fxSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setFx(+b.dataset.fx); });
@@ -632,7 +629,7 @@ $('#fxSeg').addEventListener('click', e => { const b = e.target.closest('button'
 /* ===========================================================================
    PRESETS — factory library (presets.json, shipped in repo) + user store
    (localStorage). A patch = mode + fx select and every knob bank. Loading one
-   updates the UI and pushes every param to the pedal.
+   updates the UI and pushes every param to Spore.
    ========================================================================= */
 let factoryPresets = [];                       // [{name, patch}] from presets.json
 const PRESET_KEY = 'propagator.presets';
@@ -695,7 +692,7 @@ function applyPatch(p) {
   refreshKnobs(); refreshSegments();
   if (typeof p.delaySync === 'number') setDelaySync(p.delaySync);   // restore delay sync
   if (p.seq) { loadSeqState(p.seq); refreshSeqUI(); }   // restore the sequence too
-  pushAllCC();   // push every param to the pedal
+  pushAllCC();   // push every param to Spore
 }
 
 function rebuildPresetList() {
@@ -828,7 +825,7 @@ function updateConn() {
   else if (midi) setStatus('ready', n ? 'pick a device' : 'no devices');
   else setStatus('off', 'offline');
   $('#footMidi').textContent = midi ? `${midi.outputs.size} out · ${midi.inputs.size} in` : 'no MIDI';
-  const dfu = $('#dfuBtn'); if (dfu) dfu.disabled = false;   // flash wizard works via WebUSB even without MIDI
+  const dfu = $('#dfuBtn'); if (dfu) dfu.disabled = false;   // flash wizard uses WebUSB, not MIDI
   // THRU only makes sense with a distinct IN + OUT — disable the toggle otherwise
   const thruEl = $('#midiThru'); const thruField = thruEl && thruEl.closest('.switch-field');
   const thruOk = !!(midiIn && midiOut && !sameInOut());
@@ -843,12 +840,12 @@ function selectOut(id) {
     localStorage.setItem('propagator.outName', midiOut ? (midiOut.name || '') : '');
   } catch (_) {}
   updateConn();
-  if (midiOut) {  // sync the pedal to the UI's current state on connect
+  if (midiOut) {  // sync Spore to the UI's current state on connect
     sendCC(CONFIG.ccModeSelect, activeMode / 2);
     sendCC(CONFIG.ccFxSelect, activeFx / 2);
     CONFIG.ccSynth.forEach((cc, i) => sendCC(cc, knobValue.synth[i]));
     connectedFw = null; checkFwUpdate();
-    setTimeout(sendIdentify, 150);   // ask which firmware it's running (reply pulses the DFU btn)
+    setTimeout(sendIdentify, 150);   // request the running firmware version
   } else { connectedFw = null; checkFwUpdate(); }
 }
 function selectIn(id) {
@@ -968,7 +965,7 @@ function onMidiMessage(e) {
       let s = '';
       for (let i = 3; i < d.length && d[i] !== 0xF7; i++) s += String.fromCharCode(d[i]);
       connectedFw = s.trim().replace(/^v/, '');
-      if (midiLast) midiLast.textContent = 'pedal firmware v' + connectedFw;
+      if (midiLast) midiLast.textContent = 'Spore firmware v' + connectedFw;
       checkFwUpdate();
     }
     return;
@@ -1090,8 +1087,8 @@ $('#bpmPlay').addEventListener('click', () => setPlaying(!playing));
 $('#bpmMiniPlay').addEventListener('click', () => setPlaying(!playing));
 $('#bpmMiniOpen').addEventListener('click', () => setBpmPodClosed(false));
 
-/* ---- clock master: GUI emits 24-PPQN MIDI clock to the pedal, or we forward the
-   input device's clock. The pedal locks to whichever and tempo-syncs its delay. ---- */
+/* ---- clock master: GUI emits 24-PPQN MIDI clock to Spore, or we forward the
+   input device's clock. Spore locks to whichever and tempo-syncs its delay. ---- */
 let clockTimer = null, clockTickAt = 0;
 function startClockEmit() {
   stopClockEmit();
@@ -1107,7 +1104,7 @@ function stopClockEmit() { if (clockTimer) { clearInterval(clockTimer); clockTim
 function setClockMaster(c) {
   clockMaster = c;
   document.querySelectorAll('#clockMasterSeg button').forEach(b => b.classList.toggle('on', b.dataset.c === c));
-  thruFilter.clock = (c === 'in');   // forward the input device's clock to the pedal
+  thruFilter.clock = (c === 'in');   // forward the input device's clock to Spore
   if (c === 'gui') {
     startClockEmit();
     if (midiOut) { sendCC(CONFIG.ccTempo, Math.max(0, Math.min(1, (bpm - 40) / 160))); if (playing) { try { midiOut.send([0xFA]); } catch (_) {} } }
@@ -1142,7 +1139,7 @@ function pulseBeat(beatInBar) {
 }
 
 /* ===========================================================================
-   STEP SEQUENCER — a small piano-roll that plays MIDI out to the pedal.
+   STEP SEQUENCER — a small piano-roll that plays MIDI out to Spore.
    Notes live on a pitch×step grid (scale-locked); the loop is 1–4 bars long
    and "order" sets the column playback direction (forward / back / ping-pong /
    random). It rides the same tempo + MIDI clock as the beat engine.
@@ -1327,7 +1324,7 @@ try { loadSeqState(JSON.parse(localStorage.getItem(SEQ_KEY) || 'null')); } catch
 refreshSeqUI();
 
 /* ===========================================================================
-   CONNECTOR WIRES (pod ↔ pedal control)
+   CONNECTOR WIRES (pod ↔ device control)
    ========================================================================= */
 function center(elm) {
   if (!elm) return null;
@@ -1340,8 +1337,8 @@ function edgePoint(podEl, toward) {
   const x = toward.x > cx ? r.right - s.left : r.left - s.left;
   return { x, y: r.top + r.height / 2 - s.top };
 }
-// a point on the pedal's edge facing `toward`, at height y — keeps the wire in
-// the gutter so it never crosses the pedal face / footswitch LEDs
+// a point on the device's edge facing `toward`, at height y — keeps the wire in
+// the gutter so it never crosses the device face / footswitch LEDs
 function pedalEdge(toward, y) {
   const pw = $('.pedal-wrap'); if (!pw) return { x: toward.x, y };
   const r = pw.getBoundingClientRect(); const s = stage.getBoundingClientRect();
@@ -1362,12 +1359,12 @@ function drawWires() {
   if (!wires) return;
   wires.innerHTML = '';
   // Tempo pod is intentionally NOT wired (kept separate). Only the two toggle
-  // breakouts get a connector, and they sit behind the pedal (z-order).
+  // breakouts get a connector, and they sit behind the device (z-order).
   const fxPod = $('#fxPod');
   const tog = center(toggleEls[2]);
   if (!fxPod || fxPod.classList.contains('closed') || !tog) return;
   const b = edgePoint(fxPod, tog);
-  const a = pedalEdge(b, tog.y - 22);   // pedal edge, lifted above the footswitch LED
+  const a = pedalEdge(b, tog.y - 22);   // device edge, lifted above the footswitch LED
   wirePath(a, b, activeFx > 0).forEach(n => wires.appendChild(n));
 }
 
@@ -1548,15 +1545,12 @@ makeSwitches();
 
 /* ===========================================================================
    FIRMWARE UPDATE (WebUSB DFU)
-   A 3-step wizard: choose a .bin (downloaded from the Spore releases page), reboot
-   the pedal into the STM DFU bootloader (CC 119), connect over WebUSB, and flash to
-   internal flash @ 0x08000000 via dfu.js (DfuSe). The pedal drops off USB-MIDI when
-   it reboots to DFU — that's expected. We deliberately do NOT fetch the binary
-   in-page (release-asset downloads aren't CORS-enabled) — the user grabs the .bin
-   from the linked releases page and picks it, which keeps this lean and reliable.
+   A 3-step wizard: choose a .bin (bundled latest or local file), reboot Spore into
+   the STM DFU bootloader (CC 119), connect over WebUSB, and flash to internal flash
+   @ 0x08000000 via dfu.js (DfuSe). Spore drops off USB-MIDI while in DFU.
    =========================================================================== */
 const FLASH = {
-  addr: 0x08000000,                // STM32H750 internal flash base (this firmware)
+  addr: 0x08000000,                // STM32H750 internal flash base
   buf: null,                       // ArrayBuffer of the firmware to write
   bufName: '',
   dev: null,                       // connected DfuseDevice
@@ -1587,7 +1581,7 @@ function semverGt(a, b) {   // is version a strictly newer than b?
   }
   return false;
 }
-// pulse the DFU button dim green when the bundled build is newer than the pedal's
+// pulse the DFU button dim green when the bundled build is newer than Spore's
 function checkFwUpdate() {
   const btn = $('#dfuBtn'); if (!btn) return;
   const avail = !!(latestFw && latestFw.version && connectedFw && semverGt(latestFw.version, connectedFw));
@@ -1595,7 +1589,7 @@ function checkFwUpdate() {
   btn.title = avail ? ('firmware update available: v' + connectedFw + ' → v' + latestFw.version + ' — click to flash')
                     : 'update firmware (flash over USB / DFU)';
 }
-// the firmware bundled into this site at deploy time (same-origin, no CORS)
+// the firmware bundled under /firmware/ at deploy time
 async function loadLatestFw() {
   try {
     const r = await fetch('./firmware/latest.json', { cache: 'no-cache' });
@@ -1607,7 +1601,7 @@ async function loadLatestFw() {
   } catch (e) { /* not deployed / local dev — fine */ }
   checkFwUpdate();
 }
-// ask the pedal which firmware it's running (SysEx identify) — reply handled in onMidiMessage
+// request Spore's running firmware version (SysEx identify)
 function sendIdentify() {
   if (!midiOut) return;
   try { midiOut.send([0xF0, 0x7D, 0x01, 0xF7]); } catch (e) { /* sysex not permitted */ }
@@ -1618,7 +1612,7 @@ function fwShowLatest() {
   if (latestFw && latestFw.version) {
     info.innerHTML = 'latest: <b>v' + latestFw.version + '</b>'
       + (latestFw.size ? ' · ' + (latestFw.size / 1024).toFixed(1) + ' KB' : '')
-      + (connectedFw ? ' · on pedal: v' + connectedFw : '');
+      + (connectedFw ? ' · on Spore: v' + connectedFw : '');
     btn.hidden = false;
   } else {
     info.innerHTML = 'no bundled build — get it from '
@@ -1636,7 +1630,7 @@ function fwOpen() {
   fwEl('fwConnect').disabled = !WebDFU.supported();
   fwEl('fwReboot').disabled = !midiOut;
   fwShowLatest();
-  sendIdentify();   // refresh the pedal's reported version while the wizard is open
+  sendIdentify();   // refresh Spore's reported version while the wizard is open
 }
 async function fwClose() {
   fwEl('flash').hidden = true;
@@ -1644,11 +1638,10 @@ async function fwClose() {
   fwSetFlashEnabled();
 }
 
-// open the wizard from the topbar DFU button (works even with no pedal connected,
-// since you can flash a freshly-DFU'd board via the BOOT+RESET gesture)
+// open the wizard from the topbar DFU button
 $('#dfuBtn').addEventListener('click', fwOpen);
 
-// --- step 1: use the bundled latest build (same-origin fetch — no CORS) ---
+// --- step 1: use the bundled latest build ---
 fwEl('fwUseLatest').addEventListener('click', async () => {
   if (!latestFw) return;
   const info = fwEl('fwLatestInfo');
@@ -1673,7 +1666,7 @@ fwEl('fwFile').addEventListener('change', async (e) => {
 
 // --- step 2: reboot to DFU over MIDI ---
 fwEl('fwReboot').addEventListener('click', () => {
-  if (!midiOut) { fwStatus('connect the pedal as MIDI OUT first (or use BOOT+RESET)', 'err'); return; }
+  if (!midiOut) { fwStatus('connect Spore as MIDI OUT first (or use BOOT+RESET)', 'err'); return; }
   sendCC(CONFIG.ccSysReboot, 1);     // -> 127, firmware reboots into STM DFU
   if (midiLast) midiLast.textContent = 'sent: reboot to DFU';
   fwStatus('reboot sent — wait ~2 s, then Connect', 'ok');
@@ -1702,7 +1695,7 @@ fwEl('fwFlash').addEventListener('click', async () => {
   try {
     await FLASH.dev.download(FLASH.buf, FLASH.addr, fwProgress);
     fwEl('fwBar').style.width = '100%';
-    fwStatus('✓ done — pedal is rebooting into the new firmware', 'ok');
+    fwStatus('✓ done — Spore is rebooting into the new firmware', 'ok');
     try { await FLASH.dev.close(); } catch (e) {} FLASH.dev = null;
   } catch (e) {
     fwStatus('flash failed: ' + e.message + ' — re-enter DFU and retry', 'err');

@@ -1,9 +1,9 @@
 /* ============================================================================
-   PROPAGATOR — the cultivating surface for the Spore pedal
+   PROPAGATOR — the cultivating surface for Spore
    SPDX-License-Identifier: GPL-3.0-or-later
    Copyright (C) 2026 Joakim Langkilde
    Theme: hand-inked "boiling line" cartoon on cyanotype blueprint paper, with
-   an old-school lit-panel pedal. Everything breathes, vibrates, and grows.
+   an old-school lit-panel device. Everything breathes, vibrates, and grows.
    Layout mirrors the real Spore (Chase-Bliss style): 6 knobs in a row,
    3 toggles below, 2 footswitches at the bottom with an LED above each.
    ========================================================================== */
@@ -114,7 +114,7 @@ body::before {
 .conn-status[data-state="live"] .conn-label { color: var(--grow); }
 .tb-btn { font-family: var(--font-mono); font-size: .66rem; letter-spacing: .08em; color: var(--ink-dim); background: rgba(91,208,230,.08); border: 1.5px solid var(--cyan-2); border-radius: 7px; padding: .24rem .55rem; cursor: pointer; }
 .tb-btn:hover { color: var(--ink); border-color: var(--cyan); }
-/* DFU: deliberately understated; warms up on hover, dims when unavailable */
+/* DFU button: understated, warms up on hover */
 .tb-dfu { color: var(--ink-dim); opacity: .55; letter-spacing: .12em; }
 .tb-dfu:hover:not(:disabled) { color: var(--warm); border-color: var(--warm); opacity: 1; }
 .tb-dfu:disabled { opacity: .25; cursor: not-allowed; }
@@ -164,7 +164,7 @@ body::before {
 .synth-knobs .knob-dial .knob-pointer { height: 14px; }
 .synth-knobs .knob-label { font-size: .56rem; min-height: 2.1em; }
 
-/* MOD / LFO pod — left of the pedal (top) */
+/* MOD / LFO pod — left of the device (top) */
 .pod-mod { grid-area: modpod; justify-self: end; }
 .pod-mod[hidden] { display: none; }
 .pod-mod .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
@@ -224,7 +224,7 @@ body::before {
 /* ============================================================================
    STAGE
    ========================================================================== */
-/* the pedal sits centered; pods are absolutely placed over the stage by JS, so a
+/* the device sits centered; pods are absolutely placed over the stage by JS, so a
    size change in one panel never reflows the others */
 .stage {
   position: relative; z-index: 5; display: flex; justify-content: center; align-items: flex-start;
@@ -233,7 +233,7 @@ body::before {
 }
 .pedal-wrap{ position: relative; z-index: 5; }
 
-/* wires sit BEHIND the pedal (z-index 3 < pedal 5): only the gutter segment
+/* wires sit BEHIND the device (z-index 3 < device 5): only the gutter segment
    shows, so they can't overlap the face text/displays. Kept faint + thin. */
 .wires { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: visible; }
 .wires path { fill: none; stroke: var(--cyan); stroke-width: 1.1; stroke-dasharray: 2 7; opacity: .24; }
@@ -445,9 +445,9 @@ body::before {
 .env-filter { display: flex; gap: .9rem; justify-content: center; margin-top: .35rem; }
 
 /* ============================================================================
-   THE PEDAL (landscape)
+   THE DEVICE (landscape)
    ========================================================================== */
-/* zoom enlarges the whole pedal (knobs, labels, displays) crisply for readability */
+/* zoom enlarges the whole device (knobs, labels, displays) crisply for readability */
 .pedal { position: relative; width: 330px; height: 560px; margin: 0 auto; zoom: 1.24; user-select: none; -webkit-user-select: none; }
 /* breathe lives on the drawn chassis only, so the face TEXT never sub-pixel-scales */
 .chassis { position: absolute; inset: 0; width: 100%; height: 100%; filter: url(#boil); animation: breathe 6s ease-in-out infinite; }
@@ -476,7 +476,7 @@ body::before {
   background: radial-gradient(78% 66% at 50% 30%, rgba(130,205,235,.12), rgba(10,30,50,0) 72%);
   box-shadow: inset 0 0 46px rgba(0,0,0,.55);
 }
-/* wordmark band (lower-middle, like the real Spore pedal) */
+/* wordmark band (lower-middle, like the real Spore) */
 .brandband {
   position: relative; z-index: 1; width: 86%; margin: .55rem 0; padding: .4rem 0 .35rem; text-align: center;
   background: linear-gradient(180deg, #07151f, #0b2338); border: 1.6px solid #050f18; border-radius: 9px;
@@ -518,7 +518,7 @@ body::before {
 }
 .knobs .knob-dial .knob-pointer { background: #e6ecee; box-shadow: 0 0 1px rgba(0,0,0,.6); }
 .knob.grabbing .knob-dial { cursor: grabbing; animation: none; box-shadow: inset 0 -3px 6px rgba(0,0,0,.55), 0 0 12px rgba(0,0,0,.4); }
-/* label sits in a little lit "window" like the real pedal (pods keep this theme) */
+/* label sits in a little lit "window" like the real device (pods keep this theme) */
 .knob-label {
   font-size: .58rem; line-height: 1.1; text-align: center; min-height: 2.3em; color: #e9eef0;
   display: flex; align-items: center; justify-content: center; padding: 1.5px 5px; border-radius: 5px;
@@ -526,7 +526,7 @@ body::before {
   background: rgba(6,13,20,.55); border: 1px solid rgba(255,255,255,.07);
   text-shadow: 0 1px 1px rgba(0,0,0,.6);
 }
-/* PEDAL knobs only: stenciled stickers slapped on, slightly crooked + worn */
+/* DEVICE knobs only: stenciled stickers slapped on, slightly crooked + worn */
 .knobs .knob-label {
   font-family: 'Saira Stencil One', var(--font-mono); font-size: .56rem; line-height: 1.04;
   letter-spacing: .04em; text-transform: uppercase; color: #241c12;
@@ -536,7 +536,7 @@ body::before {
   text-shadow: 0 1px 0 rgba(255,255,255,.25);
   transform: rotate(-1.6deg);
 }
-/* a few pedal knobs wear their stickers a little more crooked / scuffed */
+/* a few device knobs wear their stickers a little more crooked / scuffed */
 .knobs .knob:nth-child(2n) .knob-label { transform: rotate(1.7deg) translateY(.5px); }
 .knobs .knob:nth-child(3n) .knob-label { transform: rotate(-2.8deg) translateX(-.5px); }
 .knobs .knob:nth-child(4n) .knob-label { transform: rotate(1.1deg) translateY(-.5px); opacity: .94; }
@@ -652,8 +652,7 @@ button { font-family: var(--font-hand); }
 #noticeRetry { background: var(--heat); color: #2a160b; border: none; border-radius: 8px; padding: .4rem 1.1rem; font-size: .9rem; cursor: pointer; }
 
 /* ---- firmware update (WebUSB DFU) wizard ---- */
-/* a utility panel: clean system-UI type (not the playful hand font), mono for the
-   technical readouts — reads as a robust tool rather than a sketch. */
+/* utility panel: clean system-UI type, mono for the technical readouts */
 .flash-card { max-width: 460px; text-align: left; border-color: var(--cyan-2); }
 .flash-card,
 .flash-card h2,
@@ -761,9 +760,8 @@ button { font-family: var(--font-hand); }
   border: 2.2px solid rgba(226,233,235,.42); border-radius: 8px;
 }
 .silk-group:first-of-type { margin-top: .55rem; }
-/* align rows inside seq/voice groups: fixed-width caption column, controls fill.
-   min-width:0 + border-box let the switch shrink to fit so it never overruns the
-   pod edge (the "voices out of bounds" case: a 6-way switch + caption in a row). */
+/* seq/voice rows: fixed-width caption column, controls fill the rest.
+   min-width:0 + border-box let a wide switch shrink instead of overrunning the pod. */
 .seq-row, .voice-row { gap: .4rem; }
 .seq-row > .seq-cap,
 .voice-row > .voice-cap { flex: 0 0 50px; width: 50px; min-width: 50px; text-align: left; }
@@ -772,17 +770,13 @@ button { font-family: var(--font-hand); }
 .seq-row > .sw,
 .voice-row > .lfo-dest,
 .voice-row > .sw { flex: 1 1 0; min-width: 0; box-sizing: border-box; }
-/* dense selectors (5/6 options) need tighter gaps (button sizing is set with the
-   .sw rules below, after .sw button, so it wins on specificity + order) */
+/* dense selectors (5/6 options): tighter gaps (button sizing set in the .sw rules below) */
 .sw-5, .sw-6 { gap: 2px; }
 /* ----------------------------------------------------------------------------
-   REDISTRIBUTE TALL PODS — lay independent groups side-by-side so the pod reads
-   wider/more rectangular instead of a long vertical stack. These pods are made
-   wide enough that the half-columns don't cramp their controls.
+   WIDE PODS — lay independent groups side-by-side so the pod reads wider, not taller:
      MODULATION : LFO 1 | LFO 2 (two columns), PATCHBAY full-width below.
      VOICE      : TONE | VOICING (two columns).
-   OSC stays stacked: its WAVETABLE group is content-heavy and got cramped at
-   half width when the engine is switched to Wavetable.
+   (OSC stays stacked — its WAVETABLE group needs the full width.)
    -------------------------------------------------------------------------- */
 .pod-matrix, .pod-synth {
   display: flex; flex-wrap: wrap; gap: 0 .55rem;
@@ -831,7 +825,7 @@ button { font-family: var(--font-hand); }
 .env-cap:nth-of-type(2) { transform: rotate(1.3deg) translateY(1px); }
 
 /* ============================================================================
-   N-WAY SWITCHES — 2/3/4-option selectors styled like the pedal's toggle:
+   N-WAY SWITCHES — 2/3/4-option selectors styled like the hardware toggle:
    a dark recessed track with the active position as a bright metallic "bat".
    ========================================================================== */
 .sw {
@@ -844,13 +838,11 @@ button { font-family: var(--font-hand); }
   flex: 1 1 0; min-width: 0; border: 1.5px solid transparent; background: transparent;
   color: rgba(157,195,212,.5); border-radius: 5px; padding: .24rem .3rem; cursor: pointer;
   box-shadow: none; text-shadow: none; transition: background .14s, color .14s, box-shadow .14s;
-  /* compact label that fits the narrow track: the seq/voice selectors otherwise
-     inherit the wide .76rem handwriting font and spill out of the button box. */
+  /* compact mono label that fits the narrow track */
   font-family: var(--font-mono); font-size: .6rem; letter-spacing: .01em; line-height: 1.15;
   white-space: nowrap; overflow: hidden; text-overflow: clip;
 }
-/* dense selectors (5/6 options) — smaller still so labels like "Pent"/"Saw" fit.
-   .sw.sw-N beats .sw button on specificity so it wins despite appearing earlier. */
+/* dense selectors (5/6 options): smaller labels to fit */
 .sw.sw-5 button { font-size: .54rem; padding: .24rem .08rem; }
 .sw.sw-6 button { font-size: .5rem;  padding: .22rem .05rem; letter-spacing: 0; }
 .sw button:hover { color: var(--ink); transform: none; }

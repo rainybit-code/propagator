@@ -2,17 +2,17 @@
 
 [![web validate](https://github.com/rainybit-code/propagator/actions/workflows/web.yml/badge.svg)](https://github.com/rainybit-code/propagator/actions/workflows/web.yml)
 
-A browser-based **WebMIDI** editor for the DIY **Spore** pedal (the Electrosmith
+A browser-based **WebMIDI** editor for the DIY **Spore** device (the Electrosmith
 Daisy Seed firmware lives in the separate
-[**`spore`**](https://github.com/rainybit-code/spore) repo). Configure the pedal's
+[**`spore`**](https://github.com/rainybit-code/spore) repo). Configure Spore's
 parameters live over USB MIDI — no install, no drivers.
 
 **▶ Live: <https://rainybit-code.github.io/propagator/>** — open in Chrome or Edge
-with the Spore pedal connected over USB. (It's the editor UI; it needs the pedal to
+with Spore connected over USB. (It's the editor UI; it needs the device to
 do anything.)
 
-The look: a hand-inked **"boiling line"** cartoon of the pedal on cyanotype
-blueprint paper. Everything breathes, vibrates, and grows. The pedal is the hero
+The look: a hand-inked **"boiling line"** cartoon of Spore on cyanotype
+blueprint paper. Everything breathes, vibrates, and grows. The device is the hero
 in the centre; secondary parameters branch out into fenced blueprint callouts; the
 MIDI connection lives subtly in the top frame; a tempo dial drives a live beat.
 
@@ -38,8 +38,8 @@ Safari has no Web MIDI; recent Firefox is partial.
 
 ## What it does
 
-- Lists MIDI inputs/outputs, connects to the pedal, shows live status.
-- The 6 pedal **knobs** (drag, wheel, double-click to centre) + 3 toggles + 2
+- Lists MIDI inputs/outputs, connects to Spore, shows live status.
+- The 6 hardware **knobs** (drag, wheel, double-click to centre) + 3 toggles + 2
   footswitches, mirrored from the hardware. Toggle 1 picks the mode and **relabels**
   the knobs; Toggle 3 picks the FX.
 - A full **Synth voice editor** in draggable "pods" (shown/hidden from the View menu):
@@ -49,8 +49,8 @@ Safari has no Web MIDI; recent Firefox is partial.
   (GUI- or MIDI-master, tempo-synced delay).
 - Preset save/load (browser localStorage).
 - **Firmware flashing in the browser** (WebUSB DFU) — the ⤓ dfu button opens a wizard
-  that fetches the latest `spore` release `.bin` (or takes a local file), reboots the
-  pedal to DFU over MIDI, and flashes it. Chrome/Edge; Windows needs WinUSB once (Zadig).
+  that fetches the latest `spore` release `.bin` (or takes a local file), reboots
+  Spore to DFU over MIDI, and flashes it. Chrome/Edge; Windows needs WinUSB once (Zadig).
 
 ## MIDI map (the contract)
 
@@ -63,7 +63,7 @@ Values are 0–127 (0..1 normalized).
 ## Files
 
 ```
-index.html    structure + inline SVG filters (boil) and pedal chassis
+index.html    structure + inline SVG filters (boil) and Spore chassis
 styles.css    the living blueprint theme + animations
 app.js        WebMIDI, pods/knobs/patchbay/sequencer/clock, presets, flash wizard
 dfu.js        self-contained WebUSB + DfuSe firmware flasher
@@ -73,7 +73,7 @@ presets.json  factory preset library
 ## Roadmap
 
 Tracks the firmware's `MIDI_PROTOCOL.md` phases: SysEx 2-way sync, preset
-librarian (browser + pedal QSPI), and sample upload. Already **live on GitHub
+librarian (browser + device QSPI), and sample upload. Already **live on GitHub
 Pages** at <https://rainybit-code.github.io/propagator/> (https = secure context,
 usable from any machine).
 

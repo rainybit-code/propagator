@@ -1,9 +1,7 @@
 name: web
 
-# Validate the static site on every push/PR. Deployment to GitHub Pages is handled
-# separately by the Pages "deploy from branch" setting (main / root). On a version
-# tag (vX.Y.Z) we also attach a zipped copy of the site to a GitHub Release so a
-# pinned version can be self-hosted offline.
+# Validate the static site on every push/PR (deploy is handled by pages.yml).
+# On a version tag (vX.Y.Z), attach a zipped copy of the site to a GitHub Release.
 on:
   push:
     branches: [main]

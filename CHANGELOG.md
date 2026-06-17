@@ -10,9 +10,9 @@ uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
   time** (Pages Actions workflow fetches it server-side, dodging the release-asset
   CORS wall), so the wizard can one-click "use latest" via a same-origin fetch. Local
   .bin still supported.
-- The pedal's firmware version is read over a **SysEx identify** query; the DFU button
-  **pulses dim green** when the bundled build is newer than what's on the pedal.
-- In-browser **firmware flashing** (WebUSB DFU, `dfu.js`): update the Spore pedal from
+- Spore's firmware version is read over a **SysEx identify** query; the DFU button
+  **pulses dim green** when the bundled build is newer than what's on the device.
+- In-browser **firmware flashing** (WebUSB DFU, `dfu.js`): update Spore from
   the editor — pick the latest GitHub release `.bin` or a local file, reboot to DFU
   over MIDI (CC 119), then flash via DfuSe to internal flash. Chrome/Edge; on Windows
   the bootloader needs the WinUSB driver once (Zadig).

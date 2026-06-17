@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Propagator — the cultivating surface for the Spore pedal.
+<!-- Propagator — the cultivating surface for Spore.
      SPDX-License-Identifier: GPL-3.0-or-later · Copyright (C) 2026 Joakim Langkilde -->
 <html lang="en">
 <head>
@@ -108,7 +108,7 @@
       <span>IN&nbsp;◂</span>
       <select id="midiIn"><option value="">— no device —</option></select>
     </label>
-    <label class="conn-field switch-field" title="forward notes/CC from the IN device to the pedal">
+    <label class="conn-field switch-field" title="forward notes/CC from the IN device to Spore">
       <span>thru</span>
       <span class="pill">
         <input type="checkbox" id="midiThru" checked />
@@ -141,7 +141,7 @@
 <div class="notice" id="flash" hidden>
   <div class="notice-card sketch flash-card">
     <h2>Update firmware</h2>
-    <p class="flash-sub">Flash the <b>Spore</b> pedal over USB — no extra tools.</p>
+    <p class="flash-sub">Flash <b>Spore</b> over USB — no extra tools.</p>
 
     <div class="flash-step">
       <span class="flash-num">1</span>
@@ -162,7 +162,7 @@
     <div class="flash-step">
       <span class="flash-num">2</span>
       <div class="flash-body">
-        <div class="flash-label">Put the pedal in DFU mode</div>
+        <div class="flash-label">Put Spore in DFU mode</div>
         <button id="fwReboot" class="flash-btn">⤓ Reboot to DFU (via MIDI)</button>
         <div class="flash-info">…or hold <b>BOOT</b> + tap <b>RESET</b> on the Daisy, or hold both footswitches 2&nbsp;s.</div>
       </div>
@@ -183,7 +183,7 @@
 
     <p class="flash-note">Chrome/Edge only. On <b>Windows</b> the bootloader may need the
       <b>WinUSB</b> driver once, via <a href="https://zadig.akeo.ie/" target="_blank" rel="noopener">Zadig</a>.
-      A failed flash can't brick the pedal — just re-enter DFU and retry.</p>
+      A failed flash can't brick Spore — just re-enter DFU and retry.</p>
 
     <div class="flash-actions">
       <button id="fwClose" class="flash-btn">Close</button>
@@ -197,10 +197,10 @@
   <!-- wires overlay (connector lines drawn in app.js) -->
   <svg class="wires" id="wires" aria-hidden="true"></svg>
 
-  <!-- ---- center: the pedal ---- -->
+  <!-- ---- center: the Spore device ---- -->
   <section class="pedal-wrap">
     <div class="pedal" id="pedal">
-      <!-- boiling hand-inked chassis (portrait, Spore pedal layout) -->
+      <!-- boiling hand-inked chassis (portrait, Spore layout) -->
       <svg class="chassis" viewBox="0 0 340 560" preserveAspectRatio="none" aria-hidden="true">
         <g class="ink">
           <rect class="body" x="14" y="14" width="312" height="532" rx="26"/>
@@ -482,11 +482,11 @@
     </div>
     <div class="silk-group">
       <span class="silk-label">CLOCK</span>
-      <div class="lfo-dest" id="clockMasterSeg" title="who is tempo master for the pedal">
+      <div class="lfo-dest" id="clockMasterSeg" title="who is tempo master for Spore">
         <button data-c="off" class="on">Off</button><button data-c="gui">GUI</button><button data-c="in">MIDI</button>
       </div>
     </div>
-    <p class="pod-note">drag the number · scroll to fine-tune · CLOCK sends tempo to the pedal (delay sync)</p>
+    <p class="pod-note">drag the number · scroll to fine-tune · CLOCK sends tempo to Spore (delay sync)</p>
   </aside>
 
   <!-- ---- bottom-right pod: step SEQUENCER (web-side piano-roll) ---- -->
