@@ -675,7 +675,9 @@ button { font-family: var(--font-hand); }
 .flash-info { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-dim); margin-top: .3rem; word-break: break-word; }
 .flash-info[data-kind="ok"] { color: var(--mode, #45c069); }
 .flash-info[data-kind="err"] { color: var(--heat-2); }
-.flash-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.flash-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+.flash-row .flash-info { margin-top: 0; }                 /* don't shift text inside a row */
+.flash-row #fwUseLatest, .flash-row #fwPick { min-width: 8.6rem; text-align: left; }  /* equal width -> info aligns */
 .flash-btn { background: rgba(91,208,230,.1); color: var(--ink); border: 1.5px solid var(--cyan-2);
   border-radius: 8px; padding: .42rem .9rem; font-size: .84rem; font-weight: 600; letter-spacing: .01em;
   cursor: pointer; transition: background .15s, border-color .15s; }
