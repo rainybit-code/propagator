@@ -307,7 +307,21 @@ $('#waveEngineSeg').addEventListener('click', e => {
   const en = +b.dataset.e;   // 0 = analog, 1 = wavetable
   document.querySelectorAll('#waveEngineSeg button').forEach(x => x.classList.toggle('on', +x.dataset.e === en));
   knobValue.synth[14] = en; sendCC(CONFIG.ccSynth[14], en);
+  updateEngineUI();
 });
+// show only the controls that apply to the chosen engine
+function showEl(sel, show) { const e = $(sel); if (e) e.style.display = show ? '' : 'none'; }
+function updateEngineUI() {
+  const wt = knobValue.synth[14] >= 0.5;   // wavetable engine?
+  showEl('#wtControls', wt);               // table / scan / FM / fold
+  showEl('#synthWaveSeg', !wt);            // analog waveform selector
+  showEl('#unisonRow', !wt);               // unison is analog-only
+  const note = $('#waveNote');
+  if (note) note.textContent = wt
+    ? 'wavetable scan (sine→bright) · FM (carrier × ratio) · wavefold · sub for body'
+    : 'analog: 2–4 detuned oscillators (super-saw via UNISON) + sub';
+  requestAnimationFrame(reflowPods);       // heights changed -> re-clamp pods
+}
 const waveKnobsEl = $('#waveKnobs');
 if (waveKnobsEl) {
   waveKnobsEl.appendChild(makeKnob('synth', 15, 'Scan'));   // wavetable position
@@ -355,6 +369,7 @@ if (matrixSlotsEl) [[27, 28, 29], [30, 31, 32], [33, 34, 35]].forEach(([si, di, 
   matrixSlotsEl.appendChild(row);
   matrixRows.push({ ssel, dsel, si, di });
 });
+updateEngineUI();   // set the initial analog/wavetable control visibility
 function refreshMatrix() {
   matrixRows.forEach(r => {
     r.ssel.value = Math.round(knobValue.synth[r.si] * 4);
@@ -422,8 +437,7 @@ function setMode(m) {
   const labels = CONFIG.modeLabels[name];
   modeKnobs.forEach((k, i) => { k._label.textContent = labels[i]; });
   if (stompNames[1]) stompNames[1].textContent = CONFIG.fsActions[name] || 'ACTION';  // FS2 = mode action
-  const sp = $('#synthPod'); if (sp) sp.hidden = (m !== 0);          // synth/mod/env panels only in Synth mode
-  const mo = $('#modPod'); if (mo) mo.hidden = (m !== 0);
+  const sp = $('#synthPod'); if (sp) sp.hidden = (m !== 0);          // synth panels only in Synth mode
   const ev = $('#envPod'); if (ev) ev.hidden = (m !== 0);
   const wv = $('#wavePod'); if (wv) wv.hidden = (m !== 0);
   const mx = $('#matrixPod'); if (mx) mx.hidden = (m !== 0);
@@ -485,6 +499,7 @@ function refreshSegments() {
   on('#subWaveSeg',     'w', Math.round(knobValue.synth[24]));
   on('#lfo2ShapeSeg',   'w', Math.round(knobValue.synth[26] * 3));
   refreshMatrix();
+  updateEngineUI();
 }
 function pushAllCC() {
   CONFIG.ccMode.forEach((cc, i) => sendCC(cc, knobValue.mode[i]));
@@ -1171,7 +1186,7 @@ function loop(now) {
    (Starting a drag on a control inside is ignored so knobs/buttons still work.
    Uses left/top so the float animation's transform still composes; wires follow.)
    ========================================================================= */
-const POD_IDS = ['#synthPod', '#fxPod', '#bpmPod', '#midiPod', '#modPod', '#seqPod', '#envPod', '#wavePod', '#matrixPod'];
+const POD_IDS = ['#synthPod', '#fxPod', '#bpmPod', '#midiPod', '#seqPod', '#envPod', '#wavePod', '#matrixPod'];
 const SNAP_STEP = 28;   // pods tidy onto this px grid when released
 
 // apply a drag offset (dx,dy relative to the grid slot), then nudge the whole
