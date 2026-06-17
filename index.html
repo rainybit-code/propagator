@@ -217,6 +217,12 @@
     <div class="fx-knobs" id="fxKnobs">
       <!-- 6 fx knobs injected by app.js -->
     </div>
+    <div class="voice-row">
+      <span class="voice-cap">DLY&nbsp;SYNC</span>
+      <div class="lfo-dest" id="delaySyncSeg" title="lock delay time to the clock tempo">
+        <button data-s="0" class="on">Off</button><button data-s="1">¼</button><button data-s="2">⅛</button><button data-s="3">⅛.</button><button data-s="4">16</button>
+      </div>
+    </div>
   </aside>
 
   <!-- ---- SYNTH voice editor (shown in Synth mode) ---- -->
@@ -369,7 +375,13 @@
         <div class="beat-dots" id="beatDots"><i></i><i></i><i></i><i></i></div>
       </div>
     </div>
-    <p class="pod-note">drag the number · scroll to fine-tune</p>
+    <div class="voice-row">
+      <span class="voice-cap">CLOCK</span>
+      <div class="lfo-dest" id="clockMasterSeg" title="who is tempo master for the pedal">
+        <button data-c="off" class="on">Off</button><button data-c="gui">GUI</button><button data-c="in">MIDI-in</button>
+      </div>
+    </div>
+    <p class="pod-note">drag the number · scroll to fine-tune · CLOCK sends tempo to the pedal (delay sync)</p>
   </aside>
 
   <!-- ---- bottom-right pod: step SEQUENCER (web-side piano-roll) ---- -->

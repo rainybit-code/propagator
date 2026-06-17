@@ -11,6 +11,8 @@ const CONFIG = {
   ccFx:   [26, 27, 28, 29, 30, 31], // FX-layer knobs 1..6
   ccModeSelect: 16,                 // mode select (0/64/127 -> synth/granular/generative)
   ccFxSelect:   17,                 // FX select   (0/64/127 -> off/delay/reverb)
+  ccTempo:      14,                 // internal clock BPM (0..1 -> 40..200)
+  ccDelaySync:  15,                 // delay tempo-sync division (0 off / ¼ / ⅛ / ⅛. / 16)
   ccSysReboot:  119,                // CC 119 >=64 -> pedal reboots into DFU bootloader
 
   ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14-19 wavetable · 20-24 tone · 25-26 LFO2 · 27-44 matrix (6 slots) · 45 LFO2 depth
@@ -51,6 +53,7 @@ const midiPod   = $('#midiPod'), midiAct = $('#midiAct'), midiLast = $('#midiLas
 /* ---------- MIDI state ---------- */
 let midi = null, midiOut = null, midiIn = null;
 let thru = true;   // forward IN-device messages to the pedal (OUT)
+let clockMaster = 'off';   // tempo master for the pedal: 'off' | 'gui' | 'in'
 // clock OFF by default: the pedal ignores incoming clock, and relaying a 24-PPQN
 // stream floods its USB-MIDI input and can cause it to miss notes. (Beat sync in
 // the web UI is unaffected — it reads clock locally, before this forward filter.)
@@ -1011,6 +1014,7 @@ function setBpm(v) {
   bpm = Math.max(40, Math.min(240, Math.round(v)));
   bpmNum.textContent = bpm;
   if (bpmMiniVal) bpmMiniVal.textContent = bpm;
+  if (clockMaster === 'gui' && midiOut) sendCC(CONFIG.ccTempo, Math.max(0, Math.min(1, (bpm - 40) / 160)));
 }
 
 function updateTransportUI() {
@@ -1020,6 +1024,7 @@ function updateTransportUI() {
 function setPlaying(p) {
   playing = p;
   updateTransportUI();
+  if (clockMaster === 'gui' && midiOut) { try { midiOut.send([playing ? 0xFA : 0xFC]); } catch (_) {} }
   if (playing) {  // START: restart from the beginning of the bar (downbeat)
     beatIndex = 0;
     nextBeat = performance.now();
@@ -1048,6 +1053,42 @@ function setBpmPodClosed(closed) {
 $('#bpmPlay').addEventListener('click', () => setPlaying(!playing));
 $('#bpmMiniPlay').addEventListener('click', () => setPlaying(!playing));
 $('#bpmMiniOpen').addEventListener('click', () => setBpmPodClosed(false));
+
+/* ---- clock master: GUI emits 24-PPQN MIDI clock to the pedal, or we forward the
+   input device's clock. The pedal locks to whichever and tempo-syncs its delay. ---- */
+let clockTimer = null, clockTickAt = 0;
+function startClockEmit() {
+  stopClockEmit();
+  clockTickAt = performance.now();
+  clockTimer = setInterval(() => {
+    if (clockMaster !== 'gui' || !midiOut) return;
+    const now = performance.now(), tickMs = 60000 / (bpm * 24);
+    let guard = 0;
+    while (now - clockTickAt >= tickMs && guard++ < 96) { try { midiOut.send([0xF8]); } catch (_) {} clockTickAt += tickMs; }
+  }, 6);
+}
+function stopClockEmit() { if (clockTimer) { clearInterval(clockTimer); clockTimer = null; } }
+function setClockMaster(c) {
+  clockMaster = c;
+  document.querySelectorAll('#clockMasterSeg button').forEach(b => b.classList.toggle('on', b.dataset.c === c));
+  thruFilter.clock = (c === 'in');   // forward the input device's clock to the pedal
+  if (c === 'gui') {
+    startClockEmit();
+    if (midiOut) { sendCC(CONFIG.ccTempo, Math.max(0, Math.min(1, (bpm - 40) / 160))); if (playing) { try { midiOut.send([0xFA]); } catch (_) {} } }
+  } else {
+    stopClockEmit();
+    if (c === 'off' && midiOut) { try { midiOut.send([0xFC]); } catch (_) {} }
+  }
+  try { localStorage.setItem('propagator.clock', c); } catch (_) {}
+}
+$('#clockMasterSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setClockMaster(b.dataset.c); });
+$('#delaySyncSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const s = +b.dataset.s;
+  document.querySelectorAll('#delaySyncSeg button').forEach(x => x.classList.toggle('on', +x.dataset.s === s));
+  sendCC(CONFIG.ccDelaySync, s / 4);
+});
+try { setClockMaster(localStorage.getItem('propagator.clock') || 'off'); } catch (_) { setClockMaster('off'); }
 
 let beatIndex = 0, nextBeat = performance.now();
 function pulseBeat(beatInBar) {
