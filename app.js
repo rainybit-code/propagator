@@ -55,6 +55,8 @@ const midiPod   = $('#midiPod'), midiAct = $('#midiAct'), midiLast = $('#midiLas
 /* ---------- MIDI state ---------- */
 let midi = null, midiOut = null, midiIn = null;
 let thru = true;   // forward IN-device messages to the pedal (OUT)
+let latestFw = null;     // {version,size,file} from ./firmware/latest.json (bundled at deploy)
+let connectedFw = null;  // version string reported by the pedal's SysEx identify reply
 let clockMaster = 'off';   // tempo master for the pedal: 'off' | 'gui' | 'in'
 let delaySyncIdx = 0;      // delay tempo-sync division (part of a patch/preset)
 // clock OFF by default: the pedal ignores incoming clock, and relaying a 24-PPQN
@@ -845,7 +847,9 @@ function selectOut(id) {
     sendCC(CONFIG.ccModeSelect, activeMode / 2);
     sendCC(CONFIG.ccFxSelect, activeFx / 2);
     CONFIG.ccSynth.forEach((cc, i) => sendCC(cc, knobValue.synth[i]));
-  }
+    connectedFw = null; checkFwUpdate();
+    setTimeout(sendIdentify, 150);   // ask which firmware it's running (reply pulses the DFU btn)
+  } else { connectedFw = null; checkFwUpdate(); }
 }
 function selectIn(id) {
   if (midiIn) midiIn.onmidimessage = null;
@@ -959,7 +963,17 @@ function onMidiMessage(e) {
     else if (status === 0xFC && clockSync) setPlaying(false);                       // stop
     fwd(d, 'clock'); return;
   }
-  if (status < 0x80 || status >= 0xF0) return;   // ignore other system msgs (sysex/sensing)
+  if (status === 0xF0) {   // SysEx — identify reply: F0 7D 41 <version ASCII> F7
+    if (d.length >= 4 && d[1] === 0x7D && d[2] === 0x41) {
+      let s = '';
+      for (let i = 3; i < d.length && d[i] !== 0xF7; i++) s += String.fromCharCode(d[i]);
+      connectedFw = s.trim().replace(/^v/, '');
+      if (midiLast) midiLast.textContent = 'pedal firmware v' + connectedFw;
+      checkFwUpdate();
+    }
+    return;
+  }
+  if (status < 0x80 || status >= 0xF0) return;   // ignore other system msgs (sensing/etc)
 
   // channel-voice: activity LED, last-received readout, filtered thru
   const info = describeMidi(d);
@@ -1563,6 +1577,56 @@ function fwProgress(p) {
     ? 'Writing ' + Math.round((p.ratio || 0) * 100) + '%' : 'Finishing…');
 }
 
+// --- firmware version awareness ---
+function semverGt(a, b) {   // is version a strictly newer than b?
+  const pa = String(a).replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
+  const pb = String(b).replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) > (pb[i] || 0)) return true;
+    if ((pa[i] || 0) < (pb[i] || 0)) return false;
+  }
+  return false;
+}
+// pulse the DFU button dim green when the bundled build is newer than the pedal's
+function checkFwUpdate() {
+  const btn = $('#dfuBtn'); if (!btn) return;
+  const avail = !!(latestFw && latestFw.version && connectedFw && semverGt(latestFw.version, connectedFw));
+  btn.classList.toggle('update', avail);
+  btn.title = avail ? ('firmware update available: v' + connectedFw + ' → v' + latestFw.version + ' — click to flash')
+                    : 'update firmware (flash over USB / DFU)';
+}
+// the firmware bundled into this site at deploy time (same-origin, no CORS)
+async function loadLatestFw() {
+  try {
+    const r = await fetch('./firmware/latest.json', { cache: 'no-cache' });
+    if (r.ok) {
+      const j = await r.json();
+      if (j && j.version) latestFw = { version: String(j.version).replace(/^v/, ''),
+                                       size: j.size, file: j.file || 'spore-latest.bin' };
+    }
+  } catch (e) { /* not deployed / local dev — fine */ }
+  checkFwUpdate();
+}
+// ask the pedal which firmware it's running (SysEx identify) — reply handled in onMidiMessage
+function sendIdentify() {
+  if (!midiOut) return;
+  try { midiOut.send([0xF0, 0x7D, 0x01, 0xF7]); } catch (e) { /* sysex not permitted */ }
+}
+
+function fwShowLatest() {
+  const info = fwEl('fwLatestInfo'), btn = fwEl('fwUseLatest');
+  if (latestFw && latestFw.version) {
+    info.innerHTML = 'latest: <b>v' + latestFw.version + '</b>'
+      + (latestFw.size ? ' · ' + (latestFw.size / 1024).toFixed(1) + ' KB' : '')
+      + (connectedFw ? ' · on pedal: v' + connectedFw : '');
+    btn.hidden = false;
+  } else {
+    info.innerHTML = 'no bundled build — get it from '
+      + '<a href="https://github.com/rainybit-code/spore/releases/latest" target="_blank" rel="noopener">releases</a>, then pick a .bin';
+    btn.hidden = true;
+  }
+}
+
 function fwOpen() {
   const m = fwEl('flash'); if (!m) return;
   m.hidden = false;
@@ -1571,6 +1635,8 @@ function fwOpen() {
   fwStatus(WebDFU.supported() ? '—' : 'WebUSB unavailable — use Chrome/Edge over https/localhost', 'err');
   fwEl('fwConnect').disabled = !WebDFU.supported();
   fwEl('fwReboot').disabled = !midiOut;
+  fwShowLatest();
+  sendIdentify();   // refresh the pedal's reported version while the wizard is open
 }
 async function fwClose() {
   fwEl('flash').hidden = true;
@@ -1582,7 +1648,21 @@ async function fwClose() {
 // since you can flash a freshly-DFU'd board via the BOOT+RESET gesture)
 $('#dfuBtn').addEventListener('click', fwOpen);
 
-// --- step 1: choose the .bin (downloaded from the releases page) ---
+// --- step 1: use the bundled latest build (same-origin fetch — no CORS) ---
+fwEl('fwUseLatest').addEventListener('click', async () => {
+  if (!latestFw) return;
+  const info = fwEl('fwLatestInfo');
+  try {
+    const r = await fetch('./firmware/' + (latestFw.file || 'spore-latest.bin'), { cache: 'no-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    FLASH.buf = await r.arrayBuffer(); FLASH.bufName = 'spore-v' + latestFw.version + '.bin';
+    info.innerHTML = '✓ loaded <b>v' + latestFw.version + '</b> · ' + (FLASH.buf.byteLength / 1024).toFixed(1) + ' KB';
+    fwSetFlashEnabled();
+  } catch (e) {
+    info.textContent = 'could not load bundled firmware (' + e.message + ') — use a local .bin';
+  }
+});
+// --- step 1: or choose a local .bin ---
 fwEl('fwPick').addEventListener('click', () => fwEl('fwFile').click());
 fwEl('fwFile').addEventListener('change', async (e) => {
   const f = e.target.files && e.target.files[0]; if (!f) return;
@@ -1643,4 +1723,5 @@ window.addEventListener('resize', reflowPods);
 requestAnimationFrame(() => { reflowPods(); requestAnimationFrame(loop); });
 startBoil();
 loadFactoryPresets();    // factory library + any saved user presets -> dropdown
+loadLatestFw();          // read the bundled firmware version (drives the DFU update pulse)
 initMidi();

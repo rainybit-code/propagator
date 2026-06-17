@@ -6,6 +6,12 @@ uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
 - Live on GitHub Pages: <https://rainybit-code.github.io/propagator/>.
+- Firmware flashing: the latest Spore build is now **bundled into the site at deploy
+  time** (Pages Actions workflow fetches it server-side, dodging the release-asset
+  CORS wall), so the wizard can one-click "use latest" via a same-origin fetch. Local
+  .bin still supported.
+- The pedal's firmware version is read over a **SysEx identify** query; the DFU button
+  **pulses dim green** when the bundled build is newer than what's on the pedal.
 - In-browser **firmware flashing** (WebUSB DFU, `dfu.js`): update the Spore pedal from
   the editor — pick the latest GitHub release `.bin` or a local file, reboot to DFU
   over MIDI (CC 119), then flash via DfuSe to internal flash. Chrome/Edge; on Windows

@@ -7,3 +7,6 @@
 __pycache__/
 *.pyc
 .cache/
+
+# firmware binaries are bundled at deploy time (CI), never committed
+firmware/*.bin

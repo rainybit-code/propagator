@@ -147,14 +147,14 @@
       <span class="flash-num">1</span>
       <div class="flash-body">
         <div class="flash-label">Choose firmware</div>
-        <div class="flash-info">
-          <a href="https://github.com/rainybit-code/spore/releases/latest" target="_blank" rel="noopener">↓ Download the latest Spore firmware</a>
-          (the <code>.bin</code>), then select it:
+        <div class="flash-row">
+          <button id="fwUseLatest" class="flash-btn flash-btn-sm" hidden>⤓ use latest</button>
+          <span id="fwLatestInfo" class="flash-info">—</span>
         </div>
         <input type="file" id="fwFile" accept=".bin" hidden />
         <div class="flash-row">
-          <button id="fwPick" class="flash-btn flash-btn-sm">choose .bin…</button>
-          <span id="fwFileInfo" class="flash-info">no file chosen</span>
+          <button id="fwPick" class="flash-btn flash-btn-sm">or choose a .bin…</button>
+          <span id="fwFileInfo" class="flash-info"></span>
         </div>
       </div>
     </div>

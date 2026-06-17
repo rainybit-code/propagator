@@ -1,0 +1,59 @@
+name: pages
+
+# Deploy the static site to GitHub Pages AND bundle the latest Spore firmware .bin
+# into it at deploy time. GitHub release assets aren't CORS-enabled, so the browser
+# can't fetch them directly — but here we curl it server-side (no CORS) and serve it
+# same-origin under /firmware/, which the flash wizard can then fetch with no CORS.
+#
+# Runs on every push to main, daily (to pick up new firmware releases), and on demand.
+# NOTE: this needs Pages "Source" set to "GitHub Actions" (Settings → Pages).
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * *'      # daily — refresh the bundled firmware if a new release shipped
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble site + bundle latest Spore firmware
+        run: |
+          mkdir -p _site/firmware
+          cp index.html app.js dfu.js styles.css presets.json _site/
+          touch _site/.nojekyll
+          REL="$(curl -s https://api.github.com/repos/rainybit-code/spore/releases/latest)"
+          TAG="$(printf '%s' "$REL" | grep -oE '"tag_name":[ ]*"[^"]*"' | head -1 | sed -E 's/.*"([^"]*)"$/\1/')"
+          URL="$(printf '%s' "$REL" | grep -oE '"browser_download_url":[ ]*"[^"]*\.bin"' | head -1 | sed -E 's/.*"(https[^"]*)"$/\1/')"
+          if [ -n "$URL" ]; then
+            curl -sL "$URL" -o _site/firmware/spore-latest.bin
+            SIZE="$(wc -c < _site/firmware/spore-latest.bin)"
+            printf '{"version":"%s","file":"spore-latest.bin","size":%s}\n' "$TAG" "$SIZE" > _site/firmware/latest.json
+            echo "bundled firmware $TAG ($SIZE bytes)"
+          else
+            printf '{"version":null}\n' > _site/firmware/latest.json
+            echo "no release asset found — site deploys without bundled firmware"
+          fi
+          cat _site/firmware/latest.json
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
