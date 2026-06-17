@@ -300,7 +300,7 @@
   <!-- ---- MODULATION: LFO1 + LFO2 + 3-slot matrix (shown in Synth mode) ---- -->
   <aside class="pod pod-matrix sketch" id="matrixPod">
     <div class="pod-tab">MODULATION</div>
-    <div class="mod-sub">LFO 1 → vib / filter / trem</div>
+    <div class="mod-sub">LFO 1 · shape / rate / depth</div>
     <div class="synth-wave" id="lfoShapeSeg" title="LFO1 shape">
       <button data-w="0" class="on" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
       <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>
@@ -308,13 +308,7 @@
       <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
     </div>
     <div class="mod-knobs" id="modKnobs"><!-- LFO1 rate + depth injected by app.js --></div>
-    <div class="lfo-dest" id="lfoDestSeg">
-      <button data-d="0">Off</button>
-      <button data-d="1" class="on">Vib</button>
-      <button data-d="2">Filt</button>
-      <button data-d="3">Trem</button>
-    </div>
-    <div class="mod-sub">LFO 2</div>
+    <div class="mod-sub">LFO 2 · shape / rate / depth</div>
     <div class="synth-wave" id="lfo2ShapeSeg" title="LFO2 shape">
       <button data-w="0" class="on" title="Sine"><svg viewBox="0 0 26 16"><path d="M2 8 q3 -6 6 0 q3 6 6 0 q3 -6 6 0"/></svg></button>
       <button data-w="1" title="Triangle"><svg viewBox="0 0 26 16"><path d="M2 13 L9 3 L16 13 L23 3"/></svg></button>

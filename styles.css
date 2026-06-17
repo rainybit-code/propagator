@@ -284,19 +284,26 @@ body::before {
 .mod-knobs { display: flex; gap: .7rem; justify-content: center; margin: .4rem 0 .2rem; }
 .mod-sub { font-family: var(--font-mono); font-size: .54rem; letter-spacing: .12em; color: var(--ink-dim); text-transform: uppercase; margin: .55rem 0 .2rem; opacity: .85; }
 .mod-sub:first-of-type { margin-top: .1rem; }
-/* patchbay: source pins (left) -> destination pins (right), draggable cables */
+/* patchbay: silkscreen pads on a metal plate, draggable cables between them */
 .patchbay { margin: .3rem 0 .1rem; }
 .patch-svg { width: 100%; height: auto; display: block; touch-action: none; cursor: crosshair; overflow: visible; }
-.patch-pin { fill: #07151f; stroke: var(--cyan-2); stroke-width: 2; cursor: pointer; transition: fill .12s; }
-.patch-pin.src { stroke: var(--mode); }
-.patch-pin.dst { stroke: var(--heat); }
-.patch-pin.src.used { fill: var(--mode); }
-.patch-pin.dst.used { fill: var(--heat); }
-.patch-pin:hover { stroke: var(--ink); }
-.patch-label { fill: var(--ink-dim); font-family: var(--font-mono); font-size: 8px; pointer-events: none; }
-.patch-cable { fill: none; stroke: var(--mode); stroke-width: 2; opacity: .7; cursor: pointer; }
+.patch-metal { fill: url(#pbsteel); stroke: #060d14; stroke-width: 1.5;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+/* faint "possible connections" guide web */
+.patch-ghost path { fill: none; stroke: #eaf6f4; stroke-width: .6; opacity: .05; }
+/* silkscreen label pads (white, screen-printed look) */
+.patch-pad { cursor: pointer; }
+.patch-plate { fill: rgba(8,16,24,.35); stroke: #e8eef0; stroke-width: 1.3; opacity: .9; transition: fill .12s, stroke .12s; }
+.patch-silk { fill: #e8eef0; font-family: var(--font-mono); font-size: 8px; letter-spacing: .04em; pointer-events: none; text-shadow: 0 1px 0 rgba(0,0,0,.5); }
+.patch-pad:hover .patch-plate { fill: rgba(91,208,230,.18); stroke: #fff; }
+.patch-pad.src.used .patch-plate { stroke: var(--mode); fill: rgba(147,240,107,.14); }
+.patch-pad.dst.used .patch-plate { stroke: var(--heat); fill: rgba(255,124,61,.14); }
+.patch-pin { fill: #0a1620; stroke: #cfd8db; stroke-width: 1.4; pointer-events: none; }
+.patch-pad.src.used .patch-pin { fill: var(--mode); stroke: var(--mode); }
+.patch-pad.dst.used .patch-pin { fill: var(--heat); stroke: var(--heat); }
+.patch-cable { fill: none; stroke: var(--mode); stroke-width: 2; opacity: .85; cursor: pointer; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
 .patch-cable.sel { stroke: var(--heat); opacity: 1; stroke-width: 2.6; }
-.patch-cable.temp { stroke: var(--ink-dim); stroke-dasharray: 3 3; opacity: .8; pointer-events: none; }
+.patch-cable.temp { stroke: #e8eef0; stroke-dasharray: 3 3; opacity: .7; pointer-events: none; }
 .patch-inspect { display: flex; align-items: center; gap: .4rem; margin-top: .25rem; font-family: var(--font-mono); font-size: .58rem; color: var(--ink-dim); }
 .patch-inspect[hidden] { display: none; }
 .patch-inspect input[type=range] { flex: 1 1 auto; min-width: 0; accent-color: var(--heat); }
