@@ -317,7 +317,7 @@ function updateEngineUI() {
   if (note) note.textContent = wt
     ? 'wavetable scan (sine→bright) · FM (carrier × ratio) · wavefold · sub for body'
     : 'analog: 2–4 detuned oscillators (super-saw via UNISON) + sub';
-  requestAnimationFrame(reflowPods);       // heights changed -> re-clamp pods
+  // note: no relayout here — the panel resizes in place so nothing else jumps
 }
 const waveKnobsEl = $('#waveKnobs');
 if (waveKnobsEl) {
