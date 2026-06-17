@@ -280,7 +280,7 @@ body::before {
 .pod-seq   .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
 .pod-env   { transform: rotate(-.9deg);  animation: float-a 7.5s ease-in-out infinite; border-color: var(--mode); transition: border-color .3s; }
 .pod-env   .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
-.pod-wave  { transform: rotate(.8deg);   animation: float-b 9.5s ease-in-out infinite; max-width: 248px; }
+.pod-wave  { transform: rotate(.8deg);   animation: float-b 9.5s ease-in-out infinite; max-width: 288px; }
 .pod-wave  .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
 .wave-knobs { display: flex; gap: .7rem; justify-content: center; margin: .45rem 0 .2rem; }
 .pod-matrix { transform: rotate(-.7deg); animation: float-a 8s ease-in-out infinite; max-width: 330px; }
@@ -724,19 +724,23 @@ button { font-family: var(--font-hand); }
 .sw-5 button, .sw-6 button { padding: .24rem .1rem; }
 /* ----------------------------------------------------------------------------
    REDISTRIBUTE TALL PODS — lay independent groups side-by-side so the pod reads
-   wider/more rectangular instead of a long vertical stack. MODULATION: LFO1 |
-   LFO2 in two columns, PATCHBAY full-width below. OSC: ENGINE | WAVETABLE. A
-   group flex-grows to fill the row when its sibling is hidden (e.g. WAVETABLE
-   when the engine is Analog).
+   wider/more rectangular instead of a long vertical stack. These pods are made
+   wide enough that the half-columns don't cramp their controls.
+     MODULATION : LFO 1 | LFO 2 (two columns), PATCHBAY full-width below.
+     VOICE      : TONE | VOICING (two columns).
+   OSC stays stacked: its WAVETABLE group is content-heavy and got cramped at
+   half width when the engine is switched to Wavetable.
    -------------------------------------------------------------------------- */
-.pod-matrix, .pod-wave {
-  display: flex; flex-wrap: wrap; gap: 0 .5rem;
-  align-content: flex-start; align-items: flex-start; max-width: 360px;
+.pod-matrix, .pod-synth {
+  display: flex; flex-wrap: wrap; gap: 0 .55rem;
+  align-content: flex-start; align-items: flex-start;
 }
-.pod-matrix > .pod-tab, .pod-wave > .pod-tab,
-.pod-matrix > .pod-note, .pod-wave > .pod-note { flex: 0 0 100%; }
-.pod-matrix > .silk-group, .pod-wave > .silk-group {
-  flex: 1 1 calc(50% - .26rem); min-width: 0; box-sizing: border-box;
+.pod-matrix { max-width: 440px; }
+.pod-synth  { max-width: 430px; }
+.pod-matrix > .pod-tab, .pod-synth > .pod-tab,
+.pod-matrix > .pod-note, .pod-synth > .pod-note { flex: 0 0 100%; }
+.pod-matrix > .silk-group, .pod-synth > .silk-group {
+  flex: 1 1 calc(50% - .3rem); min-width: 0; box-sizing: border-box;
   margin-top: .85rem; margin-bottom: .3rem;
 }
 .pod-matrix > .silk-group:last-of-type { flex: 1 1 100%; }   /* PATCHBAY spans full width below LFO1|LFO2 */
