@@ -322,9 +322,14 @@
       <button data-w="3" title="Square"><svg viewBox="0 0 26 16"><path d="M2 12 L2 4 L10 4 L10 12 L18 12 L18 4 L24 4"/></svg></button>
     </div>
     <div class="mod-knobs" id="lfo2Knobs"><!-- LFO2 rate knob injected by app.js --></div>
-    <div class="mod-sub">MATRIX · source → dest → amount</div>
-    <div class="matrix-slots" id="matrixSlots"><!-- 3 routing rows injected by app.js --></div>
-    <p class="pod-note">two LFOs + 3 routings · Random &amp; Sensor sources · bipolar amounts</p>
+    <div class="mod-sub">PATCHBAY · drag source → destination</div>
+    <div class="patchbay" id="patchbay"><!-- SVG pins + cables injected by app.js --></div>
+    <div class="patch-inspect" id="patchInspect" hidden>
+      <span id="patchLabel">—</span>
+      <input type="range" id="patchAmt" min="-100" max="100" value="50" title="amount (bipolar)" />
+      <button id="patchRemove" title="remove this cable">✕</button>
+    </div>
+    <p class="pod-note">drag a cable from a source pin to a destination · click a cable to set amount / remove · up to 6</p>
   </aside>
 
   <!-- ---- MOD / LFO (shown in Synth mode) ---- -->

@@ -1,5 +1,5 @@
 /* ============================================================================
-   PROPAGATOR — hothouse control surface (WebMIDI)
+   PROPAGATOR — control surface (WebMIDI)
    The CC map is the contract with the firmware (see daisy repo
    docs/MIDI_PROTOCOL.md). Edit CONFIG to extend.
    ========================================================================== */
@@ -13,7 +13,7 @@ const CONFIG = {
   ccFxSelect:   17,                 // FX select   (0/64/127 -> off/delay/reverb)
   ccSysReboot:  119,                // CC 119 >=64 -> pedal reboots into DFU bootloader
 
-  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14-19 wavetable · 20-24 tone · 25-26 LFO2 · 27-35 mod-matrix (3 slots src/dst/amt)
+  ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14-19 wavetable · 20-24 tone · 25-26 LFO2 · 27-44 mod-matrix (6 slots src/dst/amt)
   synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
   modeOrder: ['synth', 'granular', 'generative'], // toggle 1: up / middle / down
   modeLabels: {
@@ -66,11 +66,13 @@ const knobValue = {
   // 0-7 voice · 8 wave · 9 LFO rate · 10 LFO depth · 11 LFO shape · 12 LFO dest · 13 voices(0.6->4)
   // 14 engine(0=analog) · 15 wt scan · 16 FM amt · 17 FM ratio · 18 fold · 19 wt bank
   // 20 drive · 21 filter(0=Svf) · 22 unison(0.33->2) · 23 sub oct · 24 sub wave
-  // 25 LFO2 rate · 26 LFO2 shape · 27-29 slot1 src/dst/amt · 30-32 slot2 · 33-35 slot3
+  // 25 LFO2 rate · 26 LFO2 shape · 27-44 mod matrix (6 slots: src/dst/amt)
   synth: [0.25, 0.40, 0.70, 0.30, 0.50, 0.30, 0.00, 0.60, 0.66, 0.30, 0.00, 0.00, 0.33, 0.60,
           0.00, 0.30, 0.00, 0.25, 0.00, 0.00,
           0.00, 0.00, 0.33, 0.00, 0.00,
-          0.30, 0.00, 0.00, 0.00, 0.50, 0.00, 0.00, 0.50, 0.00, 0.00, 0.50],
+          0.30, 0.00,
+          0.00, 0.00, 0.50, 0.00, 0.00, 0.50, 0.00, 0.00, 0.50,
+          0.00, 0.00, 0.50, 0.00, 0.00, 0.50, 0.00, 0.00, 0.50],
 };
 
 /* ===========================================================================
@@ -355,28 +357,111 @@ $('#lfo2ShapeSeg').addEventListener('click', e => {
   document.querySelectorAll('#lfo2ShapeSeg button').forEach(x => x.classList.toggle('on', +x.dataset.w === w));
   knobValue.synth[26] = w / 3; sendCC(CONFIG.ccSynth[26], w / 3);
 });
-const matrixRows = [];
-const matrixSlotsEl = $('#matrixSlots');
-if (matrixSlotsEl) [[27, 28, 29], [30, 31, 32], [33, 34, 35]].forEach(([si, di, ai]) => {
-  const row = el('div', 'matrix-row');
-  const ssel = el('select', 'seq-sel');
-  MOD_SRC.forEach((n, i) => { const o = el('option'); o.value = i; o.textContent = n; ssel.appendChild(o); });
-  const dsel = el('select', 'seq-sel');
-  MOD_DST.forEach((n, i) => { const o = el('option'); o.value = i; o.textContent = n; dsel.appendChild(o); });
-  ssel.addEventListener('change', e => { const v = +e.target.value / 4; knobValue.synth[si] = v; sendCC(CONFIG.ccSynth[si], v); });
-  dsel.addEventListener('change', e => { const v = +e.target.value / 6; knobValue.synth[di] = v; sendCC(CONFIG.ccSynth[di], v); });
-  row.append(ssel, dsel, makeKnob('synth', ai, 'Amt'));
-  matrixSlotsEl.appendChild(row);
-  matrixRows.push({ ssel, dsel, si, di });
-});
-updateEngineUI();   // set the initial analog/wavetable control visibility
-function refreshMatrix() {
-  matrixRows.forEach(r => {
-    r.ssel.value = Math.round(knobValue.synth[r.si] * 4);
-    r.dsel.value = Math.round(knobValue.synth[r.di] * 6);
-  });
+/* ---- PATCHBAY: drag a cable from a source pin (left) to a destination pin
+   (right). Each cable = one of the 6 matrix slots. Many cables can share a
+   source or a destination; the pedal sums per destination. ---- */
+const NSV = 'http://www.w3.org/2000/svg';
+const PATCH_SLOTS = [27, 30, 33, 36, 39, 42];   // synth idx of each slot's SRC (DST=+1, AMT=+2)
+const SRCY = [20, 54, 88, 122];                 // source pin y (LFO1/LFO2/Rnd/Sens)
+const DSTY = [14, 33, 52, 71, 90, 109, 128];    // destination pin y (Cutoff..Amp)
+const PSX = 12, PDX = 228;                       // pin x (left / right)
+let patchSvg = null, patchSel = -1;
+
+function slotGet(i) {
+  const b = PATCH_SLOTS[i];
+  return { src: Math.round(knobValue.synth[b] * 4), dst: Math.round(knobValue.synth[b + 1] * 6), amt: knobValue.synth[b + 2] };
 }
-refreshMatrix();
+function slotSet(i, src, dst, amt) {
+  const b = PATCH_SLOTS[i];
+  if (src != null) { knobValue.synth[b] = src / 4; sendCC(CONFIG.ccSynth[b], src / 4); }
+  if (dst != null) { knobValue.synth[b + 1] = dst / 6; sendCC(CONFIG.ccSynth[b + 1], dst / 6); }
+  if (amt != null) { knobValue.synth[b + 2] = amt; sendCC(CONFIG.ccSynth[b + 2], amt); }
+}
+function freeSlot() { for (let i = 0; i < 6; i++) if (slotGet(i).src === 0) return i; return -1; }
+function cablePath(sx, sy, dx, dy) { const mx = (sx + dx) / 2; return `M ${sx} ${sy} C ${mx} ${sy} ${mx} ${dy} ${dx} ${dy}`; }
+function svgPt(e) { const r = patchSvg.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 240, y: (e.clientY - r.top) / r.height * 150 }; }
+
+function buildPatch() {
+  const host = $('#patchbay'); if (!host) return;
+  patchSvg = document.createElementNS(NSV, 'svg');
+  patchSvg.setAttribute('viewBox', '0 0 240 150');
+  patchSvg.setAttribute('class', 'patch-svg');
+  const cables = document.createElementNS(NSV, 'g'); cables.setAttribute('class', 'patch-cables');
+  patchSvg.appendChild(cables); patchSvg._cables = cables;
+  const pin = (kind, i, x, y, label, anchor, lx) => {
+    const c = document.createElementNS(NSV, 'circle');
+    c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', 5);
+    c.setAttribute('class', 'patch-pin ' + kind); c.dataset.kind = kind; c.dataset.i = i;
+    const t = document.createElementNS(NSV, 'text');
+    t.setAttribute('x', lx); t.setAttribute('y', y + 3); t.setAttribute('text-anchor', anchor);
+    t.setAttribute('class', 'patch-label'); t.textContent = label;
+    patchSvg.append(c, t);
+  };
+  MOD_SRC.slice(1).forEach((n, i) => pin('src', i, PSX, SRCY[i], n, 'start', PSX + 9));
+  MOD_DST.forEach((n, j) => pin('dst', j, PDX, DSTY[j], n, 'end', PDX - 9));
+  host.appendChild(patchSvg);
+
+  // drag a new cable from a source pin
+  patchSvg.addEventListener('pointerdown', (e) => {
+    const p = e.target.closest('.patch-pin'); if (!p || p.dataset.kind !== 'src') return;
+    const from = +p.dataset.i;
+    const temp = document.createElementNS(NSV, 'path'); temp.setAttribute('class', 'patch-cable temp');
+    patchSvg._cables.appendChild(temp);
+    try { patchSvg.setPointerCapture(e.pointerId); } catch (_) {}
+    const mv = (ev) => { const q = svgPt(ev); temp.setAttribute('d', cablePath(PSX, SRCY[from], q.x, q.y)); };
+    const up = (ev) => {
+      patchSvg.removeEventListener('pointermove', mv); patchSvg.removeEventListener('pointerup', up);
+      try { patchSvg.releasePointerCapture(ev.pointerId); } catch (_) {}
+      temp.remove();
+      const tgt = document.elementFromPoint(ev.clientX, ev.clientY);
+      if (tgt && tgt.classList.contains('patch-pin') && tgt.dataset.kind === 'dst') {
+        const slot = freeSlot();
+        if (slot >= 0) { slotSet(slot, from + 1, +tgt.dataset.i, 0.75); patchSel = slot; }
+      }
+      renderPatch();
+    };
+    patchSvg.addEventListener('pointermove', mv);
+    patchSvg.addEventListener('pointerup', up);
+    mv(e);
+  });
+  renderPatch();
+}
+
+function renderPatch() {
+  if (!patchSvg) return;
+  const g = patchSvg._cables; g.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const s = slotGet(i); if (s.src === 0) continue;
+    const path = document.createElementNS(NSV, 'path');
+    path.setAttribute('d', cablePath(PSX, SRCY[s.src - 1], PDX, DSTY[s.dst]));
+    path.setAttribute('class', 'patch-cable' + (i === patchSel ? ' sel' : ''));
+    path.addEventListener('pointerdown', (e) => { e.stopPropagation(); patchSel = i; renderPatch(); });
+    g.appendChild(path);
+  }
+  patchSvg.querySelectorAll('.patch-pin').forEach((pin) => {
+    const kind = pin.dataset.kind, i = +pin.dataset.i; let used = false;
+    for (let s = 0; s < 6; s++) { const sl = slotGet(s); if (sl.src === 0) continue;
+      if (kind === 'src' && sl.src - 1 === i) used = true; if (kind === 'dst' && sl.dst === i) used = true; }
+    pin.classList.toggle('used', used);
+  });
+  const ins = $('#patchInspect');
+  if (ins) {
+    const ok = patchSel >= 0 && slotGet(patchSel).src > 0;
+    ins.hidden = !ok;
+    if (ok) {
+      const s = slotGet(patchSel);
+      $('#patchLabel').textContent = MOD_SRC[s.src] + ' → ' + MOD_DST[s.dst];
+      const a = $('#patchAmt'); if (a) a.value = Math.round((s.amt * 2 - 1) * 100);
+    }
+  }
+}
+const patchAmtEl = $('#patchAmt');
+if (patchAmtEl) patchAmtEl.addEventListener('input', (e) => { if (patchSel < 0) return; slotSet(patchSel, null, null, (+e.target.value / 100 + 1) / 2); });
+const patchRmEl = $('#patchRemove');
+if (patchRmEl) patchRmEl.addEventListener('click', () => { if (patchSel < 0) return; slotSet(patchSel, 0, 0, 0.5); patchSel = -1; renderPatch(); });
+function refreshMatrix() { renderPatch(); }   // called on preset load
+buildPatch();
+updateEngineUI();   // set the initial analog/wavetable control visibility
 
 /* ===========================================================================
    TOGGLES (3-position)
@@ -1222,7 +1307,7 @@ function makeDraggable(pod) {
   if (!pod) return;
   let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
   pod.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.knob, button, input, label, .pill, .switch-field, .bpm-dial, select, .seg, .seq-grid, .env-graph, .beat-seed')) return;
+    if (e.target.closest('.knob, button, input, label, .pill, .switch-field, .bpm-dial, select, .seg, .seq-grid, .env-graph, .patchbay, .beat-seed')) return;
     dragging = true; pod.classList.add('dragging');
     sx = e.clientX; sy = e.clientY;
     ox = parseFloat(pod.dataset.dx || '0'); oy = parseFloat(pod.dataset.dy || '0');
