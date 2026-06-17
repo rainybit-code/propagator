@@ -231,7 +231,7 @@ function envSet(bank, idx, v) {
 }
 
 function drawEnv() {
-  if (!envSvg) return;
+  if (!envSvg) { buildEnv(); if (!envSvg) return; }   // lazy-build if it wasn't ready at load
   const { A, D, S, R } = envGet();
   const peakX = ENV.X0 + A * ENV.AW;
   const susStartX = peakX + D * ENV.DW;
@@ -267,7 +267,7 @@ function envDrag(handle, onMove) {
   });
 }
 function buildEnv() {
-  if (!envHost) return;
+  if (!envHost || envSvg) return;   // build once; idempotent for the lazy path
   envSvg = document.createElementNS(NSVG, 'svg');
   envSvg.setAttribute('viewBox', `0 0 ${ENV.VBW} ${ENV.VBH}`);
   envSvg.setAttribute('class', 'env-svg');
@@ -1423,6 +1423,7 @@ function applyPods() {
     else { pe.hidden = false; pe.style.display = want ? '' : 'none'; }
   });
   layoutPods();
+  envRedraw();   // re-draw the ADSR graph whenever the env pod is (re)shown
 }
 function applyPod(pe) {
   const bx = +(pe.dataset.bx || 0), by = +(pe.dataset.by || 0);

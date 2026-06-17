@@ -708,6 +708,38 @@ button { font-family: var(--font-hand); }
   border: 2.2px solid rgba(226,233,235,.42); border-radius: 8px;
 }
 .silk-group:first-of-type { margin-top: .55rem; }
+/* align rows inside seq/voice groups: fixed-width caption column, controls fill.
+   min-width:0 + border-box let the switch shrink to fit so it never overruns the
+   pod edge (the "voices out of bounds" case: a 6-way switch + caption in a row). */
+.seq-row, .voice-row { gap: .4rem; }
+.seq-row > .seq-cap,
+.voice-row > .voice-cap { flex: 0 0 50px; width: 50px; min-width: 50px; text-align: left; }
+.seq-row > .seq-sel,
+.seq-row > .seq-seg,
+.seq-row > .sw,
+.voice-row > .lfo-dest,
+.voice-row > .sw { flex: 1 1 0; min-width: 0; box-sizing: border-box; }
+/* dense selectors (5/6 options) need tighter buttons to fit a half/narrow column */
+.sw-5, .sw-6 { gap: 2px; }
+.sw-5 button, .sw-6 button { padding: .24rem .1rem; }
+/* ----------------------------------------------------------------------------
+   REDISTRIBUTE TALL PODS — lay independent groups side-by-side so the pod reads
+   wider/more rectangular instead of a long vertical stack. MODULATION: LFO1 |
+   LFO2 in two columns, PATCHBAY full-width below. OSC: ENGINE | WAVETABLE. A
+   group flex-grows to fill the row when its sibling is hidden (e.g. WAVETABLE
+   when the engine is Analog).
+   -------------------------------------------------------------------------- */
+.pod-matrix, .pod-wave {
+  display: flex; flex-wrap: wrap; gap: 0 .5rem;
+  align-content: flex-start; align-items: flex-start; max-width: 360px;
+}
+.pod-matrix > .pod-tab, .pod-wave > .pod-tab,
+.pod-matrix > .pod-note, .pod-wave > .pod-note { flex: 0 0 100%; }
+.pod-matrix > .silk-group, .pod-wave > .silk-group {
+  flex: 1 1 calc(50% - .26rem); min-width: 0; box-sizing: border-box;
+  margin-top: .85rem; margin-bottom: .3rem;
+}
+.pod-matrix > .silk-group:last-of-type { flex: 1 1 100%; }   /* PATCHBAY spans full width below LFO1|LFO2 */
 .silk-label {
   position: absolute; top: -7px; left: 10px; padding: 0 5px;
   background: var(--paper);
