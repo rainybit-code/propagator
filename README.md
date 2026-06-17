@@ -1,5 +1,7 @@
 # 🌱 Propagator
 
+[![web validate](https://github.com/rainybit-code/propagator/actions/workflows/web.yml/badge.svg)](https://github.com/rainybit-code/propagator/actions/workflows/web.yml)
+
 A browser-based **WebMIDI** editor for the DIY **Spore** pedal (the Electrosmith
 Daisy Seed firmware lives in the separate
 [**`spore`**](https://github.com/rainybit-code/spore) repo). Configure the pedal's
