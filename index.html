@@ -117,6 +117,7 @@
       <span class="dot"></span><span class="conn-label" id="connLabel">offline</span>
     </div>
     <button id="resetLayout" class="tb-btn" title="reset breakout box positions">⟲ layout</button>
+    <button id="dfuBtn" class="tb-btn tb-dfu" title="reboot the pedal into DFU mode for firmware flashing" disabled>⤓ dfu</button>
   </div>
 </header>
 
@@ -235,7 +236,42 @@
         <button data-v="6">6</button>
       </div>
     </div>
-    <p class="pod-note">detuned oscillators · sub · ADSR · filter envelope · glide · poly/mono</p>
+    <p class="pod-note">detuned oscillators · sub · glide · width · poly / mono</p>
+  </aside>
+
+  <!-- ---- ENVELOPE editor: interactive ADSR graph (shown in Synth mode) ---- -->
+  <aside class="pod pod-env sketch" id="envPod">
+    <div class="pod-tab">ENV&nbsp;▸&nbsp;ADSR</div>
+    <div class="env-cap">AMP · attack decay sustain release</div>
+    <div class="env-graph" id="envGraph" title="drag the handles to shape the amp envelope"></div>
+    <div class="env-cap">FILTER ENV</div>
+    <div class="env-filter" id="envFilter"><!-- filter-env knobs injected by app.js --></div>
+    <p class="pod-note">drag: ◦ attack · ◦ decay + sustain · ◦ release · filter-env amount + time</p>
+  </aside>
+
+  <!-- ---- WAVE / DIGITAL voice engine (shown in Synth mode) ---- -->
+  <aside class="pod pod-wave sketch" id="wavePod">
+    <div class="pod-tab">WAVE&nbsp;▸&nbsp;DIGITAL</div>
+    <div class="seq-row">
+      <span class="seq-cap">ENGINE</span>
+      <div class="seq-seg" id="waveEngineSeg">
+        <button data-e="0" class="on">Analog</button><button data-e="1">Wavetable</button>
+      </div>
+    </div>
+    <div class="seq-row">
+      <span class="seq-cap">TABLE</span>
+      <div class="seq-seg" id="waveBankSeg">
+        <button data-b="0" class="on">Saw</button><button data-b="1">Sqr</button><button data-b="2">Org</button><button data-b="3">Voc</button><button data-b="4">Dig</button>
+      </div>
+    </div>
+    <div class="wave-knobs" id="waveKnobs"><!-- scan / FM / fold knobs injected by app.js --></div>
+    <div class="seq-row">
+      <span class="seq-cap">FM&nbsp;×</span>
+      <div class="seq-seg" id="waveRatioSeg">
+        <button data-r="0">½</button><button data-r="1" class="on">1</button><button data-r="2">2</button><button data-r="3">3</button>
+      </div>
+    </div>
+    <p class="pod-note">wavetable scan (sine→bright) · FM (carrier × ratio) · wavefold · sub kept for body</p>
   </aside>
 
   <!-- ---- MOD / LFO (shown in Synth mode) ---- -->
@@ -292,6 +328,56 @@
       </div>
     </div>
     <p class="pod-note">drag the number · scroll to fine-tune</p>
+  </aside>
+
+  <!-- ---- bottom-right pod: step SEQUENCER (web-side piano-roll) ---- -->
+  <aside class="pod pod-seq sketch" id="seqPod">
+    <div class="pod-tab">SEQ&nbsp;▸&nbsp;ROLL</div>
+    <div class="seq-head">
+      <button class="seq-run" id="seqRun" title="run / stop the sequencer">▶ run</button>
+      <div class="seq-bartabs" id="seqBarTabs" title="bar to edit" hidden></div>
+      <div class="seq-mini">
+        <button id="seqClear" title="clear all notes">clr</button>
+        <button id="seqSeed" title="randomize">⚄</button>
+      </div>
+    </div>
+    <div class="seq-grid" id="seqGrid" title="click or drag to place notes"></div>
+    <div class="seq-row">
+      <span class="seq-cap">SCALE</span>
+      <div class="seq-seg" id="seqScaleSeg">
+        <button data-s="0" class="on">Maj</button><button data-s="1">Min</button><button data-s="2">Dor</button><button data-s="3">Pent</button><button data-s="4">Chr</button>
+      </div>
+    </div>
+    <div class="seq-row">
+      <span class="seq-cap">KEY</span>
+      <select class="seq-sel" id="seqRoot" title="root note">
+        <option value="0">C</option><option value="1">C#</option><option value="2">D</option><option value="3">D#</option><option value="4">E</option><option value="5">F</option><option value="6">F#</option><option value="7">G</option><option value="8">G#</option><option value="9">A</option><option value="10">A#</option><option value="11">B</option>
+      </select>
+      <select class="seq-sel" id="seqOct" title="octave">
+        <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
+      </select>
+      <span class="seq-cap seq-cap-sm">GATE</span>
+      <div class="seq-seg" id="seqGateSeg">
+        <button data-g="0">¼</button><button data-g="1" class="on">½</button><button data-g="2">¾</button><button data-g="3">F</button>
+      </div>
+    </div>
+    <div class="seq-row">
+      <span class="seq-cap">STEPS</span>
+      <div class="seq-seg" id="seqStepsSeg">
+        <button data-p="8">8</button><button data-p="16" class="on">16</button>
+      </div>
+      <span class="seq-cap seq-cap-sm">BARS</span>
+      <div class="seq-seg" id="seqBarsSeg">
+        <button data-b="1" class="on">1</button><button data-b="2">2</button><button data-b="4">4</button>
+      </div>
+    </div>
+    <div class="seq-row">
+      <span class="seq-cap">ORDER</span>
+      <div class="seq-seg" id="seqOrderSeg">
+        <button data-o="0" class="on" title="forward">→</button><button data-o="1" title="backward">←</button><button data-o="2" title="ping-pong">↔</button><button data-o="3" title="random">⚄</button>
+      </div>
+    </div>
+    <p class="pod-note">piano-roll → MIDI notes · scale-locked rows · 1–4 bar loop · synced to tempo / MIDI clock</p>
   </aside>
 
   <!-- floating blueprint annotation on hover -->

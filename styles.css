@@ -24,6 +24,12 @@
   --grid:     rgba(120, 210, 230, .16);
   --grid-bold:rgba(120, 210, 230, .26);
 
+  /* dark "machine" panels that frame the blueprint + a warm complement accent */
+  --slate:    #050b12;   /* near-black cool slate */
+  --slate-2:  #0b1822;
+  --warm:     #ff9a4d;   /* warm accent (complements the all-blue field) */
+  --warm-line:rgba(255,138,71,.30);
+
   --font-hand: 'Shantell Sans', 'Comic Sans MS', 'Segoe Print', cursive;
   --font-mono: 'Spline Sans Mono', ui-monospace, 'Cascadia Mono', monospace;
 
@@ -70,8 +76,15 @@ body::before {
    ========================================================================== */
 .titleblock {
   position: relative; z-index: 30; flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
-  gap: 1rem; padding: .5rem 1.1rem; border-bottom: 1.5px dashed var(--cyan-2);
-  background: linear-gradient(180deg, rgba(8,29,49,.92), rgba(8,29,49,.55)); backdrop-filter: blur(3px);
+  gap: 1rem; padding: .5rem 1.1rem; border-bottom: 1px solid #02080e;
+  background: linear-gradient(180deg, var(--slate) 0%, var(--slate-2) 100%); backdrop-filter: blur(3px);
+  /* warm hairline under the dark bar = the complementary accent against the blue field */
+  box-shadow: 0 1px 0 var(--warm-line), 0 8px 26px rgba(0,0,0,.5);
+}
+/* faint warm sheen along the top edge of the dark header */
+.titleblock::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255,154,77,.22) 30%, rgba(255,154,77,.22) 70%, transparent);
 }
 .tb-left { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.1rem; }
 .tb-preset { display: flex; align-items: center; gap: .5rem; font-family: var(--font-mono); font-size: .72rem; }
@@ -97,6 +110,10 @@ body::before {
 .conn-status[data-state="live"] .conn-label { color: var(--grow); }
 .tb-btn { font-family: var(--font-mono); font-size: .66rem; letter-spacing: .08em; color: var(--ink-dim); background: rgba(91,208,230,.08); border: 1.5px solid var(--cyan-2); border-radius: 7px; padding: .24rem .55rem; cursor: pointer; }
 .tb-btn:hover { color: var(--ink); border-color: var(--cyan); }
+/* DFU: deliberately understated; warms up on hover, dims when unavailable */
+.tb-dfu { color: var(--ink-dim); opacity: .55; letter-spacing: .12em; }
+.tb-dfu:hover:not(:disabled) { color: var(--warm); border-color: var(--warm); opacity: 1; }
+.tb-dfu:disabled { opacity: .25; cursor: not-allowed; }
 /* inline preset name editor */
 .preset-saver { display: inline-flex; align-items: center; gap: .4rem; }
 .preset-saver[hidden] { display: none; }
@@ -209,7 +226,8 @@ body::before {
   grid-template-areas:
     "modpod   pedal fxpod"
     "synthpod pedal midipod"
-    "bpmpod   pedal .";
+    "envpod   pedal seqpod"
+    "bpmpod   pedal wavepod";
   gap: 1.1rem 1.7rem; align-items: start; justify-items: center;
   max-width: 1300px; width: 100%; margin: 0 auto; padding: 1.1rem 1.4rem .5rem;
   flex: 1 1 auto; min-height: 0; overflow: visible;  /* body handles no-scroll; let pods move full-width */
@@ -217,6 +235,9 @@ body::before {
 .pod-left  { grid-area: modepod; justify-self: end; }
 .pod-right { grid-area: fxpod;   justify-self: start; }
 .pod-bpm   { grid-area: bpmpod;  justify-self: end; }
+.pod-seq   { grid-area: seqpod;  justify-self: start; }
+.pod-env   { grid-area: envpod;  justify-self: end; }
+.pod-wave  { grid-area: wavepod; justify-self: start; }
 .pedal-wrap{ grid-area: pedal; position: relative; z-index: 5; }
 
 /* wires sit BEHIND the pedal (z-index 3 < pedal 5): only the gutter segment
@@ -250,6 +271,13 @@ body::before {
 .pod-left  { transform: rotate(-1.1deg); animation: float-a 7s ease-in-out infinite; border-color: var(--mode); transition: border-color .3s; }
 .pod-right { transform: rotate(1.1deg);  animation: float-b 8s ease-in-out infinite; }
 .pod-bpm   { transform: rotate(-.7deg);  animation: float-a 9s ease-in-out infinite; }
+.pod-seq   { transform: rotate(.7deg);   animation: float-b 8.5s ease-in-out infinite; max-width: 300px; }
+.pod-seq   .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
+.pod-env   { transform: rotate(-.9deg);  animation: float-a 7.5s ease-in-out infinite; border-color: var(--mode); transition: border-color .3s; }
+.pod-env   .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
+.pod-wave  { transform: rotate(.8deg);   animation: float-b 9.5s ease-in-out infinite; max-width: 248px; }
+.pod-wave  .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
+.wave-knobs { display: flex; gap: .7rem; justify-content: center; margin: .45rem 0 .2rem; }
 .pod-tab {
   position: absolute; top: -12px; left: 14px; font-family: var(--font-mono); font-size: .6rem; letter-spacing: .14em;
   padding: .14rem .5rem; border-radius: 5px; transform: rotate(-1.5deg); box-shadow: 0 2px 6px rgba(0,0,0,.35);
@@ -285,6 +313,89 @@ body::before {
   background: radial-gradient(120% 140% at 30% 30%, #ffd9a6, var(--heat) 55%, #d8551f 100%);
   box-shadow: inset 0 0 10px rgba(50,15,0,.4), 0 0 16px rgba(255,124,61,.45);
 }
+
+/* ============================================================================
+   STEP SEQUENCER pod
+   ========================================================================== */
+.seq-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+.seq-run {
+  font-family: var(--font-mono); font-size: .66rem; letter-spacing: .06em; cursor: pointer;
+  padding: .3rem .55rem; border-radius: 8px; border: 1.6px solid var(--cyan-2);
+  background: rgba(91,208,230,.05); color: var(--ink-dim); transition: background .2s, color .2s, border-color .2s, box-shadow .2s;
+}
+.seq-run.on {
+  color: #0a1620; font-weight: 600; border-color: var(--mode);
+  background: radial-gradient(120% 140% at 30% 30%, rgba(255,255,255,.6), var(--mode) 55%, var(--mode-2) 100%);
+  box-shadow: 0 0 14px var(--mode);
+}
+.seq-mini { display: flex; gap: .3rem; margin-left: auto; }
+.seq-mini button {
+  font-family: var(--font-mono); font-size: .6rem; cursor: pointer; padding: .24rem .42rem; border-radius: 7px;
+  border: 1.4px solid var(--cyan-2); background: rgba(91,208,230,.05); color: var(--ink-dim); transition: color .15s, border-color .15s;
+}
+.seq-mini button:hover { color: var(--ink); border-color: var(--heat); }
+
+/* bar-edit tabs (multi-bar loops) */
+.seq-bartabs { display: flex; gap: .25rem; }
+.seq-bartabs button {
+  font-family: var(--font-mono); font-size: .58rem; width: 18px; height: 18px; padding: 0; cursor: pointer;
+  border-radius: 5px; border: 1.3px solid var(--cyan-2); background: rgba(91,208,230,.05); color: var(--ink-dim);
+}
+.seq-bartabs button.on { color: #0a1620; border-color: var(--mode); background: var(--mode); }
+.seq-bartabs button.playing { border-color: var(--heat); box-shadow: 0 0 8px var(--heat); }
+
+/* piano-roll: a left pitch-label gutter + a cell per step */
+.seq-grid { display: grid; grid-template-columns: 24px repeat(var(--cols), 1fr); gap: 2px; margin-bottom: .55rem; }
+.seq-rlabel {
+  font-family: var(--font-mono); font-size: .46rem; color: var(--ink-dim);
+  display: flex; align-items: center; justify-content: flex-end; padding-right: 3px;
+}
+.seq-cell {
+  height: 11px; cursor: pointer; touch-action: none; border: 1px solid var(--cyan-2); border-radius: 3px;
+  background: rgba(91,208,230,.04); transition: background .1s, border-color .1s;
+}
+.seq-cell.beat { background: rgba(91,208,230,.09); }   /* quarter-note guide columns */
+.seq-cell:hover { background: rgba(91,208,230,.18); }
+.seq-cell.on { border-color: var(--mode); background: linear-gradient(180deg, var(--mode), var(--mode-2)); box-shadow: 0 0 6px var(--mode); }
+.seq-cell.cur { box-shadow: inset 0 0 0 1.4px var(--heat); }
+.seq-cell.on.cur { box-shadow: inset 0 0 0 1.4px var(--heat), 0 0 8px var(--mode); }
+
+.seq-row { display: flex; align-items: center; gap: .4rem; margin-top: .42rem; }
+.seq-cap { font-family: var(--font-mono); font-size: .55rem; letter-spacing: .1em; color: var(--ink-dim); min-width: 36px; }
+.seq-cap-sm { min-width: auto; }
+.seq-seg { display: flex; gap: .25rem; flex: 1 1 auto; }
+.seq-seg button {
+  flex: 1 1 0; font-family: var(--font-hand); font-size: .76rem; cursor: pointer; text-align: center;
+  color: var(--ink-dim); background: rgba(91,208,230,.05); border: 1.4px solid var(--cyan-2); border-radius: 7px; padding: .2rem .1rem;
+  transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
+}
+.seq-seg button:hover { color: var(--ink); }
+.seq-seg button.on {
+  color: #0a1620; font-weight: 600; border-color: var(--mode);
+  background: radial-gradient(120% 140% at 30% 30%, rgba(255,255,255,.6), var(--mode) 55%, var(--mode-2) 100%);
+  box-shadow: 0 0 12px var(--mode);
+}
+.seq-sel {
+  font-family: var(--font-mono); font-size: .7rem; cursor: pointer; padding: .2rem .25rem; border-radius: 7px;
+  background: #07151f; color: var(--ink); border: 1.4px solid var(--cyan-2);
+}
+
+/* ============================================================================
+   ENVELOPE pod — interactive ADSR graph
+   ========================================================================== */
+.env-cap { font-family: var(--font-mono); font-size: .55rem; letter-spacing: .1em; color: var(--ink-dim); text-align: center; margin: .25rem 0 .15rem; }
+.env-graph {
+  border: 1.4px dashed rgba(91,208,230,.28); border-radius: 9px; padding: 5px;
+  background: rgba(91,208,230,.04); box-shadow: inset 0 0 16px rgba(0,0,0,.35);
+}
+.env-svg { width: 100%; height: auto; display: block; touch-action: none; overflow: visible; cursor: crosshair; }
+.env-base { stroke: rgba(91,208,230,.25); stroke-width: 1; stroke-dasharray: 2 4; }
+.env-fill { fill: var(--mode); opacity: .15; transition: fill .3s; }
+.env-line { fill: none; stroke: var(--mode); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--mode)); transition: stroke .3s; }
+.env-handle { fill: #07151f; stroke: var(--mode); stroke-width: 2; cursor: grab; transition: fill .12s; }
+.env-handle:hover { fill: var(--mode); }
+.env-handle:active { cursor: grabbing; }
+.env-filter { display: flex; gap: .9rem; justify-content: center; margin-top: .35rem; }
 
 /* ============================================================================
    THE PEDAL (landscape)
@@ -483,7 +594,13 @@ body::before {
   box-shadow: 0 6px 18px rgba(0,0,0,.45); max-width: 200px; transform: translate(-50%, -120%) rotate(-1deg); }
 .annot b { color: var(--heat-2); } .annot .cc { color: var(--cyan); }
 
-.footer { flex: 0 0 auto; position: relative; z-index: 5; text-align: center; padding: .5rem; font-family: var(--font-mono); font-size: .62rem; letter-spacing: .12em; color: var(--ink-dim); }
+.footer {
+  flex: 0 0 auto; position: relative; z-index: 5; text-align: center; padding: .5rem;
+  font-family: var(--font-mono); font-size: .62rem; letter-spacing: .12em; color: var(--ink-dim);
+  /* dark slate bar to bookend the dark header at the bottom */
+  background: linear-gradient(0deg, var(--slate) 0%, var(--slate-2) 100%);
+  border-top: 1px solid #02080e; box-shadow: 0 -1px 0 var(--warm-line);
+}
 .footer span { color: var(--grow); }
 button { font-family: var(--font-hand); }
 #noticeRetry { background: var(--heat); color: #2a160b; border: none; border-radius: 8px; padding: .4rem 1.1rem; font-size: .9rem; cursor: pointer; }
