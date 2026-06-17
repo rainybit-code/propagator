@@ -719,9 +719,9 @@ button { font-family: var(--font-hand); }
 .seq-row > .sw,
 .voice-row > .lfo-dest,
 .voice-row > .sw { flex: 1 1 0; min-width: 0; box-sizing: border-box; }
-/* dense selectors (5/6 options) need tighter buttons to fit a half/narrow column */
+/* dense selectors (5/6 options) need tighter gaps (button sizing is set with the
+   .sw rules below, after .sw button, so it wins on specificity + order) */
 .sw-5, .sw-6 { gap: 2px; }
-.sw-5 button, .sw-6 button { padding: .24rem .1rem; }
 /* ----------------------------------------------------------------------------
    REDISTRIBUTE TALL PODS — lay independent groups side-by-side so the pod reads
    wider/more rectangular instead of a long vertical stack. These pods are made
@@ -791,7 +791,15 @@ button { font-family: var(--font-hand); }
   flex: 1 1 0; min-width: 0; border: 1.5px solid transparent; background: transparent;
   color: rgba(157,195,212,.5); border-radius: 5px; padding: .24rem .3rem; cursor: pointer;
   box-shadow: none; text-shadow: none; transition: background .14s, color .14s, box-shadow .14s;
+  /* compact label that fits the narrow track: the seq/voice selectors otherwise
+     inherit the wide .76rem handwriting font and spill out of the button box. */
+  font-family: var(--font-mono); font-size: .6rem; letter-spacing: .01em; line-height: 1.15;
+  white-space: nowrap; overflow: hidden; text-overflow: clip;
 }
+/* dense selectors (5/6 options) — smaller still so labels like "Pent"/"Saw" fit.
+   .sw.sw-N beats .sw button on specificity so it wins despite appearing earlier. */
+.sw.sw-5 button { font-size: .54rem; padding: .24rem .08rem; }
+.sw.sw-6 button { font-size: .5rem;  padding: .22rem .05rem; letter-spacing: 0; }
 .sw button:hover { color: var(--ink); transform: none; }
 .sw button.on {   /* the metallic bat sitting at this position */
   color: #07182a; font-weight: 700;

@@ -424,6 +424,8 @@ function slotSet(i, src, dst, amt) {
   if (amt != null) { knobValue.synth[b + 2] = amt; sendCC(CONFIG.ccSynth[b + 2], amt); }
 }
 function freeSlot() { for (let i = 0; i < 6; i++) if (slotGet(i).src === 0) return i; return -1; }
+// find an existing cable for this exact source+destination (src is 1-based, dst 0-based)
+function findSlot(src, dst) { for (let i = 0; i < 6; i++) { const s = slotGet(i); if (s.src === src && s.dst === dst) return i; } return -1; }
 function cablePath(sx, sy, dx, dy) {   // hanging-wire curve (control points sag down)
   const mx = (sx + dx) / 2, sag = 10 + Math.abs(dx - sx) * 0.06;
   return `M ${sx} ${sy} C ${mx} ${sy + sag} ${mx} ${dy + sag} ${dx} ${dy}`;
@@ -474,8 +476,13 @@ function buildPatch() {
       if (tg && tg.dataset.kind !== startKind) {                     // connect to the opposite side
         const srcI = startKind === 'src' ? startI : +tg.dataset.i;
         const dstI = startKind === 'src' ? +tg.dataset.i : startI;
-        const slot = freeSlot();
-        if (slot >= 0) { slotSet(slot, srcI + 1, dstI, 0.75); patchSel = slot; }
+        const dup = findSlot(srcI + 1, dstI);   // already wired? don't add a duplicate
+        if (dup >= 0) {
+          patchSel = dup;                        // just select the existing cable (adjust its amount)
+        } else {
+          const slot = freeSlot();
+          if (slot >= 0) { slotSet(slot, srcI + 1, dstI, 0.75); patchSel = slot; }
+        }
       }
       renderPatch();
     };
