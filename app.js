@@ -445,14 +445,6 @@ function buildPatch() {
   plate.setAttribute('rx', 9); plate.setAttribute('class', 'patch-metal');
   patchSvg.appendChild(plate);
 
-  // faint "possible connections" guide web in the middle
-  const ghost = elNS('g'); ghost.setAttribute('class', 'patch-ghost');
-  for (let i = 0; i < SRCY.length; ++i)
-    for (let j = 0; j < DSTY.length; ++j) {
-      const l = elNS('path'); l.setAttribute('d', cablePath(PB_SPIN, SRCY[i], PB_DPIN, DSTY[j])); ghost.appendChild(l);
-    }
-  patchSvg.appendChild(ghost);
-
   const cables = elNS('g'); cables.setAttribute('class', 'patch-cables');
   patchSvg.appendChild(cables); patchSvg._cables = cables;
 

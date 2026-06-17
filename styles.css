@@ -293,12 +293,10 @@ body::before {
 .patch-svg { width: 100%; height: auto; display: block; touch-action: none; cursor: crosshair; overflow: visible; }
 .patch-metal { fill: url(#pbsteel); stroke: #060d14; stroke-width: 1.5;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
-/* faint "possible connections" guide web */
-.patch-ghost path { fill: none; stroke: #eaf6f4; stroke-width: .6; opacity: .05; }
 /* silkscreen label pads (white, screen-printed look) */
 .patch-pad { cursor: pointer; }
 .patch-plate { fill: rgba(8,16,24,.35); stroke: #e8eef0; stroke-width: 1.3; opacity: .9; transition: fill .12s, stroke .12s; }
-.patch-silk { fill: #e8eef0; font-family: var(--font-mono); font-size: 8px; letter-spacing: .04em; pointer-events: none; text-shadow: 0 1px 0 rgba(0,0,0,.5); }
+.patch-silk { fill: #e8eef0; font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: .02em; pointer-events: none; text-shadow: 0 1px 0 rgba(0,0,0,.5); }
 .patch-pad:hover .patch-plate { fill: rgba(91,208,230,.18); stroke: #fff; }
 .patch-pad.src.used .patch-plate { stroke: var(--mode); fill: rgba(147,240,107,.14); }
 .patch-pad.dst.used .patch-plate { stroke: var(--heat); fill: rgba(255,124,61,.14); }
