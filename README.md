@@ -1,7 +1,7 @@
 # 🌱 Propagator
 
-A browser-based **WebMIDI** editor for the DIY **Spore** pedal (Electrosmith
-Daisy Seed firmware lives in the separate `daisy` repo). Configure the pedal's
+A browser-based **WebMIDI** editor for the DIY **Spore** pedal (the Electrosmith
+Daisy Seed firmware lives in the separate **`spore`** repo). Configure the pedal's
 parameters live over USB MIDI — no install, no drivers.
 
 The look: a hand-inked **"boiling line"** cartoon of the pedal on cyanotype
@@ -29,23 +29,22 @@ Safari has no Web MIDI; recent Firefox is partial.
 ## What it does
 
 - Lists MIDI inputs/outputs, connects to the pedal, shows live status.
-- 6 **knobs** (drag, wheel, double-click to centre) send Control Change.
-- **Toggle 1** picks the mode (Synth / Granular / Generative) and **relabels** the
-  knobs; **Toggle 3** picks the FX (Off / Delay / Reverb) and lights the FX pod.
-- **FX pod** branches off Toggle 3 with its own 6 controls.
-- **Tempo** dial + a pulsing beat (visual only for now).
+- The 6 pedal **knobs** (drag, wheel, double-click to centre) + 3 toggles + 2
+  footswitches, mirrored from the hardware. Toggle 1 picks the mode and **relabels**
+  the knobs; Toggle 3 picks the FX.
+- A full **Synth voice editor** in draggable "pods" (shown/hidden from the View menu):
+  oscillator engine (analog / wavetable), tone & voicing, an interactive **ADSR**
+  graph, **LFO 1 / LFO 2** (free-Hz or clock-synced), a drag-to-wire **patchbay**
+  (6-slot mod matrix), a piano-roll **step sequencer**, and a **tempo/clock** section
+  (GUI- or MIDI-master, tempo-synced delay).
+- Preset save/load (browser localStorage) and a one-click reboot-to-**DFU** for flashing.
 
 ## MIDI map (the contract)
 
-Matches `daisy/docs/MIDI_PROTOCOL.md`:
-
-| Control            | CC      |
-|--------------------|---------|
-| Mode knobs 1–6     | 20–25   |
-| FX knobs 1–6       | 26–31   |
-
-Values are 0–127 (0..1 normalized). Edit `CONFIG` at the top of `app.js` to extend
-(labels, CC numbers, channel).
+The CC / SysEx map is defined by the firmware and is the single source of truth:
+see **`spore/docs/MIDI_PROTOCOL.md`**. The mirror of it lives in the `CONFIG` block at
+the top of `app.js` (labels, CC numbers, channel) — edit there to extend the surface.
+Values are 0–127 (0..1 normalized).
 
 ## Files
 
@@ -60,3 +59,8 @@ app.js       WebMIDI, knob/toggle/footswitch interaction, beat engine, wires
 Tracks the firmware's `MIDI_PROTOCOL.md` phases: SysEx 2-way sync, preset
 librarian (browser + pedal QSPI), and sample upload. Deploy to **GitHub Pages**
 once it stabilizes (https = secure context, usable from any machine).
+
+## License
+
+**GPL-3.0-or-later.** Copyright (C) 2026 Joakim Langkilde. See [`LICENSE`](LICENSE).
+Pairs with the **Spore** firmware (`spore` repo), which is GPL-3.0 for the same reason.

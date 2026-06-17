@@ -1,5 +1,7 @@
 /* ============================================================================
    PROPAGATOR (WebMIDI) — the cultivating surface for the Spore pedal
+   SPDX-License-Identifier: GPL-3.0-or-later
+   Copyright (C) 2026 Joakim Langkilde
    The CC map is the contract with the firmware (see daisy repo
    docs/MIDI_PROTOCOL.md). Edit CONFIG to extend.
    ========================================================================== */
