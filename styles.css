@@ -695,3 +695,29 @@ button { font-family: var(--font-hand); }
   box-shadow: inset 0 0 8px rgba(0,0,0,.5), 0 0 5px color-mix(in srgb, var(--heat) 30%, transparent);
   text-shadow: 0 0 5px color-mix(in srgb, var(--heat) 50%, transparent);
 }
+
+/* ============================================================================
+   DYMO LABELS — embossed label-maker tape for pod section captions, clearly
+   distinct from the buttons: dark tape, bulky raised off-white text, hand-skew
+   ========================================================================== */
+.voice-cap, .seq-cap, .env-cap, .mod-sub {
+  display: inline-block; width: auto; min-width: 0;
+  background: linear-gradient(180deg, #121922, #070b11);
+  color: #edf2ef;
+  font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;
+  font-size: .6rem; letter-spacing: .14em; line-height: 1.15;
+  padding: .15rem .45rem; border-radius: 4px; border: 1px solid #050a10;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 0 -1.5px 2px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.55);
+  text-shadow: 0 -1px 0 rgba(255,255,255,.22), 0 1px 1px rgba(0,0,0,.7);   /* raised emboss */
+  opacity: 1;
+}
+.env-cap, .mod-sub { text-align: center; }
+/* hand-applied, slightly-off rotations (varied per instance) */
+.voice-row:nth-of-type(odd)  .voice-cap { transform: rotate(-1.6deg); }
+.voice-row:nth-of-type(even) .voice-cap { transform: rotate(1.2deg) translateY(1px); }
+.seq-row:nth-of-type(odd)    .seq-cap   { transform: rotate(1.3deg); }
+.seq-row:nth-of-type(even)   .seq-cap   { transform: rotate(-1.2deg) translateY(-1px); }
+.mod-sub { transform: rotate(-1deg); }
+.mod-sub:nth-of-type(2) { transform: rotate(1deg); }
+.env-cap { transform: rotate(-.9deg); }
+.env-cap:nth-of-type(2) { transform: rotate(1.3deg) translateY(1px); }
