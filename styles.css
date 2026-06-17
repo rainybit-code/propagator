@@ -298,12 +298,17 @@ body::before {
 .patch-pad:hover .patch-plate { fill: rgba(91,208,230,.18); stroke: #fff; }
 .patch-pad.src.used .patch-plate { stroke: var(--mode); fill: rgba(147,240,107,.14); }
 .patch-pad.dst.used .patch-plate { stroke: var(--heat); fill: rgba(255,124,61,.14); }
-.patch-pin { fill: #0a1620; stroke: #cfd8db; stroke-width: 1.4; pointer-events: none; }
+.patch-pin { fill: #0a1620; stroke: #cfd8db; stroke-width: 1.4; cursor: crosshair; transition: fill .12s; }
+.patch-pad:hover .patch-pin { fill: #cfd8db; }
 .patch-pad.src.used .patch-pin { fill: var(--mode); stroke: var(--mode); }
 .patch-pad.dst.used .patch-pin { fill: var(--heat); stroke: var(--heat); }
-.patch-cable { fill: none; stroke: var(--mode); stroke-width: 2; opacity: .85; cursor: pointer; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
-.patch-cable.sel { stroke: var(--heat); opacity: 1; stroke-width: 2.6; }
-.patch-cable.temp { stroke: #e8eef0; stroke-dasharray: 3 3; opacity: .7; pointer-events: none; }
+/* cables drawn as wire: dark casing + bright core, round ends, soft shadow */
+.patch-cable { cursor: pointer; filter: drop-shadow(0 1.5px 1px rgba(0,0,0,.5)); }
+.cab-under { fill: none; stroke: #0a1620; stroke-width: 5; stroke-linecap: round; opacity: .6; }
+.cab-core  { fill: none; stroke: var(--mode); stroke-width: 2.6; stroke-linecap: round; }
+.patch-cable.sel .cab-core { stroke: var(--heat); }
+.patch-cable:hover .cab-core { stroke: var(--ink); }
+.cab-temp { fill: none; stroke: #e8eef0; stroke-width: 2.4; stroke-linecap: round; opacity: .8; pointer-events: none; }
 .patch-inspect { display: flex; align-items: center; gap: .4rem; margin-top: .25rem; font-family: var(--font-mono); font-size: .58rem; color: var(--ink-dim); }
 .patch-inspect[hidden] { display: none; }
 .patch-inspect input[type=range] { flex: 1 1 auto; min-width: 0; accent-color: var(--heat); }

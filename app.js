@@ -401,7 +401,10 @@ function slotSet(i, src, dst, amt) {
   if (amt != null) { knobValue.synth[b + 2] = amt; sendCC(CONFIG.ccSynth[b + 2], amt); }
 }
 function freeSlot() { for (let i = 0; i < 6; i++) if (slotGet(i).src === 0) return i; return -1; }
-function cablePath(sx, sy, dx, dy) { const mx = (sx + dx) / 2; return `M ${sx} ${sy} C ${mx} ${sy} ${mx} ${dy} ${dx} ${dy}`; }
+function cablePath(sx, sy, dx, dy) {   // hanging-wire curve (control points sag down)
+  const mx = (sx + dx) / 2, sag = 10 + Math.abs(dx - sx) * 0.06;
+  return `M ${sx} ${sy} C ${mx} ${sy + sag} ${mx} ${dy + sag} ${dx} ${dy}`;
+}
 function svgPt(e) { const r = patchSvg.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * PB_W, y: (e.clientY - r.top) / r.height * PB_H }; }
 
 function buildPatch() {
@@ -445,19 +448,27 @@ function buildPatch() {
   MOD_DST.forEach((n, j) => pad('dst', j, DSTY[j], n));
   host.appendChild(patchSvg);
 
+  // drag a wire from either side (source pad/dot OR destination pad/dot)
   patchSvg.addEventListener('pointerdown', (e) => {
-    const g = e.target.closest('.patch-pad'); if (!g || g.dataset.kind !== 'src') return;
-    const from = +g.dataset.i;
-    const temp = elNS('path'); temp.setAttribute('class', 'patch-cable temp'); patchSvg._cables.appendChild(temp);
+    const g = e.target.closest('.patch-pad'); if (!g) return;
+    const startKind = g.dataset.kind, startI = +g.dataset.i;
+    const ax = startKind === 'src' ? PB_SPIN : PB_DPIN;
+    const ay = startKind === 'src' ? SRCY[startI] : DSTY[startI];
+    const temp = elNS('path'); temp.setAttribute('class', 'cab-temp'); patchSvg._cables.appendChild(temp);
     try { patchSvg.setPointerCapture(e.pointerId); } catch (_) {}
-    const mv = (ev) => { const q = svgPt(ev); temp.setAttribute('d', cablePath(PB_SPIN, SRCY[from], q.x, q.y)); };
+    const mv = (ev) => { const q = svgPt(ev); temp.setAttribute('d', cablePath(ax, ay, q.x, q.y)); };
     const up = (ev) => {
       patchSvg.removeEventListener('pointermove', mv); patchSvg.removeEventListener('pointerup', up);
       try { patchSvg.releasePointerCapture(ev.pointerId); } catch (_) {}
       temp.remove();
       const t = document.elementFromPoint(ev.clientX, ev.clientY);
-      const dg = t && t.closest ? t.closest('.patch-pad') : null;
-      if (dg && dg.dataset.kind === 'dst') { const slot = freeSlot(); if (slot >= 0) { slotSet(slot, from + 1, +dg.dataset.i, 0.75); patchSel = slot; } }
+      const tg = t && t.closest ? t.closest('.patch-pad') : null;
+      if (tg && tg.dataset.kind !== startKind) {                     // connect to the opposite side
+        const srcI = startKind === 'src' ? startI : +tg.dataset.i;
+        const dstI = startKind === 'src' ? +tg.dataset.i : startI;
+        const slot = freeSlot();
+        if (slot >= 0) { slotSet(slot, srcI + 1, dstI, 0.75); patchSel = slot; }
+      }
       renderPatch();
     };
     patchSvg.addEventListener('pointermove', mv); patchSvg.addEventListener('pointerup', up);
@@ -471,11 +482,13 @@ function renderPatch() {
   const g = patchSvg._cables; g.innerHTML = '';
   for (let i = 0; i < 6; i++) {
     const s = slotGet(i); if (s.src === 0) continue;
-    const path = elNS('path');
-    path.setAttribute('d', cablePath(PB_SPIN, SRCY[s.src - 1], PB_DPIN, DSTY[s.dst]));
-    path.setAttribute('class', 'patch-cable' + (i === patchSel ? ' sel' : ''));
-    path.addEventListener('pointerdown', (e) => { e.stopPropagation(); patchSel = i; renderPatch(); });
-    g.appendChild(path);
+    const d = cablePath(PB_SPIN, SRCY[s.src - 1], PB_DPIN, DSTY[s.dst]);
+    const cg = elNS('g'); cg.setAttribute('class', 'patch-cable' + (i === patchSel ? ' sel' : ''));
+    const under = elNS('path'); under.setAttribute('d', d); under.setAttribute('class', 'cab-under');
+    const core = elNS('path'); core.setAttribute('d', d); core.setAttribute('class', 'cab-core');
+    cg.append(under, core);
+    cg.addEventListener('pointerdown', (e) => { e.stopPropagation(); patchSel = i; renderPatch(); });
+    g.appendChild(cg);
   }
   patchSvg.querySelectorAll('.patch-pad').forEach((p) => {
     const kind = p.dataset.kind, i = +p.dataset.i; let used = false;
