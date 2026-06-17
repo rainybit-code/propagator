@@ -267,10 +267,14 @@
   <!-- ---- ENVELOPE editor: interactive ADSR graph (shown in Synth mode) ---- -->
   <aside class="pod pod-env sketch" id="envPod">
     <div class="pod-tab">ENV&nbsp;▸&nbsp;ADSR</div>
-    <div class="env-cap">AMP · attack decay sustain release</div>
-    <div class="env-graph" id="envGraph" title="drag the handles to shape the amp envelope"></div>
-    <div class="env-cap">FILTER ENV</div>
-    <div class="env-filter" id="envFilter"><!-- filter-env knobs injected by app.js --></div>
+    <div class="silk-group">
+      <span class="silk-label">AMP ENV</span>
+      <div class="env-graph" id="envGraph" title="drag the handles to shape the amp envelope"></div>
+    </div>
+    <div class="silk-group">
+      <span class="silk-label">FILTER ENV</span>
+      <div class="env-filter" id="envFilter"><!-- filter-env knobs injected by app.js --></div>
+    </div>
     <p class="pod-note">drag: ◦ attack · ◦ decay + sustain · ◦ release · filter-env amount + time</p>
   </aside>
 
