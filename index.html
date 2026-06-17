@@ -147,14 +147,15 @@
       <span class="flash-num">1</span>
       <div class="flash-body">
         <div class="flash-label">Choose firmware</div>
-        <div class="flash-src">
-          <label><input type="radio" name="fwsrc" id="fwSrcRelease" value="release" checked /> Latest release</label>
-          <label><input type="radio" name="fwsrc" id="fwSrcFile" value="file" /> Local <code>.bin</code></label>
+        <div class="flash-info">
+          <a href="https://github.com/rainybit-code/spore/releases/latest" target="_blank" rel="noopener">↓ Download the latest Spore firmware</a>
+          (the <code>.bin</code>), then select it:
         </div>
-        <div id="fwReleaseInfo" class="flash-info">checking latest release…</div>
         <input type="file" id="fwFile" accept=".bin" hidden />
-        <button id="fwPick" class="flash-btn flash-btn-sm" hidden>choose .bin…</button>
-        <div id="fwFileInfo" class="flash-info" hidden>no file chosen</div>
+        <div class="flash-row">
+          <button id="fwPick" class="flash-btn flash-btn-sm">choose .bin…</button>
+          <span id="fwFileInfo" class="flash-info">no file chosen</span>
+        </div>
       </div>
     </div>
 
@@ -554,7 +555,9 @@
 </main>
 
 <footer class="footer">
-  <span>PROPAGATOR</span> · <span id="footMidi">checking MIDI…</span>
+  <span>PROPAGATOR</span> · <span id="footMidi">checking MIDI…</span> ·
+  <span class="foot-legal">© 2026 Joakim Langkilde ·
+    <a href="https://github.com/rainybit-code/propagator" target="_blank" rel="noopener">GPL-3.0 · source</a></span>
 </footer>
 
 <script src="dfu.js"></script>

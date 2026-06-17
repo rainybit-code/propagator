@@ -645,12 +645,25 @@ body::before {
   border-top: 1px solid #02080e; box-shadow: 0 -1px 0 var(--warm-line);
 }
 .footer span { color: var(--grow); }
+.footer .foot-legal { color: var(--ink-dim); }
+.footer .foot-legal a { color: var(--ink-dim); text-decoration: none; border-bottom: 1px dotted currentColor; }
+.footer .foot-legal a:hover { color: var(--grow); }
 button { font-family: var(--font-hand); }
 #noticeRetry { background: var(--heat); color: #2a160b; border: none; border-radius: 8px; padding: .4rem 1.1rem; font-size: .9rem; cursor: pointer; }
 
 /* ---- firmware update (WebUSB DFU) wizard ---- */
+/* a utility panel: clean system-UI type (not the playful hand font), mono for the
+   technical readouts — reads as a robust tool rather than a sketch. */
 .flash-card { max-width: 460px; text-align: left; border-color: var(--cyan-2); }
-.flash-card h2 { color: var(--cyan); margin: 0 0 .15rem; }
+.flash-card,
+.flash-card h2,
+.flash-card p,
+.flash-card button,
+.flash-card label,
+.flash-card a { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+.flash-card .flash-info,
+.flash-card code { font-family: var(--font-mono); }
+.flash-card h2 { color: var(--cyan); margin: 0 0 .15rem; font-size: 1.06rem; letter-spacing: .01em; font-weight: 700; }
 .flash-sub { margin: 0 0 .9rem; color: var(--ink-dim); font-size: .9rem; }
 .flash-step { display: flex; gap: .7rem; margin: .55rem 0; }
 .flash-num { flex: 0 0 1.5rem; height: 1.5rem; display: grid; place-items: center; border-radius: 50%;
@@ -664,7 +677,8 @@ button { font-family: var(--font-hand); }
 .flash-info[data-kind="err"] { color: var(--heat-2); }
 .flash-row { display: flex; gap: .5rem; flex-wrap: wrap; }
 .flash-btn { background: rgba(91,208,230,.1); color: var(--ink); border: 1.5px solid var(--cyan-2);
-  border-radius: 8px; padding: .4rem .9rem; font-size: .85rem; cursor: pointer; transition: background .15s, border-color .15s; }
+  border-radius: 8px; padding: .42rem .9rem; font-size: .84rem; font-weight: 600; letter-spacing: .01em;
+  cursor: pointer; transition: background .15s, border-color .15s; }
 .flash-btn:hover:not(:disabled) { background: rgba(91,208,230,.2); }
 .flash-btn:disabled { opacity: .4; cursor: not-allowed; }
 .flash-btn-sm { padding: .28rem .7rem; font-size: .78rem; }

@@ -1534,13 +1534,14 @@ makeSwitches();
 
 /* ===========================================================================
    FIRMWARE UPDATE (WebUSB DFU)
-   A 3-step wizard: pick firmware (latest GitHub release .bin or a local file),
-   reboot the pedal into the STM DFU bootloader (CC 119), connect over WebUSB, and
-   flash to internal flash @ 0x08000000 via dfu.js (DfuSe). The pedal drops off
-   USB-MIDI when it reboots to DFU — that's expected.
+   A 3-step wizard: choose a .bin (downloaded from the Spore releases page), reboot
+   the pedal into the STM DFU bootloader (CC 119), connect over WebUSB, and flash to
+   internal flash @ 0x08000000 via dfu.js (DfuSe). The pedal drops off USB-MIDI when
+   it reboots to DFU — that's expected. We deliberately do NOT fetch the binary
+   in-page (release-asset downloads aren't CORS-enabled) — the user grabs the .bin
+   from the linked releases page and picks it, which keeps this lean and reliable.
    =========================================================================== */
 const FLASH = {
-  repo: 'rainybit-code/spore',     // GitHub repo to pull releases from
   addr: 0x08000000,                // STM32H750 internal flash base (this firmware)
   buf: null,                       // ArrayBuffer of the firmware to write
   bufName: '',
@@ -1562,29 +1563,6 @@ function fwProgress(p) {
     ? 'Writing ' + Math.round((p.ratio || 0) * 100) + '%' : 'Finishing…');
 }
 
-async function fwLoadLatestRelease() {
-  const info = fwEl('fwReleaseInfo');
-  FLASH.buf = null; FLASH.bufName = ''; fwSetFlashEnabled();
-  info.textContent = 'checking latest release…';
-  try {
-    const r = await fetch('https://api.github.com/repos/' + FLASH.repo + '/releases/latest',
-                          { headers: { Accept: 'application/vnd.github+json' } });
-    if (r.status === 404) { info.textContent = 'no published release yet — use a local .bin'; return; }
-    if (!r.ok) throw new Error('GitHub API ' + r.status);
-    const rel = await r.json();
-    const asset = (rel.assets || []).find((a) => /\.bin$/i.test(a.name));
-    if (!asset) { info.textContent = rel.tag_name + ': no .bin asset — use a local file'; return; }
-    info.textContent = 'downloading ' + asset.name + ' (' + rel.tag_name + ')…';
-    const bin = await fetch(asset.browser_download_url);
-    if (!bin.ok) throw new Error('download ' + bin.status);
-    FLASH.buf = await bin.arrayBuffer(); FLASH.bufName = asset.name;
-    info.textContent = '✓ ' + asset.name + ' · ' + rel.tag_name + ' · ' + (FLASH.buf.byteLength / 1024).toFixed(1) + ' KB';
-    fwSetFlashEnabled();
-  } catch (e) {
-    info.textContent = 'could not fetch release (' + e.message + ') — use a local .bin';
-  }
-}
-
 function fwOpen() {
   const m = fwEl('flash'); if (!m) return;
   m.hidden = false;
@@ -1593,10 +1571,6 @@ function fwOpen() {
   fwStatus(WebDFU.supported() ? '—' : 'WebUSB unavailable — use Chrome/Edge over https/localhost', 'err');
   fwEl('fwConnect').disabled = !WebDFU.supported();
   fwEl('fwReboot').disabled = !midiOut;
-  // default to release source
-  fwEl('fwSrcRelease').checked = true;
-  fwEl('fwReleaseInfo').hidden = false; fwEl('fwPick').hidden = true; fwEl('fwFileInfo').hidden = true;
-  fwLoadLatestRelease();
 }
 async function fwClose() {
   fwEl('flash').hidden = true;
@@ -1608,15 +1582,7 @@ async function fwClose() {
 // since you can flash a freshly-DFU'd board via the BOOT+RESET gesture)
 $('#dfuBtn').addEventListener('click', fwOpen);
 
-// --- source selection ---
-fwEl('fwSrcRelease').addEventListener('change', () => {
-  fwEl('fwReleaseInfo').hidden = false; fwEl('fwPick').hidden = true; fwEl('fwFileInfo').hidden = true;
-  fwLoadLatestRelease();
-});
-fwEl('fwSrcFile').addEventListener('change', () => {
-  fwEl('fwReleaseInfo').hidden = true; fwEl('fwPick').hidden = false; fwEl('fwFileInfo').hidden = false;
-  FLASH.buf = null; FLASH.bufName = ''; fwSetFlashEnabled();
-});
+// --- step 1: choose the .bin (downloaded from the releases page) ---
 fwEl('fwPick').addEventListener('click', () => fwEl('fwFile').click());
 fwEl('fwFile').addEventListener('change', async (e) => {
   const f = e.target.files && e.target.files[0]; if (!f) return;

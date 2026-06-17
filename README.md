@@ -63,19 +63,28 @@ Values are 0–127 (0..1 normalized).
 ## Files
 
 ```
-index.html   structure + inline SVG filters (boil) and pedal chassis
-styles.css   the living blueprint theme + animations
-app.js       WebMIDI, knob/toggle/footswitch interaction, beat engine, wires
+index.html    structure + inline SVG filters (boil) and pedal chassis
+styles.css    the living blueprint theme + animations
+app.js        WebMIDI, pods/knobs/patchbay/sequencer/clock, presets, flash wizard
+dfu.js        self-contained WebUSB + DfuSe firmware flasher
+presets.json  factory preset library
 ```
 
 ## Roadmap
 
 Tracks the firmware's `MIDI_PROTOCOL.md` phases: SysEx 2-way sync, preset
-librarian (browser + pedal QSPI), and sample upload. Deploy to **GitHub Pages**
-once it stabilizes (https = secure context, usable from any machine).
+librarian (browser + pedal QSPI), and sample upload. Already **live on GitHub
+Pages** at <https://rainybit-code.github.io/propagator/> (https = secure context,
+usable from any machine).
 
 ## License
 
 **GPL-3.0-or-later.** Copyright (C) 2026 Joakim Langkilde. See [`LICENSE`](LICENSE).
 Pairs with the **Spore** firmware ([`spore`](https://github.com/rainybit-code/spore) repo),
 which is GPL-3.0 for the same reason.
+
+## AI disclosure
+
+In the interest of transparency: this project was built with substantial help from AI.
+Code, documentation, and design were generated and iterated with **Claude** (Claude Code)
+under human direction and review.
