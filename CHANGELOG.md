@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Chaos** mod-matrix source — a 7th patchbay source (Lorenz attractor) you can wire to
+  any destination. Source encoding widened to `/7`; old saved patches are migrated
+  (schema v1→v2) so existing routings keep their meaning. Needs firmware with the Chaos
+  matrix source.
 - **Remove the Spore→pod connector lines** — the dashed wire overlay between the
   device and the breakout pods is gone (cleaner stage; pods stand on their own).
 - **Live CPU load** as a mixer-style meter in the footer — polls Spore's audio-callback

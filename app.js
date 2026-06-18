@@ -349,7 +349,7 @@ $('#waveBankSeg').addEventListener('click', e => {
 /* ===========================================================================
    MOD MATRIX pod — LFO2 + 3 routing slots (source -> destination -> amount).
    ========================================================================= */
-const MOD_SRC = ['Off', 'LFO1', 'LFO2', 'Rnd', 'Sens', 'Vel', 'Key'];   // -> synth param * 6
+const MOD_SRC = ['Off', 'LFO1', 'LFO2', 'Rnd', 'Sens', 'Vel', 'Key', 'Chaos'];   // -> synth param * 7
 const MOD_DST = ['Cutoff', 'Pitch', 'Scan', 'Drive', 'Sub', 'FM', 'Amp', 'LFO1 Hz', 'LFO2 Hz'];  // -> param * 8
 // hover explanations (index aligns with MOD_SRC.slice(1) and MOD_DST)
 const PATCH_SRC_TIP = [
@@ -359,6 +359,7 @@ const PATCH_SRC_TIP = [
   'Sens — the analog sensor input (light/pressure)',
   'Vel — note velocity, per voice (MIDI notes or the sequencer)',
   'Key — note pitch / key-track, per voice (centred on middle C)',
+  'Chaos — Lorenz attractor: smooth, deterministic-but-never-repeating drift',
 ];
 const PATCH_DST_TIP = [
   'Cutoff — filter frequency (sweeps/wah)',
@@ -411,17 +412,17 @@ const elNS = (n) => document.createElementNS(NSV, n);
 const PATCH_SLOTS = [27, 30, 33, 36, 39, 42];   // synth idx of each slot's SRC (DST=+1, AMT=+2)
 const PB_W = 300, PB_H = 176;
 const PB_SPIN = 66, PB_DPIN = PB_W - 66;               // source / dest jack centres (cable anchors)
-const SRCY = [14, 43, 72, 101, 130, 158];              // 6 source jacks (LFO1/2/Rnd/Sens/Vel/Key)
+const SRCY = [14, 38, 62, 86, 110, 134, 158];          // 7 source jacks (LFO1/2/Rnd/Sens/Vel/Key/Chaos)
 const DSTY = [14, 32, 50, 68, 86, 104, 122, 140, 158]; // 9 destination jacks
 let patchSvg = null, patchSel = -1, patchKnobApply = null;
 
 function slotGet(i) {
   const b = PATCH_SLOTS[i];
-  return { src: Math.round(knobValue.synth[b] * 6), dst: Math.round(knobValue.synth[b + 1] * 8), amt: knobValue.synth[b + 2] };
+  return { src: Math.round(knobValue.synth[b] * 7), dst: Math.round(knobValue.synth[b + 1] * 8), amt: knobValue.synth[b + 2] };
 }
 function slotSet(i, src, dst, amt) {
   const b = PATCH_SLOTS[i];
-  if (src != null) { knobValue.synth[b] = src / 6; sendCC(CONFIG.ccSynth[b], src / 6); }
+  if (src != null) { knobValue.synth[b] = src / 7; sendCC(CONFIG.ccSynth[b], src / 7); }
   if (dst != null) { knobValue.synth[b + 1] = dst / 8; sendCC(CONFIG.ccSynth[b + 1], dst / 8); }
   if (amt != null) { knobValue.synth[b + 2] = amt; sendCC(CONFIG.ccSynth[b + 2], amt); }
 }
@@ -641,7 +642,7 @@ function saveUserPresets(obj) { try { localStorage.setItem(PRESET_KEY, JSON.stri
 
 function capturePatch() {
   return {
-    v: 1, mode: activeMode, fx: activeFx, delaySync: delaySyncIdx,
+    v: 2, mode: activeMode, fx: activeFx, delaySync: delaySyncIdx,
     knobs: { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice() },
     seq: serializeSeq(),
   };
@@ -689,6 +690,9 @@ function applyPatch(p) {
   if (Array.isArray(p.knobs.fx))   p.knobs.fx.forEach((v, i) => { if (i < knobValue.fx.length) knobValue.fx[i] = v; });
   // tolerate older/shorter synth arrays: keep defaults for any missing tail params
   if (Array.isArray(p.knobs.synth)) p.knobs.synth.forEach((v, i) => { if (i < knobValue.synth.length) knobValue.synth[i] = v; });
+  // migrate v1 patches: the mod-matrix SOURCE encoding changed (/6 -> /7) when the
+  // Chaos source was added, so rescale each slot's source to keep its old meaning.
+  if ((p.v || 1) < 2) PATCH_SLOTS.forEach(b => { knobValue.synth[b] = Math.round(knobValue.synth[b] * 6) / 7; });
   setMode(typeof p.mode === 'number' ? p.mode : activeMode);   // sends mode select + updates UI
   setFx(typeof p.fx === 'number' ? p.fx : activeFx);           // sends fx select
   refreshKnobs(); refreshSegments();
