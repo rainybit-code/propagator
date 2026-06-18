@@ -256,18 +256,16 @@ function envPoint(e) {
 }
 function envDrag(handle, onMove) {
   handle.addEventListener('pointerdown', (e) => {
-    e.stopPropagation();
-    try { handle.setPointerCapture(e.pointerId); } catch (_) {}
-    const mv = (ev) => { onMove(envPoint(ev)); refreshKnobs(); };   // refreshKnobs redraws the env too
-    const up = (ev) => {
-      handle.removeEventListener('pointermove', mv);
-      handle.removeEventListener('pointerup', up);
-      handle.removeEventListener('pointercancel', up);
-      try { handle.releasePointerCapture(ev.pointerId); } catch (_) {}
+    e.preventDefault(); e.stopPropagation();
+    const mv = (ev) => { onMove(envPoint(ev)); drawEnv(); refreshKnobs(); };
+    const up = () => {
+      window.removeEventListener('pointermove', mv);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
     };
-    handle.addEventListener('pointermove', mv);
-    handle.addEventListener('pointerup', up);
-    handle.addEventListener('pointercancel', up);
+    window.addEventListener('pointermove', mv);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
     mv(e);
   });
 }
