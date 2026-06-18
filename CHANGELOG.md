@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+
+## [v0.2.1] - 2026-06-18
 - **Chaos panel** in the MOD pod — a **Speed** knob (CC 18) that retunes the device's
   Lorenz chaos live, and a **live attractor canvas** that draws the real chaos streamed
   from the pedal (SysEx `0x03`/`0x43`). Polled ~20 Hz and **only while the canvas is
