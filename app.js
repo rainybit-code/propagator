@@ -1488,41 +1488,38 @@ function applyPods() {
   layoutPods();
   envRedraw();   // re-draw the ADSR graph whenever the env pod is (re)shown
 }
+// A pod's position is the absolute x/y in dataset (stage coords). Untouched pods get
+// it from layoutPods (auto-stack); a dragged pod is `pinned` and keeps its own x/y.
 function applyPod(pe) {
-  const bx = +(pe.dataset.bx || 0), by = +(pe.dataset.by || 0);
-  const dx = +(pe.dataset.dx || 0), dy = +(pe.dataset.dy || 0);
-  pe.style.left = (bx + dx) + 'px'; pe.style.top = (by + dy) + 'px';
+  pe.style.left = (+pe.dataset.x || 0) + 'px';
+  pe.style.top  = (+pe.dataset.y || 0) + 'px';
 }
 function clampPod(pe) {
-  // Clamp from the LAYOUT box (base + offset, untransformed) in stage coords -- not
-  // getBoundingClientRect, which folds in the pod's rotate()/float animation and the
-  // left/top transition and would mis-correct (e.g. fling a right-column pod off-screen).
+  // Keep the pod on-stage using the untransformed layout box (offsetWidth/Height) --
+  // not getBoundingClientRect, which would fold in the rotate()/float transform.
   const m = 8, sw = stage.clientWidth, sh = stage.clientHeight;
-  const bx = +(pe.dataset.bx || 0), by = +(pe.dataset.by || 0);
-  let dx = +(pe.dataset.dx || 0), dy = +(pe.dataset.dy || 0);
   const w = pe.offsetWidth, h = pe.offsetHeight;
-  const left = bx + dx, top = by + dy;
-  if (left < m) dx += m - left; else if (left + w > sw - m) dx += (sw - m) - (left + w);
-  if (top < m) dy += m - top; else if (top + h > sh - m) dy += (sh - m) - (top + h);
-  pe.dataset.dx = dx; pe.dataset.dy = dy; applyPod(pe);
+  let x = +pe.dataset.x || 0, y = +pe.dataset.y || 0;
+  x = Math.min(Math.max(x, m), Math.max(m, sw - w - m));
+  y = Math.min(Math.max(y, m), Math.max(m, sh - h - m));
+  pe.dataset.x = x; pe.dataset.y = y; applyPod(pe);
 }
 function podLaidOut(pe) { return pe && getComputedStyle(pe).display !== 'none' && !pe.classList.contains('closed'); }
-// Absolute layout: stack visible pods top-down per column. Called on view/mode/
-// resize/reset only -- NOT on a pod's own content change, so nothing jumps.
+// Auto-stack the un-pinned pods top-down per column. Pinned (dragged) pods keep
+// their own position -- they're only clamped back on-screen, never re-stacked.
 function layoutPods() {
   const m = 14, gap = 14, sw = stage.clientWidth;
   ['L', 'R'].forEach(side => {
     let y = 14;
     PODS.filter(p => p.col === side).forEach(p => {
       const pe = $('#' + p.id); if (!pe || !podLaidOut(pe)) return;
-      pe.dataset.dx = 0; pe.dataset.dy = 0;   // fresh base each relayout (idempotent; no accumulated clamp offset)
-      pe.dataset.bx = side === 'L' ? m : (sw - pe.offsetWidth - m);
-      pe.dataset.by = y;
-      applyPod(pe); clampPod(pe);
+      if (pe.dataset.pinned === '1') { clampPod(pe); return; }   // dragged: leave it put
+      pe.dataset.x = side === 'L' ? m : (sw - pe.offsetWidth - m);
+      pe.dataset.y = y;
+      applyPod(pe);
       y += pe.offsetHeight + gap;
     });
   });
-  drawWires();
 }
 const reflowPods = layoutPods;   // keep the name used by other callers
 
@@ -1532,17 +1529,18 @@ function makeDraggable(pod) {
   pod.addEventListener('pointerdown', (e) => {
     if (e.target.closest('.knob, button, input, label, .pill, .switch-field, .bpm-dial, select, .seg, .seq-grid, .env-graph, .patchbay, .beat-seed')) return;
     dragging = true; pod.classList.add('dragging');
-    sx = e.clientX; sy = e.clientY; ox = +(pod.dataset.dx || 0); oy = +(pod.dataset.dy || 0);
+    sx = e.clientX; sy = e.clientY; ox = +(pod.dataset.x || 0); oy = +(pod.dataset.y || 0);
     pod.setPointerCapture(e.pointerId); e.preventDefault();
   });
   pod.addEventListener('pointermove', (e) => {
     if (!dragging) return;
-    pod.dataset.dx = ox + (e.clientX - sx); pod.dataset.dy = oy + (e.clientY - sy);
-    applyPod(pod); drawWires();
+    pod.dataset.pinned = '1';   // dragged pods stay where the user puts them
+    pod.dataset.x = ox + (e.clientX - sx); pod.dataset.y = oy + (e.clientY - sy);
+    applyPod(pod);
   });
   const end = (e) => {
     if (!dragging) return;
-    dragging = false; clampPod(pod); pod.classList.remove('dragging'); drawWires();
+    dragging = false; clampPod(pod); pod.classList.remove('dragging');
     try { pod.releasePointerCapture(e.pointerId); } catch (_) {}
   };
   pod.addEventListener('pointerup', end);
@@ -1559,7 +1557,7 @@ PODS.forEach(p => {
 });
 
 function resetPods() {
-  PODS.forEach(p => { const pe = $('#' + p.id); if (pe) { delete pe.dataset.dx; delete pe.dataset.dy; } });
+  PODS.forEach(p => { const pe = $('#' + p.id); if (pe) { delete pe.dataset.pinned; delete pe.dataset.x; delete pe.dataset.y; } });
   podShown = Object.assign({}, VIEW_DEFAULT); saveView();
   PODS.forEach(p => { if (p._cb) p._cb.checked = !!podShown[p.id]; });
   applyPods();
