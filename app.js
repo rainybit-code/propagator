@@ -1494,10 +1494,16 @@ function applyPod(pe) {
   pe.style.left = (bx + dx) + 'px'; pe.style.top = (by + dy) + 'px';
 }
 function clampPod(pe) {
-  const r = pe.getBoundingClientRect(), m = 8;
+  // Clamp from the LAYOUT box (base + offset, untransformed) in stage coords -- not
+  // getBoundingClientRect, which folds in the pod's rotate()/float animation and the
+  // left/top transition and would mis-correct (e.g. fling a right-column pod off-screen).
+  const m = 8, sw = stage.clientWidth, sh = stage.clientHeight;
+  const bx = +(pe.dataset.bx || 0), by = +(pe.dataset.by || 0);
   let dx = +(pe.dataset.dx || 0), dy = +(pe.dataset.dy || 0);
-  if (r.left < m) dx += m - r.left; else if (r.right > innerWidth - m) dx += (innerWidth - m) - r.right;
-  if (r.top < m) dy += m - r.top; else if (r.bottom > innerHeight - m) dy += (innerHeight - m) - r.bottom;
+  const w = pe.offsetWidth, h = pe.offsetHeight;
+  const left = bx + dx, top = by + dy;
+  if (left < m) dx += m - left; else if (left + w > sw - m) dx += (sw - m) - (left + w);
+  if (top < m) dy += m - top; else if (top + h > sh - m) dy += (sh - m) - (top + h);
   pe.dataset.dx = dx; pe.dataset.dy = dy; applyPod(pe);
 }
 function podLaidOut(pe) { return pe && getComputedStyle(pe).display !== 'none' && !pe.classList.contains('closed'); }
