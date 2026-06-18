@@ -5,6 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Steps** mod-matrix source — an 8th patchbay source (logistic-map / stepped chaos)
+  alongside the smooth Lorenz "Chaos". Source encoding widened to `/8`; saved patches are
+  migrated (schema v2→v3). Needs firmware with the Steps source.
 
 ## [v0.2.1] - 2026-06-18
 - **Chaos panel** in the MOD pod — a **Speed** knob (CC 18) that retunes the device's
