@@ -1625,6 +1625,7 @@ function fwStatus(msg, kind) {
 }
 function fwSetFlashEnabled() {
   const b = fwEl('fwFlash'); if (b) b.disabled = !(FLASH.buf && FLASH.dev);
+  const l = fwEl('fwLeave'); if (l) l.disabled = !FLASH.dev;   // can reboot whenever connected
 }
 function fwProgress(p) {
   const wrap = fwEl('fwProgWrap'), bar = fwEl('fwBar');
@@ -1762,6 +1763,23 @@ fwEl('fwFlash').addEventListener('click', async () => {
     try { await FLASH.dev.close(); } catch (e) {} FLASH.dev = null;
   } catch (e) {
     fwStatus('flash failed: ' + e.message + ' — re-enter DFU and retry', 'err');
+  } finally {
+    cn.disabled = !WebDFU.supported();
+    fwSetFlashEnabled();
+  }
+});
+
+// --- step 3: leave DFU without flashing (boot the existing app) ---
+fwEl('fwLeave').addEventListener('click', async () => {
+  if (!FLASH.dev) return;
+  const btn = fwEl('fwLeave'), cn = fwEl('fwConnect'), fl = fwEl('fwFlash');
+  btn.disabled = cn.disabled = fl.disabled = true;
+  try {
+    await FLASH.dev.leave(FLASH.addr);
+    fwStatus('✓ rebooting Spore into app mode', 'ok');
+    try { await FLASH.dev.close(); } catch (e) {} FLASH.dev = null;
+  } catch (e) {
+    fwStatus('reboot failed: ' + e.message, 'err');
   } finally {
     cn.disabled = !WebDFU.supported();
     fwSetFlashEnabled();

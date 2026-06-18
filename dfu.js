@@ -194,6 +194,20 @@
       } catch (e) { /* device reset — success */ }
     }
 
+    // Leave DFU and boot the application at `appAddr` (default the flash base) without
+    // flashing. DfuSe interprets a zero-length DNLOAD after a SET_ADDRESS as
+    // "jump there + reset" — the same tail step download() uses to reboot post-flash.
+    async leave(appAddr) {
+      const addr = (appAddr == null ? (this.memory && this.memory.segments[0]
+                    && this.memory.segments[0].start) || 0x08000000 : appAddr) >>> 0;
+      await this.abortToIdle().catch(() => {});
+      await this._dfuseCommand(DFUSE.SET_ADDRESS, addr);
+      try { await this._out(REQ.DNLOAD, 0, new ArrayBuffer(0)); } catch (e) { /* ignore */ }
+      // GETSTATUS triggers the jump/reset; the device detaches, so a failing read is expected.
+      try { const s = await this.getStatus(); await delay(s.pollTimeout); } catch (e) {}
+      await this.getStatus().catch(() => {});
+    }
+
     async connect() {
       await this.dev.open();
       if (this.dev.configuration === null) await this.dev.selectConfiguration(1);
@@ -204,6 +218,11 @@
       }
       // read transferSize from the DFU functional descriptor (best-effort)
       await this._readTransferSize().catch(() => {});
+      // Chrome can leave alt.interfaceName empty (seen on Linux), so the DfuSe memory
+      // map never parsed. Re-read it straight off the device by string index.
+      if (!this.memory || !this.memory.segments.length) {
+        await this._readMemoryString().catch(() => {});
+      }
       // start from a known-idle state
       await this.abortToIdle().catch(() => {});
       return this;
@@ -214,20 +233,26 @@
       try { await this.dev.close(); } catch (e) {}
     }
 
-    // Pull the raw config descriptor and find the DFU functional descriptor (0x21)
-    // to read wTransferSize (offset 5, u16 LE). Falls back to 1024 on any failure.
-    async _readTransferSize() {
+    // Fetch the full configuration descriptor as a Uint8Array (best-effort, null on failure).
+    async _getConfigDescriptor() {
       const GET_DESCRIPTOR = 0x06, DT_CONFIG = 0x02;
       const head = await this.dev.controlTransferIn(
         { requestType: 'standard', recipient: 'device', request: GET_DESCRIPTOR,
           value: (DT_CONFIG << 8) | 0, index: 0 }, 4);
-      if (head.status !== 'ok') return;
+      if (head.status !== 'ok') return null;
       const totalLen = head.data.getUint16(2, true);
       const full = await this.dev.controlTransferIn(
         { requestType: 'standard', recipient: 'device', request: GET_DESCRIPTOR,
           value: (DT_CONFIG << 8) | 0, index: 0 }, totalLen);
-      if (full.status !== 'ok') return;
-      const buf = new Uint8Array(full.data.buffer);
+      if (full.status !== 'ok') return null;
+      return new Uint8Array(full.data.buffer);
+    }
+
+    // Find the DFU functional descriptor (0x21) and read wTransferSize (offset 5,
+    // u16 LE). Falls back to 1024 on any failure.
+    async _readTransferSize() {
+      const buf = await this._getConfigDescriptor();
+      if (!buf) return;
       let i = 0;
       while (i < buf.length) {
         const len = buf[i], type = buf[i + 1];
@@ -239,6 +264,43 @@
         }
         i += len;
       }
+    }
+
+    // Read the alt-setting's DfuSe memory-layout string directly from the device.
+    // Chrome sometimes reports an empty alt.interfaceName (observed under Chrome on
+    // Linux), so we parse iInterface out of the config descriptor and fetch the string
+    // ourselves — same as dfu-util does, which is why dfu-util flashes the same device.
+    async _readMemoryString() {
+      const buf = await this._getConfigDescriptor();
+      if (!buf) return;
+      let strIndex = 0, i = 0;
+      while (i < buf.length) {
+        const len = buf[i], type = buf[i + 1];
+        if (len === 0) break;
+        if (type === 0x04 && i + 9 <= buf.length) {       // interface descriptor
+          const num = buf[i + 2], alt = buf[i + 3], iIface = buf[i + 8];
+          if (num === this.ifaceNumber && (this.altSetting == null || alt === this.altSetting)) {
+            strIndex = iIface; break;
+          }
+        }
+        i += len;
+      }
+      if (!strIndex) return;
+      const mem = parseMemory(await this._readStringDescriptor(strIndex));
+      if (mem && mem.segments.length) this.memory = mem;
+    }
+
+    // GET_DESCRIPTOR(string, index) -> decoded JS string (UTF-16LE), '' on failure.
+    async _readStringDescriptor(index, langId) {
+      const GET_DESCRIPTOR = 0x06, DT_STRING = 0x03;
+      const r = await this.dev.controlTransferIn(
+        { requestType: 'standard', recipient: 'device', request: GET_DESCRIPTOR,
+          value: (DT_STRING << 8) | index, index: langId || 0x0409 }, 255);
+      if (r.status !== 'ok' || r.data.byteLength < 2) return '';
+      const len = Math.min(r.data.getUint8(0), r.data.byteLength);
+      let s = '';
+      for (let o = 2; o + 1 < len; o += 2) s += String.fromCharCode(r.data.getUint16(o, true));
+      return s;
     }
   }
 
