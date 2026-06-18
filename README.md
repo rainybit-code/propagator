@@ -2,45 +2,41 @@
 
 [![web validate](https://github.com/rainybit-code/propagator/actions/workflows/web.yml/badge.svg)](https://github.com/rainybit-code/propagator/actions/workflows/web.yml)
 
-A browser-based **WebMIDI** editor for the DIY **Spore** device (the Electrosmith
+A browser-based control surface for the **Spore** synthesizer (the Electrosmith
 Daisy Seed firmware lives in the separate
 [**`spore`**](https://github.com/rainybit-code/spore) repo). Configure Spore's
 parameters live over USB MIDI — no install, no drivers.
 
-**▶ Live: <https://rainybit-code.github.io/propagator/>** — open in Chrome or Edge
-with Spore connected over USB. (It's the editor UI; it needs the device to
-do anything.)
+**▶ Live: [`Propagator`](https://rainybit-code.github.io/propagator)** — open in Chromium based browser
+with Spore connected over USB.
 
 ![Propagator — the browser editor for Spore](docs/propagator.png)
 
 ## Run it
 
-Easiest: just open the **[live site](https://rainybit-code.github.io/propagator/)** in
-Chrome/Edge (HTTPS = secure context, so Web MIDI + SysEx work).
+Easiest: just open the **[live site](https://rainybit-code.github.io/propagator/)**.
 
 To run locally for development — it's a static site, no build step:
 
 ```sh
-# from this folder
+# from repo folder
 python -m http.server 8000
 # then open http://localhost:8000 in Chrome or Edge
 ```
 
 Use a **Chromium browser** (Chrome/Edge). Web MIDI needs a **secure context**, and
-`localhost` counts — so serving over `http.server` is enough (SysEx included).
+`localhost` counts — so serving over `http.server` is enough.
 Safari has no Web MIDI; recent Firefox is partial.
 
 ## What it does
 
-- Lists MIDI inputs/outputs, connects to Spore, shows live status.
-- The 6 hardware **knobs** (drag, wheel, double-click to centre) + 3 toggles + 2
-  footswitches, mirrored from the hardware. Toggle 1 picks the mode and **relabels**
-  the knobs; Toggle 3 picks the FX.
-- A full **Synth voice editor** in draggable "pods" (shown/hidden from the View menu):
+- Connects to Spore and other MIDI devices, shows live status.
+- The 6 hardware **knobs** + 3 toggles + 2 footswitches,
+  mirrored from the hardware.
+- A full **Synth voice editor** in draggable "pods"
   oscillator engine (analog / wavetable), tone & voicing, an interactive **ADSR**
-  graph, **LFO 1 / LFO 2** (free-Hz or clock-synced), a drag-to-wire **patchbay**
-  (6-slot mod matrix), a piano-roll **step sequencer**, and a **tempo/clock** section
-  (GUI- or MIDI-master, tempo-synced delay).
+  graph, **LFO 1 / LFO 2**, a drag-to-wire **patchbay**, a piano-roll **step sequencer**,
+  and a **tempo/clock** section
 - Preset save/load (browser localStorage).
 - **Firmware flashing in the browser** (WebUSB DFU) — the ⤓ dfu button opens a wizard
   that fetches the latest `spore` release `.bin` (or takes a local file), reboots
@@ -63,16 +59,6 @@ app.js        WebMIDI, pods/knobs/patchbay/sequencer/clock, presets, flash wizar
 dfu.js        self-contained WebUSB + DfuSe firmware flasher
 presets.json  factory preset library
 ```
-
-## Roadmap
-
-Tracks the firmware's `MIDI_PROTOCOL.md` phases: SysEx 2-way sync, preset
-librarian (browser + device QSPI), and sample upload. Already **live on GitHub
-Pages** at <https://rainybit-code.github.io/propagator/> (https = secure context,
-usable from any machine).
-
-See [`docs/IDEAS.md`](docs/IDEAS.md) for the backlog — notably making Propagator a
-**universal device editor** driven by per-device templates (Spore as device #1).
 
 ## License
 
