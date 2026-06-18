@@ -622,12 +622,16 @@ function setFx(f) {
   document.querySelectorAll('#fxSeg button').forEach(b => b.classList.toggle('on', +b.dataset.fx === f));
   const fp = $('#fxPod');
   if (fp) fp.dataset.active = f > 0 ? 'on' : 'off';
-  // changing FX re-opens the FX panel (and ticks it in View)
+  // changing FX re-opens the FX panel (and ticks it in View) -- and ONLY then do we
+  // re-layout. Re-laying-out on every FX change would re-stack the column and yank
+  // other pods around (e.g. MIDI Thru jumping up when the FX pod is pinned).
+  let reopened = false;
   if (typeof podShown !== 'undefined' && !podShown.fxPod) {
     podShown.fxPod = true; const fm = podMeta('fxPod'); if (fm && fm._cb) fm._cb.checked = true; saveView();
+    reopened = true;
   }
   sendCC(CONFIG.ccFxSelect, f / 2);   // tell Spore to switch FX
-  if (typeof applyPods === 'function') applyPods(); else drawWires();
+  if (reopened && typeof applyPods === 'function') applyPods();
 }
 $('#fxSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setFx(+b.dataset.fx); });
 
@@ -1467,7 +1471,7 @@ const PODS = [
   { id: 'midiPod',   label: 'MIDI Thru',  group: 'SYSTEM', col: 'R' },
 ];
 const VIEW_KEY = 'propagator.view';
-const VIEW_DEFAULT = { synthPod: true, envPod: false, wavePod: false, matrixPod: false, seqPod: false, fxPod: true, bpmPod: false, midiPod: true };
+const VIEW_DEFAULT = { synthPod: true, envPod: true, wavePod: true, matrixPod: true, seqPod: false, fxPod: true, bpmPod: true, midiPod: true };
 let podShown = Object.assign({}, VIEW_DEFAULT);
 try { Object.assign(podShown, JSON.parse(localStorage.getItem(VIEW_KEY) || '{}')); } catch (_) {}
 function saveView() { try { localStorage.setItem(VIEW_KEY, JSON.stringify(podShown)); } catch (_) {} }
