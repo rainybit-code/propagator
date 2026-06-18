@@ -1461,7 +1461,7 @@ const PODS = [
   { id: 'envPod',    label: 'Envelope',   group: 'VOICE',  col: 'L', synthOnly: true },
   { id: 'wavePod',   label: 'Oscillator', group: 'VOICE',  col: 'L', synthOnly: true },
   { id: 'matrixPod', label: 'Modulation', group: 'VOICE',  col: 'R', synthOnly: true },
-  { id: 'seqPod',    label: 'Sequencer',  group: 'PLAY',   col: 'R' },
+  { id: 'seqPod',    label: 'Sequencer',  group: 'PLAY',   col: 'R', synthOnly: true },
   { id: 'fxPod',     label: 'FX',         group: 'PLAY',   col: 'R' },
   { id: 'bpmPod',    label: 'Tempo',      group: 'SYSTEM', col: 'L', tempo: true },
   { id: 'midiPod',   label: 'MIDI Thru',  group: 'SYSTEM', col: 'R' },
@@ -1509,6 +1509,7 @@ function layoutPods() {
     let y = 14;
     PODS.filter(p => p.col === side).forEach(p => {
       const pe = $('#' + p.id); if (!pe || !podLaidOut(pe)) return;
+      pe.dataset.dx = 0; pe.dataset.dy = 0;   // fresh base each relayout (idempotent; no accumulated clamp offset)
       pe.dataset.bx = side === 'L' ? m : (sw - pe.offsetWidth - m);
       pe.dataset.by = y;
       applyPod(pe); clampPod(pe);
