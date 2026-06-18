@@ -432,7 +432,7 @@ body::before {
   border: 1.4px dashed rgba(91,208,230,.28); border-radius: 9px; padding: 5px;
   background: rgba(91,208,230,.04); box-shadow: inset 0 0 16px rgba(0,0,0,.35);
 }
-.env-svg { width: 100%; height: auto; display: block; touch-action: none; overflow: visible; cursor: crosshair; }
+.env-svg { width: 100%; height: auto; display: block; touch-action: none; overflow: visible; }
 .env-base { stroke: rgba(91,208,230,.25); stroke-width: 1; stroke-dasharray: 2 4; }
 .env-fill { fill: var(--mode); opacity: .15; transition: fill .3s; }
 .env-line { fill: none; stroke: var(--mode); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--mode)); transition: stroke .3s; }

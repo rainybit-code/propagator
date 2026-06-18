@@ -11,10 +11,7 @@ parameters live over USB MIDI — no install, no drivers.
 with Spore connected over USB. (It's the editor UI; it needs the device to
 do anything.)
 
-The look: a hand-inked **"boiling line"** cartoon of Spore on cyanotype
-blueprint paper. Everything breathes, vibrates, and grows. The device is the hero
-in the centre; secondary parameters branch out into fenced blueprint callouts; the
-MIDI connection lives subtly in the top frame; a tempo dial drives a live beat.
+![Propagator — the browser editor for Spore](docs/propagator.png)
 
 ## Run it
 
@@ -32,9 +29,6 @@ python -m http.server 8000
 Use a **Chromium browser** (Chrome/Edge). Web MIDI needs a **secure context**, and
 `localhost` counts — so serving over `http.server` is enough (SysEx included).
 Safari has no Web MIDI; recent Firefox is partial.
-
-> Opening `index.html` directly via `file://` may block MIDI permissions — serve
-> over localhost instead.
 
 ## What it does
 
