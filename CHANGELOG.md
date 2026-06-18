@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Fix the ADSR envelope graph not updating when you drag its handles** (also restores
+  knob-dial refresh on preset load and when the envelope pod is shown).
 - **Steps** mod-matrix source — an 8th patchbay source (logistic-map / stepped chaos)
   alongside the smooth Lorenz "Chaos". Source encoding widened to `/8`; saved patches are
   migrated (schema v2→v3). Needs firmware with the Steps source.

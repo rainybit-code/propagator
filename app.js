@@ -655,7 +655,8 @@ function capturePatch() {
 
 // redraw every knob dial/readout from the current knobValue state
 function refreshKnobs() {
-  document.querySelectorAll('.knob').forEach(k => {
+  // bank-bound knobs only (the patch-amount knob is a bankless .knob, refreshed on its own)
+  document.querySelectorAll('.knob[data-bank]').forEach(k => {
     const v = knobValue[k.dataset.bank][+k.dataset.idx];
     k.querySelector('.knob-dial').style.setProperty('--rot', rotFor(v) + 'deg');
     k.querySelector('.knob-val').textContent = String(Math.round(v * 127)).padStart(3, '0');
