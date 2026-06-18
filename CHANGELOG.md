@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Live CPU load** as a mixer-style meter in the footer — polls Spore's audio-callback
+  load once a second over SysEx (`F0 7D 02 F7` → `0x42 <avg%> <max%>`). Fill = avg
+  (green→amber→red by level), a peak-hold marker tracks the max and turns red when
+  capping (≥ 90 %). Hidden until a device answers; needs firmware with the CPU-meter SysEx.
 - **Autosave** the live patch (knobs + mode/fx + sequence) to localStorage — reloading
   the page no longer resets everything.
 - **New patch** button — reset every bank + the sequence back to defaults.

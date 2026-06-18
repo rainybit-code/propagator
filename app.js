@@ -908,7 +908,8 @@ function selectOut(id) {
     CONFIG.ccSynth.forEach((cc, i) => sendCC(cc, knobValue.synth[i]));
     connectedFw = null; checkFwUpdate();
     setTimeout(sendIdentify, 150);   // request the running firmware version
-  } else { connectedFw = null; checkFwUpdate(); }
+    startCpuPoll();                  // begin polling audio-callback load
+  } else { connectedFw = null; checkFwUpdate(); stopCpuPoll(); }
 }
 function selectIn(id) {
   if (midiIn) midiIn.onmidimessage = null;
@@ -1022,13 +1023,15 @@ function onMidiMessage(e) {
     else if (status === 0xFC && clockSync) setPlaying(false);                       // stop
     fwd(d, 'clock'); return;
   }
-  if (status === 0xF0) {   // SysEx — identify reply: F0 7D 41 <version ASCII> F7
-    if (d.length >= 4 && d[1] === 0x7D && d[2] === 0x41) {
+  if (status === 0xF0) {   // SysEx — our manufacturer ID is 0x7D
+    if (d.length >= 4 && d[1] === 0x7D && d[2] === 0x41) {   // identify reply: F0 7D 41 <version ASCII> F7
       let s = '';
       for (let i = 3; i < d.length && d[i] !== 0xF7; i++) s += String.fromCharCode(d[i]);
       connectedFw = s.trim().replace(/^v/, '');
       if (midiLast) midiLast.textContent = 'Spore firmware v' + connectedFw;
       checkFwUpdate();
+    } else if (d.length >= 5 && d[1] === 0x7D && d[2] === 0x42) {   // CPU load: F0 7D 42 <avg%> <max%> F7
+      showCpuLoad(d[3], d[4]);
     }
     return;
   }
@@ -1669,6 +1672,36 @@ async function loadLatestFw() {
 function sendIdentify() {
   if (!midiOut) return;
   try { midiOut.send([0xF0, 0x7D, 0x01, 0xF7]); } catch (e) { /* sysex not permitted */ }
+}
+
+// --- CPU load awareness (SysEx query 0x02 -> reply 0x42 <avg%> <max%>) ---
+let cpuPollTimer = null;
+// request Spore's audio-callback load
+function sendCpuQuery() {
+  if (!midiOut) return;
+  try { midiOut.send([0xF0, 0x7D, 0x02, 0xF7]); } catch (e) { /* sysex not permitted */ }
+}
+// drive the footer meter: fill = avg load, marker = peak, red when peak caps the budget
+function showCpuLoad(avg, max) {
+  const meter = $('#cpuMeter'), fill = $('#cpuFill'), peak = $('#cpuPeak'), val = $('#cpuVal');
+  if (!meter) return;
+  const a = Math.max(0, Math.min(100, avg)), m = Math.max(0, Math.min(100, max));
+  if (fill) fill.style.width = a + '%';
+  if (peak) peak.style.left = m + '%';
+  if (val) val.textContent = a + '%';
+  meter.classList.add('on');
+  meter.classList.toggle('cap', max >= 90);   // >=90% peak = at risk of dropouts
+}
+// poll once a second while a device is connected (cheap; one tiny SysEx round-trip)
+function startCpuPoll() {
+  stopCpuPoll();
+  if (!midiOut) return;
+  sendCpuQuery();
+  cpuPollTimer = setInterval(sendCpuQuery, 1000);
+}
+function stopCpuPoll() {
+  if (cpuPollTimer) { clearInterval(cpuPollTimer); cpuPollTimer = null; }
+  const meter = $('#cpuMeter'); if (meter) meter.classList.remove('on', 'cap');
 }
 
 function fwShowLatest() {

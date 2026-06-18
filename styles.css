@@ -648,6 +648,25 @@ body::before {
 .footer .foot-legal { color: var(--ink-dim); }
 .footer .foot-legal a { color: var(--ink-dim); text-decoration: none; border-bottom: 1px dotted currentColor; }
 .footer .foot-legal a:hover { color: var(--grow); }
+
+/* CPU load — mixer-style level meter in the footer (hidden until a device answers) */
+.cpu-meter { display: none; align-items: center; gap: .35rem; vertical-align: middle; }
+.cpu-meter.on { display: inline-flex; }
+.cpu-meter-label { color: var(--ink-dim) !important; letter-spacing: .12em; }
+.cpu-meter-track { position: relative; width: 60px; height: 8px; background: #06141e;
+  border: 1px solid #04101a; border-radius: 3px; overflow: hidden; }
+/* fill width = avg load; the gradient is anchored to the full track so colour maps to
+   absolute level (green low → amber → red as it approaches the per-block budget) */
+.cpu-meter-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+  background: linear-gradient(90deg, #3fb56b 0%, #3fb56b 55%, #e8c34a 80%, #ff5a4d 100%);
+  background-size: 60px 100%; background-repeat: no-repeat; transition: width .25s ease; }
+/* peak-hold marker */
+.cpu-meter-peak { position: absolute; top: 0; bottom: 0; width: 2px; left: 0;
+  background: rgba(255,255,255,.75); transform: translateX(-1px); transition: left .25s ease; }
+.cpu-meter.cap .cpu-meter-peak { background: #ff5a4d; box-shadow: 0 0 4px #ff5a4d; }
+.cpu-meter-val { color: var(--grow) !important; min-width: 2.6em; text-align: left;
+  font-variant-numeric: tabular-nums; }
+.cpu-meter.cap .cpu-meter-val { color: #ff5a4d !important; }
 button { font-family: var(--font-hand); }
 #noticeRetry { background: var(--heat); color: #2a160b; border: none; border-radius: 8px; padding: .4rem 1.1rem; font-size: .9rem; cursor: pointer; }
 
