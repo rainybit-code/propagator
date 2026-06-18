@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Chaos panel** in the MOD pod — a **Speed** knob (CC 18) that retunes the device's
+  Lorenz chaos live, and a **live attractor canvas** that draws the real chaos streamed
+  from the pedal (SysEx `0x03`/`0x43`). Polled ~20 Hz and **only while the canvas is
+  visible**, so it's idle otherwise. Needs firmware with the chaos CC + SysEx.
 - **Chaos** mod-matrix source — a 7th patchbay source (Lorenz attractor) you can wire to
   any destination. Source encoding widened to `/7`; old saved patches are migrated
   (schema v1→v2) so existing routings keep their meaning. Needs firmware with the Chaos

@@ -16,6 +16,7 @@ const CONFIG = {
   ccTempo:      14,                 // internal clock BPM (0..1 -> 40..200)
   ccDelaySync:  15,                 // delay tempo-sync division (0 off / ¼ / ⅛ / ⅛. / 16)
   ccSysReboot:  119,                // CC 119 >=64 -> Spore reboots into DFU bootloader
+  ccChaos:      [18],               // CC 18 -> Lorenz chaos speed (single-knob "bank")
 
   ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14-19 wavetable · 20-24 tone · 25-26 LFO2 · 27-44 matrix · 45 LFO2 depth · 46 LFO1 sync · 47 LFO2 sync
   synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
@@ -80,9 +81,10 @@ const knobValue = {
           0.00, 0.00, 0.50, 0.00, 0.00, 0.50, 0.00, 0.00, 0.50,
           1.00,
           0.00, 0.00],
+  chaos: [0.15],   // Lorenz speed (0..1 -> CC 18); 0.15 ~= the firmware default 2.0
 };
 // pristine defaults, captured before any preset/autosave restore — used by "new"
-const KNOB_DEFAULTS = { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice() };
+const KNOB_DEFAULTS = { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice(), chaos: knobValue.chaos.slice() };
 
 /* ===========================================================================
    KNOBS
@@ -112,7 +114,7 @@ function makeKnob(bank, idx, label) {
 
 function attachKnobDrag(k, dial, bank, idx, apply, lab) {
   let startY = 0, startV = 0, dragging = false;
-  const cc = (bank === 'mode' ? CONFIG.ccMode : bank === 'fx' ? CONFIG.ccFx : CONFIG.ccSynth)[idx];
+  const cc = (bank === 'mode' ? CONFIG.ccMode : bank === 'fx' ? CONFIG.ccFx : bank === 'chaos' ? CONFIG.ccChaos : CONFIG.ccSynth)[idx];
 
   const showAnnot = (e) => {
     annot.hidden = false;
@@ -377,6 +379,8 @@ if (lfo2KnobsEl) {
   lfo2KnobsEl.appendChild(makeKnob('synth', 25, 'LFO2 Rate'));
   lfo2KnobsEl.appendChild(makeKnob('synth', 45, 'Depth'));   // master depth for LFO2
 }
+const chaosKnobsEl = $('#chaosKnobs');
+if (chaosKnobsEl) chaosKnobsEl.appendChild(makeKnob('chaos', 0, 'Speed'));   // CC 18 -> Lorenz speed
 $('#lfo2ShapeSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const w = +b.dataset.w;   // SP_LFO2_SHAPE -> idx 26
@@ -643,7 +647,7 @@ function saveUserPresets(obj) { try { localStorage.setItem(PRESET_KEY, JSON.stri
 function capturePatch() {
   return {
     v: 2, mode: activeMode, fx: activeFx, delaySync: delaySyncIdx,
-    knobs: { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice() },
+    knobs: { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice(), chaos: knobValue.chaos.slice() },
     seq: serializeSeq(),
   };
 }
@@ -679,6 +683,7 @@ function refreshSegments() {
   updateLfoSyncUI();
 }
 function pushAllCC() {
+  CONFIG.ccChaos.forEach((cc, i) => sendCC(cc, knobValue.chaos[i]));
   CONFIG.ccMode.forEach((cc, i) => sendCC(cc, knobValue.mode[i]));
   CONFIG.ccFx.forEach((cc, i) => sendCC(cc, knobValue.fx[i]));
   CONFIG.ccSynth.forEach((cc, i) => sendCC(cc, knobValue.synth[i]));
@@ -690,6 +695,7 @@ function applyPatch(p) {
   if (Array.isArray(p.knobs.fx))   p.knobs.fx.forEach((v, i) => { if (i < knobValue.fx.length) knobValue.fx[i] = v; });
   // tolerate older/shorter synth arrays: keep defaults for any missing tail params
   if (Array.isArray(p.knobs.synth)) p.knobs.synth.forEach((v, i) => { if (i < knobValue.synth.length) knobValue.synth[i] = v; });
+  if (Array.isArray(p.knobs.chaos)) p.knobs.chaos.forEach((v, i) => { if (i < knobValue.chaos.length) knobValue.chaos[i] = v; });
   // migrate v1 patches: the mod-matrix SOURCE encoding changed (/6 -> /7) when the
   // Chaos source was added, so rescale each slot's source to keep its old meaning.
   if ((p.v || 1) < 2) PATCH_SLOTS.forEach(b => { knobValue.synth[b] = Math.round(knobValue.synth[b] * 6) / 7; });
@@ -783,6 +789,7 @@ function newPatch() {
   KNOB_DEFAULTS.mode.forEach((v, i) => knobValue.mode[i] = v);
   KNOB_DEFAULTS.fx.forEach((v, i) => knobValue.fx[i] = v);
   KNOB_DEFAULTS.synth.forEach((v, i) => knobValue.synth[i] = v);
+  KNOB_DEFAULTS.chaos.forEach((v, i) => knobValue.chaos[i] = v);
   loadSeqState(SEQ_DEFAULT); refreshSeqUI();
   setDelaySync(0);
   setMode(0); setFx(0);
@@ -912,7 +919,8 @@ function selectOut(id) {
     connectedFw = null; checkFwUpdate();
     setTimeout(sendIdentify, 150);   // request the running firmware version
     startCpuPoll();                  // begin polling audio-callback load
-  } else { connectedFw = null; checkFwUpdate(); stopCpuPoll(); }
+    startChaosPoll();                // begin polling the chaos attractor (when visible)
+  } else { connectedFw = null; checkFwUpdate(); stopCpuPoll(); stopChaosPoll(); }
 }
 function selectIn(id) {
   if (midiIn) midiIn.onmidimessage = null;
@@ -1035,6 +1043,8 @@ function onMidiMessage(e) {
       checkFwUpdate();
     } else if (d.length >= 5 && d[1] === 0x7D && d[2] === 0x42) {   // CPU load: F0 7D 42 <avg%> <max%> F7
       showCpuLoad(d[3], d[4]);
+    } else if (d.length >= 5 && d[1] === 0x7D && d[2] === 0x43) {   // chaos state: F0 7D 43 <x> <z> F7
+      pushChaosSample(d[3], d[4]);
     }
     return;
   }
@@ -1667,6 +1677,56 @@ function startCpuPoll() {
 function stopCpuPoll() {
   if (cpuPollTimer) { clearInterval(cpuPollTimer); cpuPollTimer = null; }
   const meter = $('#cpuMeter'); if (meter) meter.classList.remove('on', 'cap');
+}
+
+// --- Chaos visualization (SysEx query 0x03 -> reply 0x43 <x> <z>) ---
+// Plots the device's live Lorenz attractor (X vs Z) as a fading trail. Only
+// polled while the canvas is actually on-screen, so it costs nothing when hidden.
+let chaosPollTimer = null;
+const CHAOS_TRAIL = [];           // {x,z} in -1..1, newest last
+const CHAOS_TRAIL_MAX = 240;
+function chaosVisible() {
+  const c = $('#chaosViz');
+  return !!(c && c.offsetParent !== null);   // offsetParent null => display:none / hidden pod
+}
+function sendChaosQuery() {
+  if (!midiOut || !chaosVisible()) return;   // don't poll when the viz isn't shown
+  try { midiOut.send([0xF0, 0x7D, 0x03, 0xF7]); } catch (e) { /* sysex not permitted */ }
+}
+function pushChaosSample(x7, z7) {            // bytes 0..127 -> -1..1
+  CHAOS_TRAIL.push({ x: x7 / 127 * 2 - 1, z: z7 / 127 * 2 - 1 });
+  if (CHAOS_TRAIL.length > CHAOS_TRAIL_MAX) CHAOS_TRAIL.shift();
+  drawChaos();
+}
+function drawChaos() {
+  const c = $('#chaosViz'); if (!c) return;
+  const ctx = c.getContext('2d'); if (!ctx) return;
+  const W = c.width, H = c.height, pad = 6;
+  ctx.clearRect(0, 0, W, H);
+  const px = (x) => pad + (x * 0.5 + 0.5) * (W - 2 * pad);
+  const py = (z) => pad + (1 - (z * 0.5 + 0.5)) * (H - 2 * pad);
+  const n = CHAOS_TRAIL.length;
+  for (let i = 1; i < n; i++) {
+    const a = CHAOS_TRAIL[i - 1], b = CHAOS_TRAIL[i];
+    const age = i / n;                        // older = fainter
+    ctx.strokeStyle = `rgba(63, 181, 107, ${(age * 0.9).toFixed(3)})`;   // theme green
+    ctx.lineWidth = 1 + age;
+    ctx.beginPath(); ctx.moveTo(px(a.x), py(a.z)); ctx.lineTo(px(b.x), py(b.z)); ctx.stroke();
+  }
+  if (n) {                                    // bright head dot
+    const h = CHAOS_TRAIL[n - 1];
+    ctx.fillStyle = '#9af7c0';
+    ctx.beginPath(); ctx.arc(px(h.x), py(h.z), 2.2, 0, Math.PI * 2); ctx.fill();
+  }
+}
+function startChaosPoll() {
+  stopChaosPoll();
+  if (!midiOut) return;
+  chaosPollTimer = setInterval(sendChaosQuery, 50);   // ~20 Hz, gated on visibility
+}
+function stopChaosPoll() {
+  if (chaosPollTimer) { clearInterval(chaosPollTimer); chaosPollTimer = null; }
+  CHAOS_TRAIL.length = 0; drawChaos();
 }
 
 function fwShowLatest() {
