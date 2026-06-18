@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Remove the Spore→pod connector lines** — the dashed wire overlay between the
+  device and the breakout pods is gone (cleaner stage; pods stand on their own).
 - **Live CPU load** as a mixer-style meter in the footer — polls Spore's audio-callback
   load once a second over SysEx (`F0 7D 02 F7` → `0x42 <avg%> <max%>`). Fill = avg
   (green→amber→red by level), a peak-hold marker tracks the max and turns red when

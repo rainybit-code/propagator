@@ -44,7 +44,6 @@ const $ = (s, r = document) => r.querySelector(s);
 const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
 
 const stage     = $('#stage');
-const wires     = $('#wires');
 const annot     = $('#annot');
 const knobsRow  = $('#knobs');
 const fxKnobsEl = $('#fxKnobs');
@@ -1390,49 +1389,11 @@ try { loadSeqState(JSON.parse(localStorage.getItem(SEQ_KEY) || 'null')); } catch
 refreshSeqUI();
 
 /* ===========================================================================
-   CONNECTOR WIRES (pod ↔ device control)
+   CONNECTOR WIRES — removed. Spore→pod connector lines are no longer drawn.
+   drawWires() is kept as a no-op so its call sites (loop, pod drag/apply,
+   resize) stay valid without further edits.
    ========================================================================= */
-function center(elm) {
-  if (!elm) return null;
-  const r = elm.getBoundingClientRect(); const s = stage.getBoundingClientRect();
-  return { x: r.left + r.width / 2 - s.left, y: r.top + r.height / 2 - s.top };
-}
-function edgePoint(podEl, toward) {
-  const r = podEl.getBoundingClientRect(); const s = stage.getBoundingClientRect();
-  const cx = r.left + r.width / 2 - s.left;
-  const x = toward.x > cx ? r.right - s.left : r.left - s.left;
-  return { x, y: r.top + r.height / 2 - s.top };
-}
-// a point on the device's edge facing `toward`, at height y — keeps the wire in
-// the gutter so it never crosses the device face / footswitch LEDs
-function pedalEdge(toward, y) {
-  const pw = $('.pedal-wrap'); if (!pw) return { x: toward.x, y };
-  const r = pw.getBoundingClientRect(); const s = stage.getBoundingClientRect();
-  const cx = r.left + r.width / 2 - s.left;
-  const x = toward.x > cx ? r.right - s.left : r.left - s.left;
-  return { x, y };
-}
-function wirePath(a, b, active) {
-  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 + (active ? -5 : 7);
-  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  p.setAttribute('d', `M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`);
-  if (active) p.setAttribute('class', 'active');
-  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  dot.setAttribute('cx', b.x); dot.setAttribute('cy', b.y); dot.setAttribute('r', 2.5);
-  return [p, dot];
-}
-function drawWires() {
-  if (!wires) return;
-  wires.innerHTML = '';
-  // Tempo pod is intentionally NOT wired (kept separate). Only the two toggle
-  // breakouts get a connector, and they sit behind the device (z-order).
-  const fxPod = $('#fxPod');
-  const tog = center(toggleEls[2]);
-  if (!fxPod || fxPod.classList.contains('closed') || !tog) return;
-  const b = edgePoint(fxPod, tog);
-  const a = pedalEdge(b, tog.y - 22);   // device edge, lifted above the footswitch LED
-  wirePath(a, b, activeFx > 0).forEach(n => wires.appendChild(n));
-}
+function drawWires() {}
 
 /* ===========================================================================
    BOIL (animated hand-drawn wobble)
@@ -1445,7 +1406,7 @@ function startBoil() {
 }
 
 /* ===========================================================================
-   MAIN LOOP (beat + wires)
+   MAIN LOOP (beat)
    ========================================================================= */
 function loop(now) {
   // When external MIDI clock is live + sync on, the beat is clock-driven
@@ -1477,7 +1438,7 @@ function loop(now) {
 /* ===========================================================================
    DRAGGABLE PODS — grab an empty part of a breakout box to move it.
    (Starting a drag on a control inside is ignored so knobs/buttons still work.
-   Uses left/top so the float animation's transform still composes; wires follow.)
+   Uses left/top so the float animation's transform still composes.)
    ========================================================================= */
 const PODS = [
   { id: 'synthPod',  label: 'Voice',      group: 'VOICE',  col: 'L', synthOnly: true },

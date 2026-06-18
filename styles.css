@@ -233,12 +233,6 @@ body::before {
 }
 .pedal-wrap{ position: relative; z-index: 5; }
 
-/* wires sit BEHIND the device (z-index 3 < device 5): only the gutter segment
-   shows, so they can't overlap the face text/displays. Kept faint + thin. */
-.wires { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: visible; }
-.wires path { fill: none; stroke: var(--cyan); stroke-width: 1.1; stroke-dasharray: 2 7; opacity: .24; }
-.wires circle { fill: var(--cyan); opacity: .4; }
-.wires path.active { stroke: var(--heat); opacity: .5; }
 
 /* ============================================================================
    POD — fenced blueprint callout, lit like a backlit panel (dark edges)
@@ -731,7 +725,7 @@ button { font-family: var(--font-hand); }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; }
-  .wires, .chassis { filter: none; }
+  .chassis { filter: none; }
 }
 
 /* ============================================================================
