@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Telemetry no longer hijacks the input selector** — Spore's chaos-graph / CPU / identify
+  SysEx is now received on Spore's own input port (auto-detected by name), so you can pick a
+  keyboard or another controller as the performance input and still see the live chaos +
+  CPU meter. Notes/CC/clock still come only from the selected input.
 - **Fix the ADSR envelope graph not updating when you drag its handles** (also restores
   knob-dial refresh on preset load and when the envelope pod is shown).
 - **Steps** mod-matrix source — an 8th patchbay source (logistic-map / stepped chaos)

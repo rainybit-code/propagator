@@ -54,6 +54,7 @@ const midiPod   = $('#midiPod'), midiAct = $('#midiAct'), midiLast = $('#midiLas
 
 /* ---------- MIDI state ---------- */
 let midi = null, midiOut = null, midiIn = null;
+let sporeIn = null;   // Spore's own MIDI input (telemetry), independent of the performance input
 let thru = true;   // forward IN-device messages to Spore (OUT)
 let latestFw = null;     // {version,size,file} from ./firmware/latest.json
 let connectedFw = null;  // version string from Spore's SysEx identify reply
@@ -868,8 +869,21 @@ function fillSelect(sel, map, current) {
   }
 }
 
+// Spore talks back (telemetry SysEx) on its own input port, named "Spore". Find it so we
+// can receive the chaos/CPU/identify replies no matter which device is selected to play.
+function resolveSporeIn() {
+  sporeIn = [...midi.inputs.values()].find(i => /spore/i.test(i.name || '')) || null;
+}
+// Attach the receive handler to exactly the ports we use -- the selected performance input
+// AND Spore's telemetry input -- and clear it from any others (dedupes when they're the same).
+function bindInputs() {
+  if (!midi) return;
+  midi.inputs.forEach(inp => { inp.onmidimessage = (inp === midiIn || inp === sporeIn) ? onMidiMessage : null; });
+}
+
 function refreshDevices() {
   if (!midi) return;
+  resolveSporeIn();
   fillSelect($('#midiOut'), midi.outputs, midiOut);
   fillSelect($('#midiIn'), midi.inputs, midiIn);
   // virtual "Computer keyboard" input, listed right after "no device"
@@ -895,6 +909,7 @@ function refreshDevices() {
       if (inId) { selectIn(inId); $('#midiIn').value = inId; }
     }
   }
+  bindInputs();   // listen on Spore's telemetry input (+ the selected performance input)
   updateConn();
 }
 function updateConn() {
@@ -929,10 +944,9 @@ function selectOut(id) {
   } else { connectedFw = null; checkFwUpdate(); stopCpuPoll(); stopChaosPoll(); }
 }
 function selectIn(id) {
-  if (midiIn) midiIn.onmidimessage = null;
   setKbd(id === 'kbd');                                  // computer-keyboard "device"
   midiIn = (id && id !== 'kbd') ? midi.inputs.get(id) : null;
-  if (midiIn) midiIn.onmidimessage = onMidiMessage;
+  bindInputs();   // (re)bind the handler to the performance input + Spore's telemetry input
   try {
     localStorage.setItem('propagator.in', id || '');
     localStorage.setItem('propagator.inName', midiIn ? (midiIn.name || '') : (id === 'kbd' ? 'kbd' : ''));
@@ -1033,6 +1047,24 @@ function handleClockTick(now) {
 
 function onMidiMessage(e) {
   const d = e.data, status = d[0];
+  // Telemetry from Spore (SysEx, manufacturer 0x7D) is handled from whichever bound port
+  // delivered it -- so the chaos graph / CPU meter work regardless of the performance input.
+  if (status === 0xF0 && d[1] === 0x7D) {
+    if (d.length >= 4 && d[2] === 0x41) {            // identify reply: F0 7D 41 <version ASCII> F7
+      let s = '';
+      for (let i = 3; i < d.length && d[i] !== 0xF7; i++) s += String.fromCharCode(d[i]);
+      connectedFw = s.trim().replace(/^v/, '');
+      if (midiLast) midiLast.textContent = 'Spore firmware v' + connectedFw;
+      checkFwUpdate();
+    } else if (d.length >= 5 && d[2] === 0x42) {     // CPU load: F0 7D 42 <avg%> <max%> F7
+      showCpuLoad(d[3], d[4]);
+    } else if (d.length >= 5 && d[2] === 0x43) {     // chaos state: F0 7D 43 <x> <z> F7
+      pushChaosSample(d[3], d[4]);
+    }
+    return;
+  }
+  // Everything below (clock, notes, CC) only from the SELECTED performance input.
+  if (e.target !== midiIn) return;
   // realtime: clock + transport
   if (status === 0xF8) { handleClockTick(performance.now()); fwd(d, 'clock'); return; }
   if (status === 0xFA || status === 0xFB || status === 0xFC) {
@@ -1040,20 +1072,7 @@ function onMidiMessage(e) {
     else if (status === 0xFC && clockSync) setPlaying(false);                       // stop
     fwd(d, 'clock'); return;
   }
-  if (status === 0xF0) {   // SysEx — our manufacturer ID is 0x7D
-    if (d.length >= 4 && d[1] === 0x7D && d[2] === 0x41) {   // identify reply: F0 7D 41 <version ASCII> F7
-      let s = '';
-      for (let i = 3; i < d.length && d[i] !== 0xF7; i++) s += String.fromCharCode(d[i]);
-      connectedFw = s.trim().replace(/^v/, '');
-      if (midiLast) midiLast.textContent = 'Spore firmware v' + connectedFw;
-      checkFwUpdate();
-    } else if (d.length >= 5 && d[1] === 0x7D && d[2] === 0x42) {   // CPU load: F0 7D 42 <avg%> <max%> F7
-      showCpuLoad(d[3], d[4]);
-    } else if (d.length >= 5 && d[1] === 0x7D && d[2] === 0x43) {   // chaos state: F0 7D 43 <x> <z> F7
-      pushChaosSample(d[3], d[4]);
-    }
-    return;
-  }
+  if (status === 0xF0) return;   // other SysEx (telemetry handled above)
   if (status < 0x80 || status >= 0xF0) return;   // ignore other system msgs (sensing/etc)
 
   // channel-voice: activity LED, last-received readout, filtered thru
