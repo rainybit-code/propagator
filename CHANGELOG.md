@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **MASTER OUT** moved to its own pod (was tucked under FX) — it's the global output stage.
+- Fix the GENERATIVE pod's 6 knobs overflowing the pod (now a 3×2 grid).
 - **GENERATIVE pod** (shown in Generative mode) — Chord · Swell · Motion · Bright · Texture ·
   Wander knobs (CC 32-37, a new "gen" bank, persisted with the patch) to steer the self-playing
   engine. Timbre still re-seeds randomly (FS2); these bias the roll + behaviour.

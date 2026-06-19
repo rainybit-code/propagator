@@ -1555,11 +1555,12 @@ const PODS = [
   { id: 'seqPod',    label: 'Sequencer',  group: 'PLAY',   col: 'R', synthOnly: true },
   { id: 'genPod',    label: 'Generative', group: 'VOICE',  col: 'L', generativeOnly: true },
   { id: 'fxPod',     label: 'FX',         group: 'PLAY',   col: 'R' },
+  { id: 'masterPod', label: 'Master',     group: 'PLAY',   col: 'R' },
   { id: 'bpmPod',    label: 'Tempo',      group: 'SYSTEM', col: 'L', tempo: true },
   { id: 'midiPod',   label: 'MIDI Thru',  group: 'SYSTEM', col: 'R' },
 ];
 const VIEW_KEY = 'propagator.view';
-const VIEW_DEFAULT = { synthPod: true, envPod: true, wavePod: true, matrixPod: true, seqPod: false, genPod: true, fxPod: true, bpmPod: true, midiPod: true };
+const VIEW_DEFAULT = { synthPod: true, envPod: true, wavePod: true, matrixPod: true, seqPod: false, genPod: true, fxPod: true, masterPod: true, bpmPod: true, midiPod: true };
 let podShown = Object.assign({}, VIEW_DEFAULT);
 try { Object.assign(podShown, JSON.parse(localStorage.getItem(VIEW_KEY) || '{}')); } catch (_) {}
 function saveView() { try { localStorage.setItem(VIEW_KEY, JSON.stringify(podShown)); } catch (_) {} }

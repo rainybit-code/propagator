@@ -287,6 +287,8 @@ body::before {
 .pod-matrix { transform: rotate(-.7deg); animation: float-a 8s ease-in-out infinite; max-width: 330px; }
 .pod-matrix .pod-tab { background: var(--mode); color: #0a1620; transition: background .3s; }
 .mod-knobs { display: flex; gap: .7rem; justify-content: center; margin: .4rem 0 .2rem; }
+/* GENERATIVE pod has 6 knobs — wrap them into a 3x2 grid so they stay inside the pod */
+#genKnobs { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem .3rem; }
 .mod-sub { font-family: var(--font-mono); font-size: .54rem; letter-spacing: .12em; color: var(--ink-dim); text-transform: uppercase; margin: .55rem 0 .2rem; opacity: .85; }
 .mod-sub:first-of-type { margin-top: .1rem; }
 /* patchbay: source/destination JACKS (metal nut + hole) with a label beside each */
