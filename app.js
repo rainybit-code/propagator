@@ -293,7 +293,7 @@ function buildEnv() {
   base.setAttribute('class', 'env-base');
   envFill = document.createElementNS(NSVG, 'path'); envFill.setAttribute('class', 'env-fill');
   envLine = document.createElementNS(NSVG, 'path'); envLine.setAttribute('class', 'env-line');
-  const mkH = (cls) => { const c = document.createElementNS(NSVG, 'circle'); c.setAttribute('r', '5'); c.setAttribute('class', 'env-handle ' + cls); return c; };
+  const mkH = (cls) => { const c = document.createElementNS(NSVG, 'circle'); c.setAttribute('r', '7'); c.setAttribute('class', 'env-handle ' + cls); return c; };
   envHA = mkH('hA'); envHS = mkH('hS'); envHR = mkH('hR');
   envSvg.append(base, envFill, envLine, envHA, envHS, envHR);
   envHost.appendChild(envSvg);
@@ -354,6 +354,7 @@ function drawMasterFilt() {
   const c = $('#masterFiltViz'); if (!c) return;
   drawFilterCurve(c, activeMasterFilt, knobValue.master[1], knobValue.master[2],
                   40, 18000, { poles: 2, ghost: activeMasterFilt === 0 });
+  drawFreqCursor(c);
 }
 function drawSynthFilt() {
   const c = $('#synthFiltViz'); if (!c) return;
@@ -366,6 +367,22 @@ function drawSynthFilt() {
   drawFilterCurve(c, 1, peak, res, 40, 12000, { poles, ghost: true });
   // draw the base curve on top (same canvas; drawFilterCurve clears, so layer manually)
   drawFilterCurveOver(c, 1, cut, res, 40, 12000, poles);
+  drawFreqCursor(c);
+}
+// Hover read-out: a vertical line + estimated frequency at the mouse x (set by the
+// mousemove handler). Same 20Hz-20kHz log axis the curves use.
+function drawFreqCursor(canvas) {
+  const hx = canvas._hoverX; if (hx == null) return;
+  const ctx = canvas.getContext('2d'); if (!ctx) return;
+  const W = canvas.width, H = canvas.height, pad = 4, fLo = 20, fHi = 20000;
+  const frac = Math.max(0, Math.min(1, (hx - pad) / (W - 2 * pad)));
+  const f = fLo * Math.pow(fHi / fLo, frac);
+  ctx.strokeStyle = 'rgba(150,200,220,.55)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(hx, pad); ctx.lineTo(hx, H - pad); ctx.stroke();
+  const txt = f >= 1000 ? (f / 1000).toFixed(f >= 10000 ? 0 : 1) + ' kHz' : Math.round(f) + ' Hz';
+  ctx.font = '9px ui-monospace, monospace'; ctx.fillStyle = '#cfeaf2';
+  const tw = ctx.measureText(txt).width;
+  ctx.fillText(txt, hx + 5 + tw > W ? hx - 5 - tw : hx + 5, 11);
 }
 // draw a curve onto a canvas WITHOUT clearing (for layering base over the ghost peak)
 function drawFilterCurveOver(canvas, type, fc01, q01, fmin, fmax, poles) {
@@ -387,6 +404,16 @@ function drawFilterCurveOver(canvas, type, fc01, q01, fmin, fmax, poles) {
 function redrawGraphs() { drawEnv(); drawMasterFilt(); drawSynthFilt(); }
 envRedraw = redrawGraphs;   // knob edits (and applyPatch) refresh ADSR + both filter curves
 redrawGraphs();
+// hover read-out of the estimated frequency on each filter curve
+[['#masterFiltViz', drawMasterFilt], ['#synthFiltViz', drawSynthFilt]].forEach(([sel, fn]) => {
+  const c = $(sel); if (!c) return;
+  c.addEventListener('mousemove', (e) => {
+    const r = c.getBoundingClientRect();
+    c._hoverX = (e.clientX - r.left) / r.width * c.width;   // CSS px -> canvas px
+    fn();
+  });
+  c.addEventListener('mouseleave', () => { c._hoverX = null; fn(); });
+});
 
 /* ===========================================================================
    WAVE / DIGITAL pod — selects the voice engine (analog vs wavetable) and the

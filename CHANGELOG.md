@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **ADSR graph usability** — the grab cursor now shows only over a handle (not across the
+  whole graph), and the drag handles are bigger (grow on hover) so they're easy to find.
+- **Filter-curve frequency read-out** — hovering a filter response curve shows a cursor line
+  and the estimated frequency (Hz/kHz) at the mouse, on the 20Hz–20kHz log axis.
 - **Filter response curves** — live frequency-response graph in the MASTER pod (Off/LP/BP/HP +
   cutoff/res) and in the ENV pod for the synth filter (base curve + a faint filter-env "pluck"
   peak, steeper on Moog). Client-side; redraws on any knob/segment change.
