@@ -5,6 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **GENERATIVE pod** (shown in Generative mode) — Chord · Swell · Motion · Bright · Texture ·
+  Wander knobs (CC 32-37, a new "gen" bank, persisted with the patch) to steer the self-playing
+  engine. Timbre still re-seeds randomly (FS2); these bias the roll + behaviour.
 - **Live 2-way sync** — the editor now mirrors the device: incoming CC for mode/FX/VAR
   selects, the 12 macro knobs, and bypass update the on-screen controls. Guarded so a
   reflected change isn't echoed back (no feedback loop). Needs firmware with control echo.

@@ -297,6 +297,16 @@
   </aside>
 
   <!-- ---- SYNTH voice editor (shown in Synth mode) ---- -->
+  <!-- ---- GENERATIVE pod: steer the self-playing engine (shown in Generative mode) ---- -->
+  <aside class="pod pod-left sketch" id="genPod">
+    <div class="pod-tab">GENERATIVE&nbsp;▸&nbsp;STEER</div>
+    <div class="silk-group">
+      <span class="silk-label">BEHAVIOUR · TIMBRE BIAS</span>
+      <div class="mod-knobs" id="genKnobs"><!-- chord/swell/motion/bright/texture/wander injected by app.js --></div>
+    </div>
+    <p class="pod-note">timbre still rolls random on re-seed (FOOTSW 2); these bias the roll + steer motion</p>
+  </aside>
+
   <aside class="pod pod-synth sketch" id="synthPod">
     <div class="pod-tab">SYNTH&nbsp;▸&nbsp;VOICE</div>
     <div class="silk-group">
