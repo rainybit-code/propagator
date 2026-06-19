@@ -17,6 +17,11 @@ const CONFIG = {
   ccDelaySync:  15,                 // delay tempo-sync division (0 off / ¼ / ⅛ / ⅛. / 16)
   ccSysReboot:  119,                // CC 119 >=64 -> Spore reboots into DFU bootloader
   ccChaos:      [18],               // CC 18 -> Lorenz chaos speed (single-knob "bank")
+  ccVar:        93,                 // CC 93 -> VAR / Toggle 2 (thirds: 0 / 1 / 2)
+  ccFs1:        91,                 // CC 91 >=64 -> bypass on, <64 -> engaged
+  ccFs2:        92,                 // CC 92 >=64 -> mode action (freeze / re-seed)
+  ccMasterFilt: 88,                 // CC 88 -> master filter type (0 off / 1 LP / 2 BP / 3 HP)
+  ccMaster:     [7, 89, 90],        // master "bank": [volume(CC7) · cutoff(CC89) · res(CC90)]
 
   ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14-19 wavetable · 20-24 tone · 25-26 LFO2 · 27-44 matrix · 45 LFO2 depth · 46 LFO1 sync · 47 LFO2 sync
   synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
@@ -83,9 +88,12 @@ const knobValue = {
           1.00,
           0.00, 0.00],
   chaos: [0.15],   // Lorenz speed (0..1 -> CC 18); 0.15 ~= the firmware default 2.0
+  master: [1.0, 1.0, 0.0],   // master out: [volume · filter cutoff · resonance]
 };
+let activeVar = 0;          // VAR / Toggle 2 position (0/1/2), part of a patch
+let activeMasterFilt = 0;   // master filter type: 0 off / 1 LP / 2 BP / 3 HP
 // pristine defaults, captured before any preset/autosave restore — used by "new"
-const KNOB_DEFAULTS = { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice(), chaos: knobValue.chaos.slice() };
+const KNOB_DEFAULTS = { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice(), chaos: knobValue.chaos.slice(), master: knobValue.master.slice() };
 
 /* ===========================================================================
    KNOBS
@@ -115,7 +123,7 @@ function makeKnob(bank, idx, label) {
 
 function attachKnobDrag(k, dial, bank, idx, apply, lab) {
   let startY = 0, startV = 0, dragging = false;
-  const cc = (bank === 'mode' ? CONFIG.ccMode : bank === 'fx' ? CONFIG.ccFx : bank === 'chaos' ? CONFIG.ccChaos : CONFIG.ccSynth)[idx];
+  const cc = (bank === 'mode' ? CONFIG.ccMode : bank === 'fx' ? CONFIG.ccFx : bank === 'chaos' ? CONFIG.ccChaos : bank === 'master' ? CONFIG.ccMaster : CONFIG.ccSynth)[idx];
 
   const showAnnot = (e) => {
     annot.hidden = false;
@@ -381,6 +389,16 @@ if (lfo2KnobsEl) {
 }
 const chaosKnobsEl = $('#chaosKnobs');
 if (chaosKnobsEl) chaosKnobsEl.appendChild(makeKnob('chaos', 0, 'Speed'));   // CC 18 -> Lorenz speed
+const masterKnobsEl = $('#masterKnobs');
+if (masterKnobsEl) {
+  masterKnobsEl.appendChild(makeKnob('master', 0, 'Volume'));   // CC 7
+  masterKnobsEl.appendChild(makeKnob('master', 1, 'Cutoff'));   // CC 89
+  masterKnobsEl.appendChild(makeKnob('master', 2, 'Res'));      // CC 90
+}
+const masterFiltSeg = $('#masterFiltSeg');
+if (masterFiltSeg) masterFiltSeg.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (b) setMasterFilt(+b.dataset.t);   // CC 88
+});
 $('#lfo2ShapeSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const w = +b.dataset.w;   // SP_LFO2_SHAPE -> idx 26
@@ -577,7 +595,7 @@ const toggleEls = toggleDefs.map((def, ti) => {
     const next = (parseInt(t.dataset.pos, 10) + 1) % 3;
     if (ti === 0) setMode(next);
     else if (ti === 2) setFx(next);
-    else setToggle(ti, next);
+    else setVar(next);   // ti === 1 (VAR / Toggle 2)
   });
   togglesEl.appendChild(t);
   return t;
@@ -586,6 +604,16 @@ function updateToggleVals(ti, pos) {
   toggleEls[ti].querySelectorAll('.toggle-vals span').forEach((s, i) => s.classList.toggle('on', i === pos));
 }
 function setToggle(ti, pos) { toggleEls[ti].dataset.pos = pos; updateToggleVals(ti, pos); }
+function setVar(pos) {   // VAR / Toggle 2 -> CC 93 (per-mode variant)
+  activeVar = pos;
+  toggleEls[1].dataset.pos = pos; updateToggleVals(1, pos);
+  sendCC(CONFIG.ccVar, pos / 2);
+}
+function setMasterFilt(type) {   // master filter type 0 off / 1 LP / 2 BP / 3 HP -> CC 88
+  activeMasterFilt = type;
+  document.querySelectorAll('#masterFiltSeg button').forEach(b => b.classList.toggle('on', +b.dataset.t === type));
+  sendCC(CONFIG.ccMasterFilt, type / 3);
+}
 
 /* ===========================================================================
    FOOTSWITCHES + LEDs
@@ -597,8 +625,15 @@ const stompNames = [];
   const s = el('div', 'stomp'); s.dataset.stomp = si;
   const lbl = el('div', 'stomp-name'); stompNames[si] = lbl;
   s.addEventListener('click', () => {
-    s.classList.toggle('pressed');
-    led.classList.toggle('on', s.classList.contains('pressed'));
+    if (si === 0) {                                   // FS1 = engage/bypass (latching)
+      const on = !s.classList.contains('pressed');
+      s.classList.toggle('pressed', on); led.classList.toggle('on', on);
+      sendCC(CONFIG.ccFs1, on ? 1 : 0);               // >=64 -> bypassed
+    } else {                                          // FS2 = momentary mode action
+      sendCC(CONFIG.ccFs2, 1);                        // 127 -> trigger Action()
+      s.classList.add('pressed'); led.classList.add('on');
+      setTimeout(() => { s.classList.remove('pressed'); led.classList.remove('on'); }, 140);
+    }
   });
   unit.append(led, s, lbl);
   stompsEl.appendChild(unit);
@@ -651,7 +686,8 @@ function saveUserPresets(obj) { try { localStorage.setItem(PRESET_KEY, JSON.stri
 function capturePatch() {
   return {
     v: 3, mode: activeMode, fx: activeFx, delaySync: delaySyncIdx,
-    knobs: { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice(), chaos: knobValue.chaos.slice() },
+    var: activeVar, masterFilt: activeMasterFilt,
+    knobs: { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice(), chaos: knobValue.chaos.slice(), master: knobValue.master.slice() },
     seq: serializeSeq(),
   };
 }
@@ -689,6 +725,9 @@ function refreshSegments() {
 }
 function pushAllCC() {
   CONFIG.ccChaos.forEach((cc, i) => sendCC(cc, knobValue.chaos[i]));
+  CONFIG.ccMaster.forEach((cc, i) => sendCC(cc, knobValue.master[i]));
+  sendCC(CONFIG.ccMasterFilt, activeMasterFilt / 3);
+  sendCC(CONFIG.ccVar, activeVar / 2);
   CONFIG.ccMode.forEach((cc, i) => sendCC(cc, knobValue.mode[i]));
   CONFIG.ccFx.forEach((cc, i) => sendCC(cc, knobValue.fx[i]));
   CONFIG.ccSynth.forEach((cc, i) => sendCC(cc, knobValue.synth[i]));
@@ -701,6 +740,7 @@ function applyPatch(p) {
   // tolerate older/shorter synth arrays: keep defaults for any missing tail params
   if (Array.isArray(p.knobs.synth)) p.knobs.synth.forEach((v, i) => { if (i < knobValue.synth.length) knobValue.synth[i] = v; });
   if (Array.isArray(p.knobs.chaos)) p.knobs.chaos.forEach((v, i) => { if (i < knobValue.chaos.length) knobValue.chaos[i] = v; });
+  if (Array.isArray(p.knobs.master)) p.knobs.master.forEach((v, i) => { if (i < knobValue.master.length) knobValue.master[i] = v; });
   // migrate the mod-matrix SOURCE encoding as sources were added (chained, oldest first):
   //   v1->v2: /6 -> /7 (added Chaos)   ·   v2->v3: /7 -> /8 (added Steps)
   const pv = p.v || 1;
@@ -708,6 +748,8 @@ function applyPatch(p) {
   if (pv < 3) PATCH_SLOTS.forEach(b => { knobValue.synth[b] = Math.round(knobValue.synth[b] * 7) / 8; });
   setMode(typeof p.mode === 'number' ? p.mode : activeMode);   // sends mode select + updates UI
   setFx(typeof p.fx === 'number' ? p.fx : activeFx);           // sends fx select
+  if (typeof p.var === 'number') setVar(p.var);                // VAR / Toggle 2
+  if (typeof p.masterFilt === 'number') setMasterFilt(p.masterFilt);
   refreshKnobs(); refreshSegments();
   if (typeof p.delaySync === 'number') setDelaySync(p.delaySync);   // restore delay sync
   if (p.seq) { loadSeqState(p.seq); refreshSeqUI(); }   // restore the sequence too
@@ -797,8 +839,10 @@ function newPatch() {
   KNOB_DEFAULTS.fx.forEach((v, i) => knobValue.fx[i] = v);
   KNOB_DEFAULTS.synth.forEach((v, i) => knobValue.synth[i] = v);
   KNOB_DEFAULTS.chaos.forEach((v, i) => knobValue.chaos[i] = v);
+  KNOB_DEFAULTS.master.forEach((v, i) => knobValue.master[i] = v);
   loadSeqState(SEQ_DEFAULT); refreshSeqUI();
   setDelaySync(0);
+  setVar(0); setMasterFilt(0);
   setMode(0); setFx(0);
   refreshKnobs(); refreshSegments();
   pushAllCC();

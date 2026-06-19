@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Master output controls** in the FX pod — a filter-type segment (Off / LP / BP / HP) plus
+  Volume / Cutoff / Res knobs (CC 7 / 88 / 89 / 90), persisted with the patch.
+- **Whole control surface over MIDI** — the on-screen footswitches now send (FS1 = bypass,
+  FS2 = mode action) and the **VAR / Toggle 2** switch is wired (CC 91 / 92 / 93).
 - **Telemetry no longer hijacks the input selector** — Spore's chaos-graph / CPU / identify
   SysEx is now received on Spore's own input port (auto-detected by name), so you can pick a
   keyboard or another controller as the performance input and still see the live chaos +
