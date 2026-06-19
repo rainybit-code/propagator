@@ -297,6 +297,7 @@
       <div class="lfo-dest" id="masterFiltSeg" title="master output filter (post-FX)">
         <button data-t="0" class="on">Off</button><button data-t="1">LP</button><button data-t="2">BP</button><button data-t="3">HP</button>
       </div>
+      <canvas class="filt-viz" id="masterFiltViz" width="190" height="56" title="master filter response"></canvas>
       <div class="mod-knobs" id="masterKnobs"><!-- volume / cutoff / res knobs injected by app.js --></div>
     </div>
   </aside>
@@ -368,6 +369,7 @@
     </div>
     <div class="silk-group">
       <span class="silk-label">FILTER ENV</span>
+      <canvas class="filt-viz" id="synthFiltViz" width="216" height="56" title="filter response — base + filter-env 'pluck' peak"></canvas>
       <div class="env-filter" id="envFilter"><!-- filter-env knobs injected by app.js --></div>
     </div>
     <p class="pod-note">drag: ◦ attack · ◦ decay + sustain · ◦ release · filter-env amount + time</p>

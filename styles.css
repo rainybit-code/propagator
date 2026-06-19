@@ -296,6 +296,8 @@ body::before {
 .chaos-row { display: flex; align-items: center; gap: .5rem; margin-top: .3rem; }
 .chaos-viz { flex: 1 1 auto; width: 100%; height: auto; border: 1px solid #04101a;
   border-radius: 4px; background: radial-gradient(120% 120% at 50% 40%, #06141e 0%, #030a11 100%); }
+.filt-viz { display: block; width: 100%; height: auto; margin: .4rem 0 .1rem; border: 1px solid #04101a;
+  border-radius: 4px; background: linear-gradient(180deg, #06141e 0%, #030a11 100%); }
 .patch-svg { width: 100%; height: auto; display: block; touch-action: none; cursor: crosshair; overflow: visible; }
 .patch-jack { cursor: pointer; }
 .jack-nut { fill: #2b333b; stroke: #aab4b8; stroke-width: 1.5; transition: stroke .12s; }

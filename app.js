@@ -193,6 +193,7 @@ $('#synthFilterSeg').addEventListener('click', e => {
   const f = +b.dataset.f;
   document.querySelectorAll('#synthFilterSeg button').forEach(x => x.classList.toggle('on', +x.dataset.f === f));
   knobValue.synth[21] = f; sendCC(CONFIG.ccSynth[21], f);
+  envRedraw();   // redraw the synth filter curve (Svf 2-pole <-> Moog 4-pole)
 });
 /* unison -> SP_UNISON (idx 22): 1..4 osc map to (u-1)/3 */
 $('#synthUniSeg').addEventListener('click', e => {
@@ -312,8 +313,80 @@ buildEnv();
 /* filter-env knobs (broken out of the voice pod) */
 const envFilterEl = $('#envFilter');
 if (envFilterEl) [4, 5].forEach(i => envFilterEl.appendChild(makeKnob('synth', i, CONFIG.synthLabels[i])));
-envRedraw = drawEnv;   // knob edits (and applyPatch) now refresh the graph
-drawEnv();
+/* ---- filter response curves (master output + synth filter-env "pluck") ---- */
+// Idealised state-variable magnitude over a 20Hz-20kHz log axis. type: 0 off/flat,
+// 1 LP, 2 BP, 3 HP. poles 2 or 4 (4 = steeper, drawn as the 2-pole response squared).
+function drawFilterCurve(canvas, type, fc01, q01, fmin, fmax, opts) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d'); if (!ctx) return;
+  const W = canvas.width, H = canvas.height, pad = 4;
+  ctx.clearRect(0, 0, W, H);
+  const fLo = 20, fHi = 20000;
+  const fc = fmin * Math.pow(fmax / fmin, fc01);     // cutoff (knob 0..1 -> Hz, exp)
+  const Q = 0.5 + q01 * 9.0;                          // resonance -> Q (visual)
+  const poles = (opts && opts.poles) || 2;
+  const ghost = opts && opts.ghost;                   // dim "no-filter" look when off
+  const dB = (f) => {
+    if (type === 0) return 0;                         // off -> flat
+    const w = f / fc;
+    const d = Math.sqrt((1 - w * w) * (1 - w * w) + (w / Q) * (w / Q));
+    let m = type === 1 ? 1 / d : type === 3 ? (w * w) / d : (w / Q) / d;  // LP / HP / BP
+    if (poles >= 4) m *= m;                           // cascade ~ 4-pole
+    return 20 * Math.log10(Math.max(m, 1e-4));
+  };
+  const x = (f) => pad + (Math.log(f / fLo) / Math.log(fHi / fLo)) * (W - 2 * pad);
+  const y = (db) => pad + (1 - (Math.max(-36, Math.min(18, db)) + 36) / 54) * (H - 2 * pad);
+  // 0 dB grid line
+  ctx.strokeStyle = 'rgba(91,208,230,.15)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, y(0)); ctx.lineTo(W - pad, y(0)); ctx.stroke();
+  // the curve (canvas can't read CSS vars, so resolve --mode to a real colour)
+  const accent = getComputedStyle(document.body).getPropertyValue('--mode').trim() || '#3fb56b';
+  ctx.strokeStyle = ghost ? 'rgba(120,150,170,.45)' : accent;
+  ctx.lineWidth = 2; ctx.beginPath();
+  for (let px = pad; px <= W - pad; px++) {
+    const f = fLo * Math.pow(fHi / fLo, (px - pad) / (W - 2 * pad));
+    const yy = y(dB(f));
+    if (px === pad) ctx.moveTo(px, yy); else ctx.lineTo(px, yy);
+  }
+  ctx.stroke();
+}
+function drawMasterFilt() {
+  const c = $('#masterFiltViz'); if (!c) return;
+  drawFilterCurve(c, activeMasterFilt, knobValue.master[1], knobValue.master[2],
+                  40, 18000, { poles: 2, ghost: activeMasterFilt === 0 });
+}
+function drawSynthFilt() {
+  const c = $('#synthFiltViz'); if (!c) return;
+  // synth voice filter: cutoff = mode knob 1, res = mode knob 2, poles from SP_FILTER (21)
+  const cut = knobValue.mode[0], res = knobValue.mode[1];
+  const poles = knobValue.synth[21] >= 0.5 ? 4 : 2;     // Svf 2-pole | Moog 4-pole
+  const ctx = c.getContext('2d'); if (ctx) ctx.clearRect(0, 0, c.width, c.height);
+  // faint "pluck peak" curve: the filter-env (SP_FENV_AMT, idx 4) sweeps cutoff up
+  const peak = Math.min(1, cut + knobValue.synth[4] * 0.45);
+  drawFilterCurve(c, 1, peak, res, 40, 12000, { poles, ghost: true });
+  // draw the base curve on top (same canvas; drawFilterCurve clears, so layer manually)
+  drawFilterCurveOver(c, 1, cut, res, 40, 12000, poles);
+}
+// draw a curve onto a canvas WITHOUT clearing (for layering base over the ghost peak)
+function drawFilterCurveOver(canvas, type, fc01, q01, fmin, fmax, poles) {
+  const ctx = canvas.getContext('2d'); if (!ctx) return;
+  const W = canvas.width, H = canvas.height, pad = 4, fLo = 20, fHi = 20000;
+  const fc = fmin * Math.pow(fmax / fmin, fc01), Q = 0.5 + q01 * 9.0;
+  const y = (db) => pad + (1 - (Math.max(-36, Math.min(18, db)) + 36) / 54) * (H - 2 * pad);
+  ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--mode').trim() || '#3fb56b';
+  ctx.lineWidth = 2; ctx.beginPath();
+  for (let px = pad; px <= W - pad; px++) {
+    const f = fLo * Math.pow(fHi / fLo, (px - pad) / (W - 2 * pad));
+    const w = f / fc, d = Math.sqrt((1 - w * w) * (1 - w * w) + (w / Q) * (w / Q));
+    let m = 1 / d; if (poles >= 4) m *= m;
+    const yy = y(20 * Math.log10(Math.max(m, 1e-4)));
+    if (px === pad) ctx.moveTo(px, yy); else ctx.lineTo(px, yy);
+  }
+  ctx.stroke();
+}
+function redrawGraphs() { drawEnv(); drawMasterFilt(); drawSynthFilt(); }
+envRedraw = redrawGraphs;   // knob edits (and applyPatch) refresh ADSR + both filter curves
+redrawGraphs();
 
 /* ===========================================================================
    WAVE / DIGITAL pod — selects the voice engine (analog vs wavetable) and the
@@ -619,6 +692,7 @@ function setMasterFilt(type) {   // master filter type 0 off / 1 LP / 2 BP / 3 H
   activeMasterFilt = type;
   document.querySelectorAll('#masterFiltSeg button').forEach(b => b.classList.toggle('on', +b.dataset.t === type));
   sendCC(CONFIG.ccMasterFilt, type / 3);
+  if (typeof drawMasterFilt === 'function') drawMasterFilt();
 }
 
 /* ===========================================================================

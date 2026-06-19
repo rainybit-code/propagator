@@ -5,6 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Filter response curves** — live frequency-response graph in the MASTER pod (Off/LP/BP/HP +
+  cutoff/res) and in the ENV pod for the synth filter (base curve + a faint filter-env "pluck"
+  peak, steeper on Moog). Client-side; redraws on any knob/segment change.
 - **MASTER OUT** moved to its own pod (was tucked under FX) — it's the global output stage.
 - Fix the GENERATIVE pod's 6 knobs overflowing the pod (now a 3×2 grid).
 - **GENERATIVE pod** (shown in Generative mode) — Chord · Swell · Motion · Bright · Texture ·
