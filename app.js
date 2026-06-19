@@ -92,6 +92,7 @@ const knobValue = {
 };
 let activeVar = 0;          // VAR / Toggle 2 position (0/1/2), part of a patch
 let activeMasterFilt = 0;   // master filter type: 0 off / 1 LP / 2 BP / 3 HP
+let applyingRemote = false; // true while mirroring incoming CC -> UI (suppresses re-send)
 // pristine defaults, captured before any preset/autosave restore — used by "new"
 const KNOB_DEFAULTS = { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice(), chaos: knobValue.chaos.slice(), master: knobValue.master.slice() };
 
@@ -619,11 +620,13 @@ function setMasterFilt(type) {   // master filter type 0 off / 1 LP / 2 BP / 3 H
    FOOTSWITCHES + LEDs
    ========================================================================= */
 const stompNames = [];
+const stompEls = [], ledEls = [];
 [0, 1].forEach((si) => {
   const unit = el('div', 'stomp-unit');
   const led = el('span', 'fs-led'); led.dataset.led = si;
   const s = el('div', 'stomp'); s.dataset.stomp = si;
   const lbl = el('div', 'stomp-name'); stompNames[si] = lbl;
+  stompEls[si] = s; ledEls[si] = led;
   s.addEventListener('click', () => {
     if (si === 0) {                                   // FS1 = engage/bypass (latching)
       const on = !s.classList.contains('pressed');
@@ -894,6 +897,7 @@ async function loadFactoryPresets() {
    ========================================================================= */
 function sendCC(cc, v01) {
   scheduleAutosave();   // any param change persists the live patch (even when offline)
+  if (applyingRemote) return;   // mirroring an incoming CC -> update UI only, don't echo back
   if (!midiOut) return;
   const v = Math.max(0, Math.min(127, Math.round(v01 * 127)));
   try { midiOut.send([0xB0 | (CONFIG.channel & 0x0f), cc, v]); } catch (_) {}
@@ -1125,12 +1129,24 @@ function onMidiMessage(e) {
   if (midiLast) midiLast.textContent = info.text;
   fwd(d, info.cat);
 
-  // reflect CC onto the on-screen knobs
+  // reflect incoming CC onto the UI (device -> web mirror). applyingRemote stops the
+  // setters from echoing back out, so the physical surface drives the editor with no loop.
   if ((status & 0xf0) === 0xb0) {
-    const mi = CONFIG.ccMode.indexOf(d[1]);
-    const fi = CONFIG.ccFx.indexOf(d[1]);
-    if (mi >= 0) { knobValue.mode[mi] = d[2] / 127; modeKnobs[mi]._apply(); }
-    else if (fi >= 0) { knobValue.fx[fi] = d[2] / 127; }
+    const cc = d[1], val = d[2];
+    const mi = CONFIG.ccMode.indexOf(cc), fi = CONFIG.ccFx.indexOf(cc);
+    const third = (v) => (v < 43 ? 0 : v < 86 ? 1 : 2);
+    applyingRemote = true;
+    try {
+      if (mi >= 0) { knobValue.mode[mi] = val / 127; modeKnobs[mi]._apply(); }
+      else if (fi >= 0) { knobValue.fx[fi] = val / 127; }
+      else if (cc === CONFIG.ccModeSelect) setMode(third(val));
+      else if (cc === CONFIG.ccFxSelect)   setFx(third(val));
+      else if (cc === CONFIG.ccVar)        setVar(third(val));
+      else if (cc === CONFIG.ccFs1 && stompEls[0]) {
+        const on = val >= 64;
+        stompEls[0].classList.toggle('pressed', on); ledEls[0].classList.toggle('on', on);
+      }
+    } finally { applyingRemote = false; }
   }
 }
 

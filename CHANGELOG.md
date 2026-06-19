@@ -5,6 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Live 2-way sync** — the editor now mirrors the device: incoming CC for mode/FX/VAR
+  selects, the 12 macro knobs, and bypass update the on-screen controls. Guarded so a
+  reflected change isn't echoed back (no feedback loop). Needs firmware with control echo.
 - **Master output controls** in the FX pod — a filter-type segment (Off / LP / BP / HP) plus
   Volume / Cutoff / Res knobs (CC 7 / 88 / 89 / 90), persisted with the patch.
 - **Whole control surface over MIDI** — the on-screen footswitches now send (FS1 = bypass,
