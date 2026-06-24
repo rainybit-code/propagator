@@ -23,6 +23,7 @@ const CONFIG = {
   ccMasterFilt: 88,                 // CC 88 -> master filter type (0 off / 1 LP / 2 BP / 3 HP)
   ccMaster:     [7, 89, 90],        // master "bank": [volume(CC7) · cutoff(CC89) · res(CC90)]
   ccGen:        [32, 33, 34, 35, 36, 37],   // GENERATIVE pod bank: chord·swell·motion·bright·texture·wander
+  ccGran:       [94, 95, 96, 97],           // GRANULAR pod bank: reverse·width·shape·scale
 
   ccSynth: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87],  // 0-7 voice · 8 wave · 9-12 LFO · 13 voices · 14-19 wavetable · 20-24 tone · 25-26 LFO2 · 27-44 matrix · 45 LFO2 depth · 46 LFO1 sync · 47 LFO2 sync
   synthLabels: ['Detune', 'Sub', 'Sustain', 'Release', 'F.Env Amt', 'F.Env Time', 'Glide', 'Width'],
@@ -91,12 +92,13 @@ const knobValue = {
   chaos: [0.15],   // Lorenz speed (0..1 -> CC 18); 0.15 ~= the firmware default 2.0
   master: [1.0, 1.0, 0.0],   // master out: [volume · filter cutoff · resonance]
   gen: [0.40, 0.50, 0.45, 0.50, 0.50, 0.35],   // generative: chord·swell·motion·bright·texture·wander
+  gran: [0.30, 0.00, 0.00, 0.00],   // granular: reverse·width·shape·scale (defaults = stock sound)
 };
 let activeVar = 0;          // VAR / Toggle 2 position (0/1/2), part of a patch
 let activeMasterFilt = 0;   // master filter type: 0 off / 1 LP / 2 BP / 3 HP
 let applyingRemote = false; // true while mirroring incoming CC -> UI (suppresses re-send)
 // pristine defaults, captured before any preset/autosave restore — used by "new"
-const KNOB_DEFAULTS = { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice(), chaos: knobValue.chaos.slice(), master: knobValue.master.slice(), gen: knobValue.gen.slice() };
+const KNOB_DEFAULTS = { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice(), chaos: knobValue.chaos.slice(), master: knobValue.master.slice(), gen: knobValue.gen.slice(), gran: knobValue.gran.slice() };
 
 /* ===========================================================================
    KNOBS
@@ -126,7 +128,7 @@ function makeKnob(bank, idx, label) {
 
 function attachKnobDrag(k, dial, bank, idx, apply, lab) {
   let startY = 0, startV = 0, dragging = false;
-  const cc = (bank === 'mode' ? CONFIG.ccMode : bank === 'fx' ? CONFIG.ccFx : bank === 'chaos' ? CONFIG.ccChaos : bank === 'master' ? CONFIG.ccMaster : bank === 'gen' ? CONFIG.ccGen : CONFIG.ccSynth)[idx];
+  const cc = (bank === 'mode' ? CONFIG.ccMode : bank === 'fx' ? CONFIG.ccFx : bank === 'chaos' ? CONFIG.ccChaos : bank === 'master' ? CONFIG.ccMaster : bank === 'gen' ? CONFIG.ccGen : bank === 'gran' ? CONFIG.ccGran : CONFIG.ccSynth)[idx];
 
   const showAnnot = (e) => {
     annot.hidden = false;
@@ -505,6 +507,10 @@ if (masterFiltSeg) masterFiltSeg.addEventListener('click', e => {
 const genKnobsEl = $('#genKnobs');
 if (genKnobsEl) ['Chord', 'Swell', 'Motion', 'Bright', 'Texture', 'Wander']
   .forEach((lbl, i) => genKnobsEl.appendChild(makeKnob('gen', i, lbl)));   // CC 32-37
+
+const granKnobsEl = $('#granKnobs');
+if (granKnobsEl) ['Reverse', 'Width', 'Shape', 'Scale']
+  .forEach((lbl, i) => granKnobsEl.appendChild(makeKnob('gran', i, lbl)));   // CC 94-97
 $('#lfo2ShapeSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const w = +b.dataset.w;   // SP_LFO2_SHAPE -> idx 26
@@ -796,7 +802,7 @@ function capturePatch() {
   return {
     v: 3, mode: activeMode, fx: activeFx, delaySync: delaySyncIdx,
     var: activeVar, masterFilt: activeMasterFilt,
-    knobs: { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice(), chaos: knobValue.chaos.slice(), master: knobValue.master.slice(), gen: knobValue.gen.slice() },
+    knobs: { mode: knobValue.mode.slice(), fx: knobValue.fx.slice(), synth: knobValue.synth.slice(), chaos: knobValue.chaos.slice(), master: knobValue.master.slice(), gen: knobValue.gen.slice(), gran: knobValue.gran.slice() },
     seq: serializeSeq(),
   };
 }
@@ -836,6 +842,7 @@ function pushAllCC() {
   CONFIG.ccChaos.forEach((cc, i) => sendCC(cc, knobValue.chaos[i]));
   CONFIG.ccMaster.forEach((cc, i) => sendCC(cc, knobValue.master[i]));
   CONFIG.ccGen.forEach((cc, i) => sendCC(cc, knobValue.gen[i]));
+  CONFIG.ccGran.forEach((cc, i) => sendCC(cc, knobValue.gran[i]));
   sendCC(CONFIG.ccMasterFilt, activeMasterFilt / 3);
   sendCC(CONFIG.ccVar, activeVar / 2);
   CONFIG.ccMode.forEach((cc, i) => sendCC(cc, knobValue.mode[i]));
@@ -852,6 +859,7 @@ function applyPatch(p) {
   if (Array.isArray(p.knobs.chaos)) p.knobs.chaos.forEach((v, i) => { if (i < knobValue.chaos.length) knobValue.chaos[i] = v; });
   if (Array.isArray(p.knobs.master)) p.knobs.master.forEach((v, i) => { if (i < knobValue.master.length) knobValue.master[i] = v; });
   if (Array.isArray(p.knobs.gen)) p.knobs.gen.forEach((v, i) => { if (i < knobValue.gen.length) knobValue.gen[i] = v; });
+  if (Array.isArray(p.knobs.gran)) p.knobs.gran.forEach((v, i) => { if (i < knobValue.gran.length) knobValue.gran[i] = v; });
   // migrate the mod-matrix SOURCE encoding as sources were added (chained, oldest first):
   //   v1->v2: /6 -> /7 (added Chaos)   ·   v2->v3: /7 -> /8 (added Steps)
   const pv = p.v || 1;
@@ -952,6 +960,7 @@ function newPatch() {
   KNOB_DEFAULTS.chaos.forEach((v, i) => knobValue.chaos[i] = v);
   KNOB_DEFAULTS.master.forEach((v, i) => knobValue.master[i] = v);
   KNOB_DEFAULTS.gen.forEach((v, i) => knobValue.gen[i] = v);
+  KNOB_DEFAULTS.gran.forEach((v, i) => knobValue.gran[i] = v);
   loadSeqState(SEQ_DEFAULT); refreshSeqUI();
   setDelaySync(0);
   setVar(0); setMasterFilt(0);
@@ -1655,13 +1664,14 @@ const PODS = [
   { id: 'matrixPod', label: 'Modulation', group: 'VOICE',  col: 'R', synthOnly: true },
   { id: 'seqPod',    label: 'Sequencer',  group: 'PLAY',   col: 'R', synthOnly: true },
   { id: 'genPod',    label: 'Generative', group: 'VOICE',  col: 'L', generativeOnly: true },
+  { id: 'granPod',   label: 'Granular',   group: 'VOICE',  col: 'L', granularOnly: true },
   { id: 'fxPod',     label: 'FX',         group: 'PLAY',   col: 'R' },
   { id: 'masterPod', label: 'Master',     group: 'PLAY',   col: 'R' },
   { id: 'bpmPod',    label: 'Tempo',      group: 'SYSTEM', col: 'L', tempo: true },
   { id: 'midiPod',   label: 'MIDI Thru',  group: 'SYSTEM', col: 'R' },
 ];
 const VIEW_KEY = 'propagator.view';
-const VIEW_DEFAULT = { synthPod: true, envPod: true, wavePod: true, matrixPod: true, seqPod: false, genPod: true, fxPod: true, masterPod: true, bpmPod: true, midiPod: true };
+const VIEW_DEFAULT = { synthPod: true, envPod: true, wavePod: true, matrixPod: true, seqPod: false, genPod: true, granPod: true, fxPod: true, masterPod: true, bpmPod: true, midiPod: true };
 let podShown = Object.assign({}, VIEW_DEFAULT);
 try { Object.assign(podShown, JSON.parse(localStorage.getItem(VIEW_KEY) || '{}')); } catch (_) {}
 function saveView() { try { localStorage.setItem(VIEW_KEY, JSON.stringify(podShown)); } catch (_) {} }
@@ -1669,6 +1679,7 @@ function podMeta(id) { return PODS.find(p => p.id === id); }
 function podContextOK(p) {
   if (p.synthOnly && activeMode !== 0) return false;
   if (p.generativeOnly && activeMode !== 2) return false;
+  if (p.granularOnly && activeMode !== 1) return false;
   if (p.needThru && !(thru && midiIn && midiOut)) return false;
   return true;
 }

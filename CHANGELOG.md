@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **GRANULAR pod** (shown in Granular mode) — four new engine controls beyond the 6 mode knobs:
+  **Reverse** (backwards grains), **Width** (stereo spread), **Shape** (soft Hann → hard gate),
+  and **Scale** (off / major / minor / pentatonic pitch-lock). CC 94-97, a new "gran" bank,
+  persisted with the patch. Needs firmware with the granular params.
 - **ADSR graph usability** — the grab cursor now shows only over a handle (not across the
   whole graph), and the drag handles are bigger (grow on hover) so they're easy to find.
 - **Filter-curve frequency read-out** — hovering a filter response curve shows a cursor line
