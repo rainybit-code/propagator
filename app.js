@@ -15,7 +15,8 @@ const CONFIG = {
   ccFxSelect:   17,                 // FX select   (0/64/127 -> off/delay/reverb)
   ccTempo:      14,                 // internal clock BPM (0..1 -> 40..200)
   ccDelaySync:  15,                 // delay tempo-sync division (0 off / ¼ / ⅛ / ⅛. / 16)
-  ccSysReboot:  119,                // CC 119 >=64 -> Spore reboots into DFU bootloader
+  ccDaisyReboot: 118,               // CC 118 >=64 -> reboot into the Daisy bootloader (reflash the app, QSPI)
+  ccSysReboot:  119,                // CC 119 >=64 -> reboot into the STM ROM DFU (reflash the bootloader itself)
   ccChaos:      [18],               // CC 18 -> Lorenz chaos speed (single-knob "bank")
   ccVar:        93,                 // CC 93 -> VAR / Toggle 2 (thirds: 0 / 1 / 2)
   ccFs1:        91,                 // CC 91 >=64 -> bypass on, <64 -> engaged
@@ -1800,14 +1801,25 @@ makeSwitches();
 /* ===========================================================================
    FIRMWARE UPDATE (WebUSB DFU)
    A 3-step wizard: choose a .bin (bundled latest or local file), reboot Spore into
-   the STM DFU bootloader (CC 119), connect over WebUSB, and flash to internal flash
-   @ 0x08000000 via dfu.js (DfuSe). Spore drops off USB-MIDI while in DFU.
+   the bootloader, connect over WebUSB, and flash via dfu.js (DfuSe). Spore drops off
+   USB-MIDI while in DFU.
+
+   Two targets (Spore runs from SRAM via the Daisy bootloader):
+     • 'app'  (default) — reboot via CC 118 into the Daisy bootloader, flash the app to
+                          QSPI @ 0x90040000. The everyday "update firmware" path.
+     • 'boot' (advanced) — reboot via CC 119 (or BOOT+RESET) into the STM ROM DFU, flash
+                          the bootloader to internal flash @ 0x08000000. First-time / repair.
+   The actual write address is auto-derived from the connected DFU device's memory map
+   (which bootloader answered), so a mismatched pick is caught rather than mis-flashed.
    =========================================================================== */
+const FW_ADDR = { app: 0x90040000, boot: 0x08000000 };  // QSPI app slot · internal flash base
 const FLASH = {
-  addr: 0x08000000,                // STM32H750 internal flash base
+  mode: 'app',                     // 'app' (Daisy bootloader/QSPI) | 'boot' (STM ROM/internal)
+  addr: FW_ADDR.app,               // write address; finalized from the device on connect
   buf: null,                       // ArrayBuffer of the firmware to write
   bufName: '',
   dev: null,                       // connected DfuseDevice
+  mismatch: false,                 // connected bootloader doesn't match the selected target
 };
 const fwEl = (id) => document.getElementById(id);
 function fwStatus(msg, kind) {
@@ -1815,7 +1827,7 @@ function fwStatus(msg, kind) {
   s.textContent = msg; s.dataset.kind = kind || '';
 }
 function fwSetFlashEnabled() {
-  const b = fwEl('fwFlash'); if (b) b.disabled = !(FLASH.buf && FLASH.dev);
+  const b = fwEl('fwFlash'); if (b) b.disabled = !(FLASH.buf && FLASH.dev && !FLASH.mismatch);
   const l = fwEl('fwLeave'); if (l) l.disabled = !FLASH.dev;   // can reboot whenever connected
 }
 function fwProgress(p) {
@@ -1851,7 +1863,8 @@ async function loadLatestFw() {
     if (r.ok) {
       const j = await r.json();
       if (j && j.version) latestFw = { version: String(j.version).replace(/^v/, ''),
-                                       size: j.size, file: j.file || 'spore-latest.bin' };
+                                       size: j.size, file: j.file || 'spore-latest.bin',
+                                       bootFile: j.bootFile || null, bootSize: j.bootSize || null };
     }
   } catch (e) { /* not deployed / local dev — fine */ }
   checkFwUpdate();
@@ -1944,10 +1957,17 @@ function stopChaosPoll() {
 
 function fwShowLatest() {
   const info = fwEl('fwLatestInfo'), btn = fwEl('fwUseLatest');
-  if (latestFw && latestFw.version) {
-    info.innerHTML = 'latest: <b>v' + latestFw.version + '</b>'
+  const isApp = FLASH.mode === 'app';
+  const haveApp = !!(latestFw && latestFw.version);
+  const haveBoot = !!(latestFw && latestFw.bootFile);
+  if (isApp && haveApp) {
+    info.innerHTML = 'latest app: <b>v' + latestFw.version + '</b>'
       + (latestFw.size ? ' · ' + (latestFw.size / 1024).toFixed(1) + ' KB' : '')
       + (connectedFw ? ' · on Spore: v' + connectedFw : '');
+    btn.hidden = false;
+  } else if (!isApp && haveBoot) {
+    info.innerHTML = 'bundled bootloader'
+      + (latestFw.bootSize ? ' · ' + (latestFw.bootSize / 1024).toFixed(1) + ' KB' : '');
     btn.hidden = false;
   } else {
     info.innerHTML = 'no bundled build — get it from '
@@ -1956,15 +1976,32 @@ function fwShowLatest() {
   }
 }
 
+// Render the wizard for the current target (app vs bootloader). 'app' is the default,
+// everyday path; 'boot' is the advanced first-time/repair path.
+function fwRender() {
+  const isApp = FLASH.mode === 'app';
+  const set = (id, html) => { const e = fwEl(id); if (e) e.innerHTML = html; };
+  set('fwTitle', isApp ? 'Update firmware' : 'Install / repair bootloader');
+  set('fwSub', isApp ? 'Flash the <b>Spore</b> app over USB — no extra tools.'
+                     : 'Advanced: reinstall the Daisy <b>bootloader</b> (first-time setup or recovery).');
+  set('fwModeToggle', isApp ? 'Install / repair bootloader (advanced)' : '← Back to app update');
+  set('fwReboot', isApp ? '⤓ Reboot to bootloader (via MIDI)' : '⤓ Reboot to STM DFU (via MIDI)');
+  set('fwRebootHint', isApp
+    ? '…or just reset the Daisy — a freshly-bootloadered board waits in DFU on its own.'
+    : '…or hold <b>BOOT</b> + tap <b>RESET</b> on the Daisy Seed.');
+  fwShowLatest();
+}
+
 function fwOpen() {
   const m = fwEl('flash'); if (!m) return;
   m.hidden = false;
+  FLASH.mode = 'app';   // always open on the everyday app-update path
   // reset transient UI
   fwEl('fwProgWrap').hidden = true; fwEl('fwBar').style.width = '0%';
   fwStatus(WebDFU.supported() ? '—' : 'WebUSB unavailable — use Chrome/Edge over https/localhost', 'err');
   fwEl('fwConnect').disabled = !WebDFU.supported();
   fwEl('fwReboot').disabled = !midiOut;
-  fwShowLatest();
+  fwRender();
   sendIdentify();   // refresh Spore's reported version while the wizard is open
 }
 async function fwClose() {
@@ -1976,15 +2013,28 @@ async function fwClose() {
 // open the wizard from the topbar DFU button
 $('#dfuBtn').addEventListener('click', fwOpen);
 
-// --- step 1: use the bundled latest build ---
+// advanced: switch between app-update (default) and bootloader-install
+fwEl('fwModeToggle').addEventListener('click', () => {
+  FLASH.mode = FLASH.mode === 'app' ? 'boot' : 'app';
+  FLASH.buf = null; FLASH.bufName = ''; FLASH.mismatch = false;   // re-pick the right .bin
+  const fi = fwEl('fwFileInfo'); if (fi) fi.textContent = '';
+  fwRender();
+  fwSetFlashEnabled();
+});
+
+// --- step 1: use the bundled latest build (app or bootloader, per mode) ---
 fwEl('fwUseLatest').addEventListener('click', async () => {
   if (!latestFw) return;
+  const isApp = FLASH.mode === 'app';
+  const file = isApp ? (latestFw.file || 'spore-latest.bin') : latestFw.bootFile;
+  if (!file) return;
   const info = fwEl('fwLatestInfo');
   try {
-    const r = await fetch('./firmware/' + (latestFw.file || 'spore-latest.bin'), { cache: 'no-cache' });
+    const r = await fetch('./firmware/' + file, { cache: 'no-cache' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    FLASH.buf = await r.arrayBuffer(); FLASH.bufName = 'spore-v' + latestFw.version + '.bin';
-    info.innerHTML = '✓ loaded <b>v' + latestFw.version + '</b> · ' + (FLASH.buf.byteLength / 1024).toFixed(1) + ' KB';
+    FLASH.buf = await r.arrayBuffer(); FLASH.bufName = file;
+    info.innerHTML = '✓ loaded ' + (isApp ? '<b>app v' + latestFw.version + '</b>' : '<b>bootloader</b>')
+      + ' · ' + (FLASH.buf.byteLength / 1024).toFixed(1) + ' KB';
     fwSetFlashEnabled();
   } catch (e) {
     info.textContent = 'could not load bundled firmware (' + e.message + ') — use a local .bin';
@@ -2002,9 +2052,11 @@ fwEl('fwFile').addEventListener('change', async (e) => {
 // --- step 2: reboot to DFU over MIDI ---
 fwEl('fwReboot').addEventListener('click', () => {
   if (!midiOut) { fwStatus('connect Spore as MIDI OUT first (or use BOOT+RESET)', 'err'); return; }
-  sendCC(CONFIG.ccSysReboot, 1);     // -> 127, firmware reboots into STM DFU
-  if (midiLast) midiLast.textContent = 'sent: reboot to DFU';
-  fwStatus('reboot sent — wait ~2 s, then Connect', 'ok');
+  const isApp = FLASH.mode === 'app';
+  // app -> Daisy bootloader (infinite DFU, no timing race); boot -> STM ROM DFU
+  sendCC(isApp ? CONFIG.ccDaisyReboot : CONFIG.ccSysReboot, 1);
+  if (midiLast) midiLast.textContent = 'sent: reboot to ' + (isApp ? 'bootloader' : 'STM DFU');
+  fwStatus('reboot sent — Connect when the DFU device appears', 'ok');
 });
 
 // --- step 3: connect over WebUSB ---
@@ -2014,8 +2066,25 @@ fwEl('fwConnect').addEventListener('click', async () => {
     const dev = await WebDFU.requestDevice();
     await dev.connect();
     FLASH.dev = dev;
-    const seg = dev.memory && dev.memory.segments[0];
-    fwStatus('connected' + (seg ? ' · ' + dev.memory.name : '') + ' · ready to flash', 'ok');
+    // Derive the write address from what the connected bootloader actually exposes:
+    // a QSPI segment => Daisy bootloader (app slot), internal => STM ROM (bootloader).
+    const segs = (dev.memory && dev.memory.segments) || [];
+    const has = (a) => segs.some((s) => a >= s.start && a < s.end);
+    let target = null;
+    if (has(FW_ADDR.app)) { target = 'app'; FLASH.addr = FW_ADDR.app; }
+    else if (has(FW_ADDR.boot)) { target = 'boot'; FLASH.addr = FW_ADDR.boot; }
+    else { FLASH.addr = FW_ADDR[FLASH.mode]; }   // unknown map — trust the selected mode
+    FLASH.mismatch = !!(target && target !== FLASH.mode);
+    const name = dev.memory && dev.memory.name;
+    const at = '0x' + (FLASH.addr >>> 0).toString(16).toUpperCase();
+    if (target && target !== FLASH.mode) {
+      // The wrong bootloader answered for the chosen operation — don't flash to the wrong place.
+      fwStatus('connected to the ' + (target === 'app' ? 'Daisy bootloader (app slot)' : 'STM ROM (internal)')
+        + ', but you picked “' + (FLASH.mode === 'app' ? 'app update' : 'bootloader install')
+        + '”. Switch the target to match, then flash.', 'err');
+    } else {
+      fwStatus('connected' + (name ? ' · ' + name : '') + ' · → ' + at + ' · ready to flash', 'ok');
+    }
     fwSetFlashEnabled();
   } catch (e) {
     fwStatus('connect failed: ' + e.message + (/no device|chosen/i.test(e.message) ? '' : ' (Windows: WinUSB via Zadig?)'), 'err');
