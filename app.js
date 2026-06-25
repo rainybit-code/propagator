@@ -1984,6 +1984,7 @@ function fwRender() {
   set('fwTitle', isApp ? 'Update firmware' : 'Install / repair bootloader');
   set('fwSub', isApp ? 'Flash the <b>Spore</b> app over USB — no extra tools.'
                      : 'Advanced: reinstall the Daisy <b>bootloader</b> (first-time setup or recovery).');
+  set('fwChooseLabel', isApp ? 'Choose firmware' : 'Choose bootloader');
   set('fwModeToggle', isApp ? 'Install / repair bootloader (advanced)' : '← Back to app update');
   set('fwReboot', isApp ? '⤓ Reboot to bootloader (via MIDI)' : '⤓ Reboot to STM DFU (via MIDI)');
   set('fwRebootHint', isApp
