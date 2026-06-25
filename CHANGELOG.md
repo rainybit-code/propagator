@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Fix: live site broke because the deploy didn't bundle `core.js`.** The Pages deploy copied
+  a hardcoded file list that omitted the new `core.js`, so it 404'd and the page crashed
+  (`rotFor is not defined`). Added `core.js` (and `dfu.js`) to the deploy + release bundles, and
+  a build guard that fails if `index.html` references a script that isn't bundled.
 - **Linting + tests.** Pure helpers (`clamp01`, `rotFor`, `semverGt`, `cablePath`, `noteName`,
   `describeMidi`) moved to a new `core.js` shared by the app and a Node unit-test suite
   (`node --test`, no dependencies). Added a lightweight ESLint flat config (core rules, no

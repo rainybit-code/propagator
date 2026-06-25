@@ -29,8 +29,13 @@ jobs:
       - name: Assemble site + bundle latest Spore firmware
         run: |
           mkdir -p _site/firmware
-          cp index.html app.js dfu.js styles.css presets.json _site/
+          cp index.html app.js core.js dfu.js styles.css presets.json _site/
           touch _site/.nojekyll
+          # Guard: every <script src> in index.html must be in the bundle, so a new
+          # script can never ship missing (404) and break the page on deploy.
+          for s in $(grep -oE '<script src="[^"]+"' index.html | sed -E 's/.*src="([^"]+)".*/\1/'); do
+            [ -f "_site/$s" ] || { echo "::error::index.html loads $s but it's not in the deploy bundle"; exit 1; }
+          done
           REL="$(curl -s https://api.github.com/repos/rainybit-code/spore/releases/latest)"
           TAG="$(printf '%s' "$REL" | grep -oE '"tag_name":[ ]*"[^"]*"' | head -1 | sed -E 's/.*"([^"]*)"$/\1/')"
           # The release ships two .bin assets: the app and the (Daisy) bootloader. Pick each
