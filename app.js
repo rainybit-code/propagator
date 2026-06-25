@@ -1848,8 +1848,9 @@ function onMidiMessage(e) {
         }
         return;
     }
-    // Everything below (clock, notes, CC) only from the SELECTED performance input.
-    if (e.target !== midiIn) return;
+    // Allow messages from the selected performance input OR Spore (so CC state mirrors
+    // even when Spore isn't the performance input).
+    if (e.target !== midiIn && e.target !== sporeIn) return;
     // realtime: clock + transport
     if (status === 0xf8) {
         handleClockTick(performance.now());
