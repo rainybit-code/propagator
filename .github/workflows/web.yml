@@ -44,14 +44,20 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Syntax-check app.js
-        run: node --check app.js
+      - name: Syntax-check scripts
+        run: for f in core.js dfu.js app.js; do node --check "$f"; done
 
       - name: Validate presets.json
         run: node -e "JSON.parse(require('fs').readFileSync('presets.json','utf8')); console.log('presets.json OK')"
 
       - name: Check formatting (Prettier)
         run: npx --yes prettier@3 --check .
+
+      - name: Lint (ESLint)
+        run: npx --yes eslint@9 .
+
+      - name: Unit tests
+        run: node --test
 
       - name: Package site (tags only)
         if: github.ref_type == 'tag'

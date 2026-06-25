@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Linting + tests.** Pure helpers (`clamp01`, `rotFor`, `semverGt`, `cablePath`, `noteName`,
+  `describeMidi`) moved to a new `core.js` shared by the app and a Node unit-test suite
+  (`node --test`, no dependencies). Added a lightweight ESLint flat config (core rules, no
+  plugins); CI now lints and runs the tests. Linting also caught and removed a little dead code.
 - **Contributor tooling** (matches the Spore repo): added `CONTRIBUTING.md`, GitHub issue/PR
   templates, `.editorconfig`, and a Prettier config (`.prettierrc.json`, 4-space/100-col/single
   quotes). CI now checks formatting and requires a `CHANGELOG.md` entry on every PR. The whole

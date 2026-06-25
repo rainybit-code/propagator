@@ -75,8 +75,7 @@ const knobsRow = $('#knobs');
 const fxKnobsEl = $('#fxKnobs');
 const togglesEl = $('#toggles');
 const stompsEl = $('#stomps');
-const midiPod = $('#midiPod'),
-    midiAct = $('#midiAct'),
+const midiAct = $('#midiAct'),
     midiLast = $('#midiLast');
 
 /* ---------- MIDI state ---------- */
@@ -132,9 +131,6 @@ const KNOB_DEFAULTS = {
 /* ===========================================================================
    KNOBS
    ========================================================================= */
-function rotFor(v) {
-    return -135 + v * 270;
-}
 let envRedraw = () => {}; // set by the envelope pod; lets knob edits redraw the ADSR graph
 
 function makeKnob(bank, idx, label) {
@@ -357,9 +353,6 @@ let envSvg = null,
     envHS = null,
     envHR = null;
 
-function clamp01(v) {
-    return v < 0 ? 0 : v > 1 ? 1 : v;
-}
 // Attack/Decay are the synth-mode MODE knobs 3/4; Sustain/Release are synth params.
 function envGet() {
     return {
@@ -492,7 +485,6 @@ function drawFilterCurve(canvas, type, fc01, q01, fmin, fmax, opts) {
         if (poles >= 4) m *= m; // cascade ~ 4-pole
         return 20 * Math.log10(Math.max(m, 1e-4));
     };
-    const x = (f) => pad + (Math.log(f / fLo) / Math.log(fHi / fLo)) * (W - 2 * pad);
     const y = (db) => pad + (1 - (Math.max(-36, Math.min(18, db)) + 36) / 54) * (H - 2 * pad);
     // 0 dB grid line
     ctx.strokeStyle = 'rgba(91,208,230,.15)';
@@ -823,12 +815,6 @@ function findSlot(src, dst) {
     }
     return -1;
 }
-function cablePath(sx, sy, dx, dy) {
-    // hanging-wire curve (control points sag down)
-    const mx = (sx + dx) / 2,
-        sag = 10 + Math.abs(dx - sx) * 0.06;
-    return `M ${sx} ${sy} C ${mx} ${sy + sag} ${mx} ${dy + sag} ${dx} ${dy}`;
-}
 function svgPt(e) {
     const r = patchSvg.getBoundingClientRect();
     return {
@@ -1115,10 +1101,6 @@ function updateToggleVals(ti, pos) {
     toggleEls[ti]
         .querySelectorAll('.toggle-vals span')
         .forEach((s, i) => s.classList.toggle('on', i === pos));
-}
-function setToggle(ti, pos) {
-    toggleEls[ti].dataset.pos = pos;
-    updateToggleVals(ti, pos);
 }
 function setVar(pos) {
     // VAR / Toggle 2 -> CC 93 (per-mode variant)
@@ -1806,23 +1788,6 @@ function resolveSaved(map, savedId, savedName) {
     return '';
 }
 // incoming (for future 2-way sync): reflect CC back onto knobs
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-function noteName(n) {
-    return NOTE_NAMES[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1);
-}
-function describeMidi(d) {
-    const hi = d[0] & 0xf0;
-    if (hi === 0x90 && d[2] > 0)
-        return { cat: 'notes', text: `Note On  ${noteName(d[1])}  v${d[2]}` };
-    if (hi === 0x80 || (hi === 0x90 && d[2] === 0))
-        return { cat: 'notes', text: `Note Off ${noteName(d[1])}` };
-    if (hi === 0xb0) return { cat: 'cc', text: `CC ${d[1]} → ${d[2]}` };
-    if (hi === 0xe0) return { cat: 'other', text: `Pitch Bend ${((d[2] << 7) | d[1]) - 8192}` };
-    if (hi === 0xc0) return { cat: 'other', text: `Program ${d[1]}` };
-    if (hi === 0xd0) return { cat: 'other', text: `Ch Pressure ${d[1]}` };
-    if (hi === 0xa0) return { cat: 'other', text: `Poly AT ${noteName(d[1])} ${d[2]}` };
-    return { cat: 'other', text: `0x${d[0].toString(16)}` };
-}
 function sameInOut() {
     return midiIn && midiOut && midiIn.id === midiOut.id;
 }
@@ -2902,22 +2867,6 @@ function fwProgress(p) {
 }
 
 // --- firmware version awareness ---
-function semverGt(a, b) {
-    // is version a strictly newer than b?
-    const pa = String(a)
-        .replace(/^v/, '')
-        .split('.')
-        .map((n) => parseInt(n, 10) || 0);
-    const pb = String(b)
-        .replace(/^v/, '')
-        .split('.')
-        .map((n) => parseInt(n, 10) || 0);
-    for (let i = 0; i < 3; i++) {
-        if ((pa[i] || 0) > (pb[i] || 0)) return true;
-        if ((pa[i] || 0) < (pb[i] || 0)) return false;
-    }
-    return false;
-}
 // pulse the DFU button dim green when the bundled build is newer than Spore's
 function checkFwUpdate() {
     const btn = $('#dfuBtn');
