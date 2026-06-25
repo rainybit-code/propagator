@@ -63,6 +63,12 @@ dfu.js        self-contained WebUSB + DfuSe firmware flasher
 presets.json  factory preset library
 ```
 
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) — it's a static site (no build), formatted with
+Prettier (4-space, 100-col, matching the Spore firmware repo) and enforced by CI. Run
+`npx prettier --write .` before committing.
+
 ## License
 
 **GPL-3.0-or-later.** Copyright (C) 2026 Joakim Langkilde. See [`LICENSE`](LICENSE).
