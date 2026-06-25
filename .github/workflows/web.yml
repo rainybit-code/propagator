@@ -64,7 +64,7 @@ jobs:
         run: |
           mkdir -p dist
           zip -r "dist/propagator-${GITHUB_REF_NAME}.zip" \
-            index.html app.js styles.css presets.json .nojekyll README.md LICENSE
+            index.html app.js core.js dfu.js styles.css presets.json .nojekyll README.md LICENSE
 
       - name: Extract changelog section for this tag
         if: github.ref_type == 'tag'
