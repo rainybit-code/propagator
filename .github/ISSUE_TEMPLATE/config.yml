@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Spore firmware
+    url: https://github.com/rainybit-code/spore/issues
+    about: Issues with the synth itself (sound, controls, the MIDI/SysEx map) belong in the spore repo.

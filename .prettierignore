@@ -1,0 +1,13 @@
+# Firmware binaries + the generated manifest are bundled at deploy time.
+firmware/
+
+# Not ours to reformat / not source we style.
+LICENSE
+.nojekyll
+
+# Markdown is hand-wrapped (changelog, docs) — don't let printWidth rewrap prose.
+*.md
+
+# Workflow YAML is kept hand-formatted.
+*.yml
+*.yaml

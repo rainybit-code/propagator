@@ -5,6 +5,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Contributor tooling** (matches the Spore repo): added `CONTRIBUTING.md`, GitHub issue/PR
+  templates, `.editorconfig`, and a Prettier config (`.prettierrc.json`, 4-space/100-col/single
+  quotes). CI now checks formatting and requires a `CHANGELOG.md` entry on every PR. The whole
+  codebase was reformatted with Prettier in one pass (no behaviour change).
 - **Flash wizard now targets the SRAM bootloader build** (Spore v0.4.0+). The everyday path
   reboots Spore into the Daisy bootloader (**CC 118**) and flashes the app to **QSPI
   `0x90040000`**; an "install / repair bootloader (advanced)" toggle covers first-time setup
