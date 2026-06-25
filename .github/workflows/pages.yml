@@ -33,12 +33,22 @@ jobs:
           touch _site/.nojekyll
           REL="$(curl -s https://api.github.com/repos/rainybit-code/spore/releases/latest)"
           TAG="$(printf '%s' "$REL" | grep -oE '"tag_name":[ ]*"[^"]*"' | head -1 | sed -E 's/.*"([^"]*)"$/\1/')"
-          URL="$(printf '%s' "$REL" | grep -oE '"browser_download_url":[ ]*"[^"]*\.bin"' | head -1 | sed -E 's/.*"(https[^"]*)"$/\1/')"
-          if [ -n "$URL" ]; then
-            curl -sL "$URL" -o _site/firmware/spore-latest.bin
+          # The release ships two .bin assets: the app and the (Daisy) bootloader. Pick each
+          # explicitly -- the app is the .bin that is NOT the bootloader.
+          URLS="$(printf '%s' "$REL" | grep -oE '"browser_download_url":[ ]*"[^"]*\.bin"' | sed -E 's/.*"(https[^"]*)"$/\1/')"
+          APP_URL="$(printf '%s\n' "$URLS" | grep -v 'bootloader' | head -1)"
+          BOOT_URL="$(printf '%s\n' "$URLS" | grep 'bootloader' | head -1)"
+          if [ -n "$APP_URL" ]; then
+            curl -sL "$APP_URL" -o _site/firmware/spore-latest.bin
             SIZE="$(wc -c < _site/firmware/spore-latest.bin)"
-            printf '{"version":"%s","file":"spore-latest.bin","size":%s}\n' "$TAG" "$SIZE" > _site/firmware/latest.json
-            echo "bundled firmware $TAG ($SIZE bytes)"
+            BOOT_JSON=""
+            if [ -n "$BOOT_URL" ]; then
+              curl -sL "$BOOT_URL" -o _site/firmware/spore-bootloader.bin
+              BSIZE="$(wc -c < _site/firmware/spore-bootloader.bin)"
+              BOOT_JSON=",\"bootFile\":\"spore-bootloader.bin\",\"bootSize\":$BSIZE"
+            fi
+            printf '{"version":"%s","file":"spore-latest.bin","size":%s%s}\n' "$TAG" "$SIZE" "$BOOT_JSON" > _site/firmware/latest.json
+            echo "bundled app $TAG ($SIZE bytes)${BOOT_URL:+ + bootloader}"
           else
             printf '{"version":null}\n' > _site/firmware/latest.json
             echo "no release asset found — site deploys without bundled firmware"

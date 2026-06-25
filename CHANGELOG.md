@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Flash wizard now targets the SRAM bootloader build** (Spore v0.4.0+). The everyday path
+  reboots Spore into the Daisy bootloader (**CC 118**) and flashes the app to **QSPI
+  `0x90040000`**; an "install / repair bootloader (advanced)" toggle covers first-time setup
+  (**CC 119** → STM ROM → internal `0x08000000`). The write address is auto-derived from the
+  connected bootloader's memory map, with a guard that refuses to flash if the wrong bootloader
+  answered. The deploy now bundles both the app and the bootloader `.bin` from the release.
 - **GRANULAR pod** (shown in Granular mode) — four new engine controls beyond the 6 mode knobs:
   **Reverse** (backwards grains), **Width** (stereo spread), **Shape** (soft Hann → hard gate),
   and **Scale** (off / major / minor / pentatonic pitch-lock). CC 94-97, a new "gran" bank,

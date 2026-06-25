@@ -39,8 +39,11 @@ Safari has no Web MIDI; recent Firefox is partial.
   and a **tempo/clock** section
 - Preset save/load (browser localStorage).
 - **Firmware flashing in the browser** (WebUSB DFU) - the ⤓ dfu button opens a wizard
-  that fetches the latest `spore` release `.bin` (or takes a local file), reboots
-  Spore to DFU over MIDI, and flashes it. Chrome/Edge; Windows needs WinUSB once (Zadig).
+  that fetches the latest `spore` release `.bin` (or takes a local file), reboots Spore to
+  the bootloader over MIDI (CC 118), and flashes the app to QSPI. An "install / repair
+  bootloader (advanced)" toggle handles first-time setup (CC 119 → STM ROM → internal flash).
+  The write address is auto-derived from the connected bootloader. Chrome/Edge; Windows needs
+  WinUSB once (Zadig).
 
 ## MIDI map (the contract)
 
