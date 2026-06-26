@@ -5,8 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
-
-## [v0.5.0] - 2026-06-26
+- **On-device presets + two-way patch sync** (needs Spore firmware with the patch/preset
+  SysEx). A new **DEVICE ▸** strip in the toolbar shows the pedal's three QSPI preset slots for
+  the active mode: click a slot to recall it, or arm **⤓ save** and click a slot to store the
+  current sound on the pedal. Slots light up when occupied and highlight the active one
+  (occupancy comes from the device, refreshed on connect and on mode change). **⟳** pulls the
+  pedal's live sound into the editor, and a device-side recall or hardware tweak now mirrors
+  back into the UI automatically (SysEx `0x50` patch dump). Implements `MIDI_PROTOCOL.md` §3-4
+  (`0x10`/`0x20`/`0x21`/`0x22` → `0x50`/`0x52`).
 - **Fix: live site broke because the deploy didn't bundle `core.js`.** The Pages deploy copied
   a hardcoded file list that omitted the new `core.js`, so it 404'd and the page crashed
   (`rotFor is not defined`). Added `core.js` (and `dfu.js`) to the deploy + release bundles, and

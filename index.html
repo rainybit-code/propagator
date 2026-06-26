@@ -204,6 +204,52 @@
                         ⭱
                     </button>
                     <input type="file" id="presetFile" accept=".json,application/json" hidden />
+                    <span class="tb-device" id="deviceSlotsBox" hidden>
+                        <span class="tb-device-lbl">DEVICE&nbsp;▸</span>
+                        <span class="dslots" id="deviceSlots">
+                            <button
+                                type="button"
+                                class="dslot"
+                                data-slot="0"
+                                title="recall device slot 1"
+                            >
+                                1
+                            </button>
+                            <button
+                                type="button"
+                                class="dslot"
+                                data-slot="1"
+                                title="recall device slot 2"
+                            >
+                                2
+                            </button>
+                            <button
+                                type="button"
+                                class="dslot"
+                                data-slot="2"
+                                title="recall device slot 3"
+                            >
+                                3
+                            </button>
+                        </span>
+                        <button
+                            type="button"
+                            id="deviceSave"
+                            class="tb-btn"
+                            title="arm save, then pick a slot to store the current sound on the pedal"
+                        >
+                            ⤓&nbsp;save
+                        </button>
+                        <button
+                            type="button"
+                            id="devicePull"
+                            class="tb-btn tb-btn-icon"
+                            title="pull the pedal's live sound into the editor"
+                            aria-label="pull patch from device"
+                        >
+                            ⟳
+                        </button>
+                    </span>
                 </div>
             </div>
             <div class="tb-conn">
