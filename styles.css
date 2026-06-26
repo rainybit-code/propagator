@@ -365,6 +365,70 @@ body::before {
     border-color: var(--heat);
 }
 
+/* on-device preset slots (QSPI) — the 3 slots per mode stored on the pedal,
+   distinct from the browser preset librarian. Shown only while connected. */
+.tb-device {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-left: 0.55rem;
+    margin-left: 0.15rem;
+    border-left: 1.5px solid var(--cyan-2);
+}
+.tb-device[hidden] {
+    display: none;
+}
+.tb-device-lbl {
+    color: var(--ink-dim);
+    letter-spacing: 0.12em;
+}
+.dslots {
+    display: inline-flex;
+    gap: 0.3rem;
+}
+.dslot {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    width: 1.55rem;
+    height: 1.55rem;
+    color: var(--ink-dim);
+    background: rgba(91, 208, 230, 0.06);
+    border: 1.5px solid var(--cyan-2);
+    border-radius: 6px;
+    cursor: pointer;
+}
+.dslot:hover:not(:disabled) {
+    color: var(--ink);
+    border-color: var(--cyan);
+}
+.dslot:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+/* occupied = holds a saved preset; active = the last one loaded/saved */
+.dslot.occupied {
+    color: var(--ink);
+    background: rgba(91, 208, 230, 0.18);
+    border-color: var(--cyan);
+}
+.dslot.active {
+    color: #06210f;
+    background: var(--grow);
+    border-color: var(--grow);
+    font-weight: 700;
+}
+/* save-armed: the strip waits for a slot click to store into */
+.tb-device.armed .dslot {
+    border-color: var(--warm);
+    box-shadow: inset 0 0 0 1px var(--warm);
+}
+.tb-device.armed #deviceSave {
+    color: #210f06;
+    background: var(--warm);
+    border-color: var(--warm);
+    font-weight: 700;
+}
+
 /* top-bar tempo mini (shown when the tempo box is closed) */
 .bpm-mini {
     display: inline-flex;

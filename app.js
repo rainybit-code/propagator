@@ -1174,6 +1174,9 @@ function setMode(m) {
     if (stompNames[1]) stompNames[1].textContent = CONFIG.fsActions[name] || 'ACTION'; // FS2 = mode action
     sendCC(CONFIG.ccModeSelect, m / 2); // tell Spore to switch mode
     if (typeof applyPods === 'function') applyPods(); // synth-only panels follow the mode
+    // device preset slots are per-mode: clear the stale view and re-query this mode's
+    if (typeof renderDeviceSlots === 'function') renderDeviceSlots();
+    if (!applyingRemote && midiOut) requestDeviceSlots();
 }
 function setFx(f) {
     activeFx = f;
@@ -1554,6 +1557,112 @@ async function loadFactoryPresets() {
 }
 
 /* ===========================================================================
+   ON-DEVICE PRESET SLOTS (QSPI) — SysEx 0x10/0x11/0x20/0x21/0x22 · 0x50/0x52
+   (see daisy docs/MIDI_PROTOCOL.md §3-4). Distinct from the browser librarian
+   above: these are the 3 slots PER MODE in the pedal's flash, indexed by Toggle 2
+   and shared with the hardware save gesture. The device replies 0x52 (occupancy +
+   the active slot) and 0x50 (a full patch dump) so the editor follows a recall.
+   ========================================================================= */
+function sendSysex(bytes) {
+    if (!midiOut) return;
+    try {
+        midiOut.send([0xf0, 0x7d, ...bytes, 0xf7]);
+    } catch (_) {
+        /* sysex not permitted */
+    }
+}
+// Editor -> device sync uses live CC (sendCC / pushAllCC); the device captures its
+// own live state on save, so a SysEx 0x11 patch-load isn't needed here (the firmware
+// still accepts it). The reverse direction (device -> editor) needs the dump below.
+function requestPatchDump() {
+    sendSysex([0x10]); // device replies 0x50
+}
+function deviceSaveSlot(n) {
+    sendSysex([0x20, n & 0x7f]); // device replies 0x52
+}
+function deviceRecallSlot(n) {
+    sendSysex([0x21, n & 0x7f]); // device replies 0x50 + 0x52
+}
+function requestDeviceSlots() {
+    sendSysex([0x22]); // device replies 0x52
+}
+
+// Mirror an incoming patch dump (0x50) into the editor WITHOUT echoing back out
+// (applyingRemote suppresses the setters' CC sends), so a device recall or hardware
+// tweak drives the UI with no feedback loop.
+function applyPatchDump(d) {
+    const end = d.indexOf(0xf7, 3);
+    const p = d.subarray(3, end < 0 ? d.length : end);
+    if (p.length < 21) return;
+    const f = (x) => x / 127;
+    const mode = p[1];
+    const params = mode === 1 ? knobValue.gran : mode === 2 ? knobValue.gen : knobValue.synth;
+    applyingRemote = true;
+    try {
+        knobValue.master[0] = f(p[5]);
+        knobValue.master[1] = f(p[6]);
+        knobValue.master[2] = f(p[7]);
+        for (let i = 0; i < 6; i++) knobValue.mode[i] = f(p[8 + i]);
+        for (let i = 0; i < 6; i++) knobValue.fx[i] = f(p[14 + i]);
+        const n = Math.min(p[20], params.length);
+        for (let i = 0; i < n; i++) params[i] = f(p[21 + i]);
+        setMode(mode); // also relabels the mode knobs + switches per-mode pods
+        setFx(p[2]);
+        setDelaySync(p[3]);
+        setMasterFilt(p[4]);
+        refreshKnobs();
+        refreshSegments();
+    } finally {
+        applyingRemote = false;
+    }
+    scheduleAutosave();
+}
+
+// device-slot occupancy (for the active mode), from the 0x52 reply
+let deviceSlots = { mode: -1, used: [0, 0, 0], active: 0 };
+let slotSaveArmed = false;
+function updateDeviceSlots(mode, used, active) {
+    deviceSlots = { mode, used, active };
+    renderDeviceSlots();
+}
+function setSlotArmed(on) {
+    slotSaveArmed = on && !!midiOut;
+    const box = $('#deviceSlotsBox');
+    if (box) box.classList.toggle('armed', slotSaveArmed);
+}
+function renderDeviceSlots() {
+    const box = $('#deviceSlotsBox');
+    if (!box) return;
+    const live = !!midiOut;
+    box.hidden = !live;
+    if (!live) setSlotArmed(false);
+    // occupancy is per-mode, so it's unknown (stale) until a 0x52 for THIS mode arrives
+    const known = deviceSlots.mode === activeMode;
+    box.querySelectorAll('.dslot').forEach((btn) => {
+        const i = +btn.dataset.slot;
+        btn.classList.toggle('occupied', known && !!deviceSlots.used[i]);
+        btn.classList.toggle('active', known && deviceSlots.active === i + 1);
+        btn.disabled = !live;
+    });
+}
+$('#deviceSlots').addEventListener('click', (e) => {
+    const btn = e.target.closest('.dslot');
+    if (!btn || btn.disabled) return;
+    const slot = +btn.dataset.slot;
+    if (slotSaveArmed) {
+        deviceSaveSlot(slot); // save the live sound into this slot
+        setSlotArmed(false);
+    } else {
+        deviceRecallSlot(slot); // recall (device pushes a 0x50 dump back)
+    }
+});
+$('#deviceSave').addEventListener('click', () => setSlotArmed(!slotSaveArmed));
+$('#devicePull').addEventListener('click', () => {
+    setSlotArmed(false);
+    requestPatchDump(); // pull the device's live sound into the editor
+});
+
+/* ===========================================================================
    WEB MIDI
    ========================================================================= */
 function sendCC(cc, v01) {
@@ -1682,11 +1791,14 @@ function selectOut(id) {
         setTimeout(sendIdentify, 150); // request the running firmware version
         startCpuPoll(); // begin polling audio-callback load
         startChaosPoll(); // begin polling the chaos attractor (when visible)
+        setTimeout(requestDeviceSlots, 200); // query on-device preset occupancy
+        renderDeviceSlots(); // reveal the device-slots strip
     } else {
         connectedFw = null;
         checkFwUpdate();
         stopCpuPoll();
         stopChaosPoll();
+        renderDeviceSlots(); // hide the device-slots strip when offline
     }
 }
 function selectIn(id) {
@@ -1845,6 +1957,12 @@ function onMidiMessage(e) {
         } else if (d.length >= 5 && d[2] === 0x43) {
             // chaos state: F0 7D 43 <x> <z> F7
             pushChaosSample(d[3], d[4]);
+        } else if (d.length >= 4 && d[2] === 0x50) {
+            // full patch dump: F0 7D 50 <payload> F7 -> mirror into the editor
+            applyPatchDump(d);
+        } else if (d.length >= 8 && d[2] === 0x52) {
+            // slot list: F0 7D 52 <mode> <used0> <used1> <used2> <active+1> F7
+            updateDeviceSlots(d[3], [d[4], d[5], d[6]], d[7]);
         }
         return;
     }
