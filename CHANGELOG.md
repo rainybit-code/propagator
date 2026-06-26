@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+
+## [v0.5.0] - 2026-06-26
 - **Fix: live site broke because the deploy didn't bundle `core.js`.** The Pages deploy copied
   a hardcoded file list that omitted the new `core.js`, so it 404'd and the page crashed
   (`rotFor is not defined`). Added `core.js` (and `dfu.js`) to the deploy + release bundles, and
