@@ -5,8 +5,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
-
-## [v0.5.0] - 2026-10-12
 - **Fix: device firmware version not refreshing after DFU flash.** When DFU flashing completed,
   the editor retained the old firmware version string, failed to re-detect reconnected MIDI ports
   if `midiOut` remained holding a disconnected port instance, and did not query the rebooted
