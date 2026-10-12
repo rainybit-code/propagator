@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this pr
 uses [Semantic Versioning](https://semver.org/) (`vMAJOR.MINOR.PATCH`).
 
 ## [Unreleased]
+- **Fix: device firmware version not refreshing after DFU flash.** When DFU flashing completed,
+  the editor retained the old firmware version string, failed to re-detect reconnected MIDI ports
+  if `midiOut` remained holding a disconnected port instance, and did not query the rebooted
+  device's SysEx identify. The editor now properly invalidates disconnected MIDI ports on state
+  change, auto-reconnects to Spore when it reboots, polls identify queries with retries upon
+  reconnecting post-DFU, and immediately updates the DFU wizard, top-bar update indicator, and
+  status readout once the running version is confirmed.
 - **On-device presets + two-way patch sync** (needs Spore firmware with the patch/preset
   SysEx). A new **DEVICE ▸** strip in the toolbar shows the pedal's three QSPI preset slots for
   the active mode: click a slot to recall it, or arm **⤓ save** and click a slot to store the

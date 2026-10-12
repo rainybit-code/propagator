@@ -1685,6 +1685,7 @@ function fillSelect(sel, map, current) {
     const prev = current && current.id;
     sel.innerHTML = '<option value="">— no device —</option>';
     for (const port of map.values()) {
+        if (port.state && port.state !== 'connected') continue;
         const o = el('option');
         o.value = port.id;
         o.textContent = port.name || port.id;
@@ -1696,7 +1697,13 @@ function fillSelect(sel, map, current) {
 // Spore talks back (telemetry SysEx) on its own input port, named "Spore". Find it so we
 // can receive the chaos/CPU/identify replies no matter which device is selected to play.
 function resolveSporeIn() {
-    sporeIn = [...midi.inputs.values()].find((i) => /spore/i.test(i.name || '')) || null;
+    sporeIn =
+        [...midi.inputs.values()].find(
+            (i) =>
+                (!i.state || i.state === 'connected') &&
+                (/spore/i.test(i.name || '') ||
+                    (midiOut && midiOut.name && i.name === midiOut.name)),
+        ) || null;
 }
 // Attach the receive handler to exactly the ports we use -- the selected performance input
 // AND Spore's telemetry input -- and clear it from any others (dedupes when they're the same).
@@ -1709,6 +1716,18 @@ function bindInputs() {
 
 function refreshDevices() {
     if (!midi) return;
+    if (midiOut && (midiOut.state === 'disconnected' || !midi.outputs.has(midiOut.id))) {
+        midiOut = null;
+        connectedFw = null;
+        checkFwUpdate();
+        fwShowLatest();
+        stopCpuPoll();
+        stopChaosPoll();
+        renderDeviceSlots();
+    }
+    if (midiIn && (midiIn.state === 'disconnected' || !midi.inputs.has(midiIn.id))) {
+        midiIn = null;
+    }
     resolveSporeIn();
     fillSelect($('#midiOut'), midi.outputs, midiOut);
     fillSelect($('#midiIn'), midi.inputs, midiIn);
@@ -1731,14 +1750,24 @@ function refreshDevices() {
         savedInName = localStorage.getItem('propagator.inName') || '';
     } catch (_) {}
     if (!midiOut) {
-        const outId = resolveSaved(midi.outputs, savedOut, savedOutName);
+        let outId = resolveSaved(midi.outputs, savedOut, savedOutName);
+        if (!outId) {
+            const sporePort = [...midi.outputs.values()].find(
+                (p) => (!p.state || p.state === 'connected') && /spore/i.test(p.name || ''),
+            );
+            if (sporePort) outId = sporePort.id;
+        }
         if (outId) {
             selectOut(outId);
             $('#midiOut').value = outId;
-        } else if (midi.outputs.size) {
-            const first = midi.outputs.values().next().value;
-            selectOut(first.id);
-            $('#midiOut').value = first.id;
+        } else {
+            const first = [...midi.outputs.values()].find(
+                (p) => !p.state || p.state === 'connected',
+            );
+            if (first) {
+                selectOut(first.id);
+                $('#midiOut').value = first.id;
+            }
         }
     }
     if (!midiIn && !kbdOn) {
@@ -1746,7 +1775,13 @@ function refreshDevices() {
             selectIn('kbd');
             $('#midiIn').value = 'kbd';
         } else {
-            const inId = resolveSaved(midi.inputs, savedIn, savedInName);
+            let inId = resolveSaved(midi.inputs, savedIn, savedInName);
+            if (!inId) {
+                const sporeInPort = [...midi.inputs.values()].find(
+                    (p) => (!p.state || p.state === 'connected') && /spore/i.test(p.name || ''),
+                );
+                if (sporeInPort) inId = sporeInPort.id;
+            }
             if (inId) {
                 selectIn(inId);
                 $('#midiIn').value = inId;
@@ -1755,6 +1790,9 @@ function refreshDevices() {
     }
     bindInputs(); // listen on Spore's telemetry input (+ the selected performance input)
     updateConn();
+    if (midiOut && !connectedFw) {
+        requestIdentify(2);
+    }
 }
 function updateConn() {
     const n = midi ? midi.outputs.size : 0;
@@ -1788,7 +1826,8 @@ function selectOut(id) {
         CONFIG.ccSynth.forEach((cc, i) => sendCC(cc, knobValue.synth[i]));
         connectedFw = null;
         checkFwUpdate();
-        setTimeout(sendIdentify, 150); // request the running firmware version
+        fwShowLatest();
+        setTimeout(() => requestIdentify(3), 150); // request running firmware with retries
         startCpuPoll(); // begin polling audio-callback load
         startChaosPoll(); // begin polling the chaos attractor (when visible)
         setTimeout(requestDeviceSlots, 200); // query on-device preset occupancy
@@ -1796,6 +1835,7 @@ function selectOut(id) {
     } else {
         connectedFw = null;
         checkFwUpdate();
+        fwShowLatest();
         stopCpuPoll();
         stopChaosPoll();
         renderDeviceSlots(); // hide the device-slots strip when offline
@@ -1893,9 +1933,14 @@ function setKbd(on) {
 // resolve a saved device: prefer the exact id, else fall back to a name match
 // (WebMIDI port ids are not stable across sessions, especially on Windows)
 function resolveSaved(map, savedId, savedName) {
-    if (savedId && map.has(savedId)) return savedId;
+    if (savedId && map.has(savedId)) {
+        const p = map.get(savedId);
+        if (!p.state || p.state === 'connected') return savedId;
+    }
     if (savedName) {
-        for (const p of map.values()) if ((p.name || '') === savedName) return p.id;
+        for (const p of map.values()) {
+            if ((!p.state || p.state === 'connected') && (p.name || '') === savedName) return p.id;
+        }
     }
     return '';
 }
@@ -1945,12 +1990,25 @@ function onMidiMessage(e) {
     // delivered it -- so the chaos graph / CPU meter work regardless of the performance input.
     if (status === 0xf0 && d[1] === 0x7d) {
         if (d.length >= 4 && d[2] === 0x41) {
+            if (identifyTimer) {
+                clearTimeout(identifyTimer);
+                identifyTimer = null;
+            }
+            if (sporeRebootPoll) {
+                clearInterval(sporeRebootPoll);
+                sporeRebootPoll = null;
+            }
             // identify reply: F0 7D 41 <version ASCII> F7
             let s = '';
             for (let i = 3; i < d.length && d[i] !== 0xf7; i++) s += String.fromCharCode(d[i]);
             connectedFw = s.trim().replace(/^v/, '');
             if (midiLast) midiLast.textContent = 'Spore firmware v' + connectedFw;
             checkFwUpdate();
+            fwShowLatest();
+            const flashCard = fwEl('flash');
+            if (flashCard && !flashCard.hidden) {
+                fwStatus('✓ Spore rebooted — running v' + connectedFw, 'ok');
+            }
         } else if (d.length >= 5 && d[2] === 0x42) {
             // CPU load: F0 7D 42 <avg%> <max%> F7
             showCpuLoad(d[3], d[4]);
@@ -3026,6 +3084,7 @@ async function loadLatestFw() {
     checkFwUpdate();
 }
 // request Spore's running firmware version (SysEx identify)
+let identifyTimer = null;
 function sendIdentify() {
     if (!midiOut) return;
     try {
@@ -3033,6 +3092,49 @@ function sendIdentify() {
     } catch (e) {
         /* sysex not permitted */
     }
+}
+function requestIdentify(retries = 3) {
+    if (identifyTimer) {
+        clearTimeout(identifyTimer);
+        identifyTimer = null;
+    }
+    sendIdentify();
+    if (retries > 0) {
+        identifyTimer = setTimeout(() => {
+            if (!connectedFw && midiOut) {
+                requestIdentify(retries - 1);
+            }
+        }, 600);
+    }
+}
+
+// Watch for Spore to reboot into app mode post-DFU, reconnect MIDI, and identify
+let sporeRebootPoll = null;
+function waitForSporeReboot() {
+    if (sporeRebootPoll) clearInterval(sporeRebootPoll);
+    let attempts = 0;
+    const maxAttempts = 20; // poll every 1s for up to 20s
+    sporeRebootPoll = setInterval(() => {
+        attempts++;
+        if (connectedFw) {
+            clearInterval(sporeRebootPoll);
+            sporeRebootPoll = null;
+            return;
+        }
+        if (attempts >= maxAttempts) {
+            clearInterval(sporeRebootPoll);
+            sporeRebootPoll = null;
+            const flashCard = fwEl('flash');
+            if (flashCard && !flashCard.hidden) {
+                fwStatus('flashed — if Spore did not reboot, tap RESET on the board', 'ok');
+            }
+            return;
+        }
+        refreshDevices();
+        if (midiOut) {
+            requestIdentify(1);
+        }
+    }, 1000);
 }
 
 // --- CPU load awareness (SysEx query 0x02 -> reply 0x42 <avg%> <max%>) ---
@@ -3169,7 +3271,8 @@ function fwShowLatest() {
     } else {
         info.innerHTML =
             'no bundled build — get it from ' +
-            '<a href="https://github.com/rainybit-code/spore/releases/latest" target="_blank" rel="noopener">releases</a>, then pick a .bin';
+            '<a href="https://github.com/rainybit-code/spore/releases/latest" target="_blank" rel="noopener">releases</a>, then pick a .bin' +
+            (connectedFw ? ' · on Spore: v' + connectedFw : '');
         btn.hidden = true;
     }
 }
@@ -3216,7 +3319,7 @@ function fwOpen() {
     fwEl('fwConnect').disabled = !WebDFU.supported();
     fwEl('fwReboot').disabled = !midiOut;
     fwRender();
-    sendIdentify(); // refresh Spore's reported version while the wizard is open
+    requestIdentify(2); // refresh Spore's reported version while the wizard is open
 }
 async function fwClose() {
     fwEl('flash').hidden = true;
@@ -3349,14 +3452,25 @@ fwEl('fwFlash').addEventListener('click', async () => {
     const btn = fwEl('fwFlash'),
         cn = fwEl('fwConnect');
     btn.disabled = cn.disabled = true;
+    connectedFw = null;
+    checkFwUpdate();
+    fwShowLatest();
     try {
         await FLASH.dev.download(FLASH.buf, FLASH.addr, fwProgress);
         fwEl('fwBar').style.width = '100%';
-        fwStatus('✓ done — Spore is rebooting into the new firmware', 'ok');
         try {
             await FLASH.dev.close();
         } catch (e) {}
         FLASH.dev = null;
+        if (FLASH.mode === 'boot') {
+            fwStatus(
+                '✓ done — Daisy bootloader installed. Switch to App update to flash Spore',
+                'ok',
+            );
+        } else {
+            fwStatus('✓ done — waiting for Spore to reboot…', 'ok');
+            waitForSporeReboot();
+        }
     } catch (e) {
         fwStatus('flash failed: ' + e.message + ' — re-enter DFU and retry', 'err');
     } finally {
@@ -3374,11 +3488,15 @@ fwEl('fwLeave').addEventListener('click', async () => {
     btn.disabled = cn.disabled = fl.disabled = true;
     try {
         await FLASH.dev.leave(FLASH.addr);
-        fwStatus('✓ rebooting Spore into app mode', 'ok');
         try {
             await FLASH.dev.close();
         } catch (e) {}
         FLASH.dev = null;
+        connectedFw = null;
+        checkFwUpdate();
+        fwShowLatest();
+        fwStatus('✓ rebooting Spore into app mode…', 'ok');
+        waitForSporeReboot();
     } catch (e) {
         fwStatus('reboot failed: ' + e.message, 'err');
     } finally {
