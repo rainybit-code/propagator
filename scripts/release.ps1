@@ -17,14 +17,14 @@ if ($branch -ne 'main') { Write-Error "on '$branch', not 'main' - refusing"; exi
 git rev-parse -q --verify "refs/tags/$Version" > $null 2>&1
 if ($?) { Write-Error "tag $Version already exists"; exit 1 }
 
-$cl = Get-Content CHANGELOG.md -Raw
+$cl = [System.IO.File]::ReadAllText("$root\CHANGELOG.md", [System.Text.Encoding]::UTF8)
 $m = [regex]::Match($cl, '(?ms)^## \[Unreleased\]\s*?\n(.*?)(?=^## \[)')
 $body = if ($m.Success) { $m.Groups[1].Value.Trim() } else { '' }
 if (-not $body) { Write-Error 'nothing under [Unreleased] - add release notes there first'; exit 1 }
 
 $date = Get-Date -Format 'yyyy-MM-dd'
 $new = [regex]::Replace($cl, '(?m)^## \[Unreleased\]\r?\n', "## [Unreleased]`n`n## [$Version] - $date`n", 1)
-Set-Content CHANGELOG.md $new -NoNewline -Encoding utf8
+[System.IO.File]::WriteAllText("$root\CHANGELOG.md", $new, [System.Text.UTF8Encoding]::new($false))
 
 git add CHANGELOG.md
 # keep the firmware version constant in sync with the tag (no-op outside the firmware repo)
